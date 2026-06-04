@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OPTCG Meta Analyzer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0a0a0a;--surf:#111111;--card:#1a1a1a;--brd:#2a2a2a;
   --text:#f0f0f0;--dim:#666666;--acc:#e01b1b;--acc-dim:rgba(224,27,27,.15);
   --g1:#00e87a;--g2:#6ee87a;--y:#fbbf24;--o:#f97316;--r:#ef4444;--rr:#dc2626;
-  --font-head:'Barlow Condensed',sans-serif;
-  --font-body:'DM Sans',sans-serif;
+  --font-head:'Nunito',sans-serif;
+  --font-body:'Nunito',sans-serif;
   --font-mono:'JetBrains Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -32,7 +32,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 
 /* Header */
 .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;flex-wrap:wrap;gap:12px}
-.hdr-title{font-family:var(--font-head);font-size:26px;font-weight:800;letter-spacing:.08em;color:var(--acc);line-height:1}
+.hdr-title{font-family:var(--font-head);font-size:24px;font-weight:900;letter-spacing:.02em;color:var(--acc);line-height:1}
 .hdr-sub{font-size:11px;color:var(--dim);margin-top:4px;font-family:var(--font-mono)}
 .hdr-badge{background:var(--card);border:1px solid var(--brd);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--dim);font-family:var(--font-mono)}
 .hdr-ds{width:auto!important;min-width:160px;font-size:12px!important;padding:5px 10px!important}
@@ -72,7 +72,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .rank-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rank-code{font-family:var(--font-mono);font-size:10px;color:#e06060;margin-top:1px}
 .rank-wr{font-family:var(--font-mono);font-size:14px;font-weight:700;text-align:right}
-.rank-play{font-family:var(--font-mono);font-size:11px;color:var(--dim);text-align:right}
+.rank-play{font-family:var(--font-mono);font-size:11px;color:#9aa3c0;text-align:right}
 /* Inline card image */
 .rank-img-wrap{width:48px;height:67px;border-radius:5px;overflow:hidden;background:var(--card);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .12s}
 .rank-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
@@ -80,7 +80,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .rank-row.off .rank-img-wrap{opacity:.35}
 /* Sort bar */
 .sort-bar{display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
-.sort-lbl{font-size:10px;color:var(--dim);font-family:var(--font-head);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.sort-lbl{font-size:10px;color:#8a93b0;font-family:var(--font-head);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .sort-btn{background:transparent;border:0.5px solid var(--brd);border-radius:20px;padding:3px 11px;font-size:11px;color:var(--dim);cursor:pointer;font-family:var(--font-body);transition:all .12s}
 .sort-btn.active{background:var(--acc-dim);border-color:var(--acc);color:var(--acc)}
 .sort-btn:hover{color:var(--text);border-color:#555}
@@ -171,11 +171,11 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 /* Decklist section */
 .dl-card{margin-top:16px;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px 16px}
 .dl-title{font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--text);margin-bottom:4px}
-.dl-subtitle{font-size:10px;color:var(--dim);font-family:var(--font-mono);margin-bottom:12px}
+.dl-subtitle{font-size:10px;color:#8a93b0;font-family:var(--font-mono);margin-bottom:12px}
 .dl-entry{background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:10px 12px;margin-bottom:10px}
 .dl-entry-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px}
 .dl-entry-wr{font-family:var(--font-mono);font-size:14px;font-weight:700}
-.dl-entry-meta{font-family:var(--font-mono);font-size:10px;color:var(--dim)}
+.dl-entry-meta{font-family:var(--font-mono);font-size:10px;color:#b8c0d8}
 .dl-cards{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-end}
 .dl-card-item{display:flex;flex-direction:column;align-items:center;gap:2px}
 .dl-img-wrap{border-radius:4px;overflow:hidden;background:var(--card);border:1px solid var(--brd);position:relative}
@@ -190,16 +190,16 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 @media(max-width:600px){.oh-dual{grid-template-columns:1fr}}
 .oh-card{margin-top:16px;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px 16px}
 .oh-title{font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.oh-subtitle{font-size:10px;color:var(--dim);font-family:var(--font-mono);margin-top:2px}
-.oh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:8px;margin-bottom:8px}
+.oh-subtitle{font-size:10px;color:#8a93b0;font-family:var(--font-mono);margin-top:2px}
+.oh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:8px;margin-bottom:8px;justify-items:center}
 .oh-item{display:flex;flex-direction:column;align-items:center;gap:4px}
 .oh-img-wrap{width:56px;height:78px;border-radius:5px;overflow:hidden;background:var(--surf);border:1px solid var(--brd)}
 .oh-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
 .oh-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:8px;color:var(--dim);text-align:center;padding:2px}
 .oh-rate{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--g1)}
-.oh-code{font-family:var(--font-mono);font-size:8px;color:var(--dim);text-align:center;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.oh-code{font-family:var(--font-mono);font-size:8px;color:#8a93b0;text-align:center;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .oh-empty{font-size:12px;color:var(--dim);text-align:center;padding:16px 0}
-.oh-ds-note{font-size:10px;color:var(--dim);margin-top:6px;text-align:right;font-family:var(--font-mono)}
+.oh-ds-note{font-size:10px;color:#6a7090;margin-top:6px;text-align:right;font-family:var(--font-mono)}
 /* Favourites */
 .fav-btn{background:none;border:none;cursor:pointer;font-size:16px;color:var(--dim);padding:0 4px;line-height:1;transition:color .15s;flex-shrink:0}
 .fav-btn:hover{color:#f5c518}
@@ -655,7 +655,7 @@ function viewAdvisor(){
   const savedDef=()=>{try{return localStorage.getItem(LS_DECK);}catch{return null;}};
   const wrap=document.createElement('div');
   const note=document.createElement('div');note.className='note';note.style.marginBottom='14px';
-  note.textContent='Select your deck and your opponent\'s. Ordered by play rate.';
+  note.style.color='#9aa3c0';note.textContent='Select your deck and your opponent\'s. Ordered by play rate.';
   wrap.appendChild(note);
   const grid=document.createElement('div');grid.className='adv-grid';
 
@@ -806,6 +806,121 @@ function viewAdvisor(){
   dp.append(mkDeckTile(myDeck,'My deck'),vs,mkDeckTile(oppDeck,'Opponent'));
   wrap.appendChild(dp);
 
+  // Opening hand guide — both decks side by side
+  const ohCard=document.createElement('div');ohCard.className='oh-card';
+  const ohTitle=document.createElement('div');ohTitle.className='oh-title';
+  ohTitle.textContent='✦ OPENING HAND ANALYSIS';
+  const ohSub=document.createElement('div');ohSub.className='oh-subtitle';
+  ohSub.textContent='Typical opening cards for each side — based on all recorded games';
+  ohTitle.appendChild(ohSub);
+  ohCard.appendChild(ohTitle);
+
+  function buildHandGrid(handsData, leaderId, sideLabel, accentColor){
+    const col=document.createElement('div');
+    const lbl=document.createElement('div');lbl.className='oh-side-label';
+    lbl.innerHTML=`${sideLabel} <span style="color:${accentColor}">[${leaderId}]</span>`;
+    col.appendChild(lbl);
+    if(!MY_DECK&&sideLabel==='YOUR DECK'){
+      const m=document.createElement('div');m.className='oh-empty';m.textContent='Select your deck above';col.appendChild(m);return col;
+    }
+    if(!OPP_DECK&&sideLabel==='OPPONENT'){
+      const m=document.createElement('div');m.className='oh-empty';m.textContent='Select opponent above';col.appendChild(m);return col;
+    }
+    if(!handsData){const m=document.createElement('div');m.className='oh-empty';m.textContent='No data';col.appendChild(m);return col;}
+    const entry=handsData.find(h=>h.leader===leaderId);
+    if(!entry?.common_cards?.length){const m=document.createElement('div');m.className='oh-empty';m.textContent='No hand data';col.appendChild(m);return col;}
+    const grid=document.createElement('div');grid.className='oh-grid';
+    entry.common_cards.slice(0,5).forEach(card=>{
+      const item=document.createElement('div');item.className='oh-item';
+      const iw=document.createElement('div');iw.className='oh-img-wrap';
+      const im=document.createElement('img');im.alt='';
+      const ph=document.createElement('div');ph.className='oh-img-ph';
+      iw.appendChild(im);iw.appendChild(ph);
+      applyCardImg(im,ph,card.card);
+      const rate=document.createElement('div');rate.className='oh-rate';
+      rate.style.color=accentColor;
+      rate.textContent=((card.appearance_rate||0)*100).toFixed(1)+'%';
+      const code=document.createElement('div');code.className='oh-code';
+      code.textContent=card.card;
+      item.append(iw,rate,code);
+      grid.appendChild(item);
+    });
+    col.appendChild(grid);
+    return col;
+  }
+
+  const ohLoading=document.createElement('div');ohLoading.className='oh-empty';
+  ohLoading.textContent='Loading hand data…';
+  ohCard.appendChild(ohLoading);
+  wrap.appendChild(ohCard);
+  // ── Key Cards for this Matchup ─────────────────────────────────
+  // Derived from decklist data: cards appearing across top-performing lists vs this opponent
+  const kcCard=document.createElement('div');kcCard.className='dl-card';
+  const kcTitle=document.createElement('div');kcTitle.className='dl-title';
+  kcTitle.textContent='✦ KEY CARDS FOR THIS MATCHUP';
+  const kcSub=document.createElement('div');kcSub.className='dl-subtitle';
+  kcSub.textContent='Cards that appear across the top-performing decklists specifically against this opponent';
+  kcCard.append(kcTitle,kcSub);
+
+  if(MY_DECK&&OPP_DECK){
+    const kcLoading=document.createElement('div');kcLoading.className='dl-empty';
+    kcLoading.textContent='Analysing…';kcCard.appendChild(kcLoading);
+    loadDecklist(DATASET_ID).then(dlData=>{
+      kcLoading.remove();
+      if(!dlData){kcCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:'No data.'}));return;}
+      const leaderEntry=dlData.find(e=>e.leader===MY_DECK);
+      const withMatchup=(leaderEntry?.best_decklists||[])
+        .map(dl=>{const ms=dl.matchup_stats?.find(m=>m.oppLeader===OPP_DECK);return ms?{...dl,vsWR:ms.win_rate,vsGames:ms.games_played}:null;})
+        .filter(Boolean).sort((a,b)=>(b.vsWR-a.vsWR)||(b.vsGames-a.vsGames));
+
+      if(!withMatchup.length){
+        kcCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:'Insufficient matchup data to identify key cards.'}));return;
+      }
+      // Score each card by how often it appears in top lists, weighted by that list's WR
+      const scores={};
+      withMatchup.slice(0,5).forEach(dl=>{
+        const cards=parseDecklist(dl.decklist);
+        Object.entries(cards).forEach(([id,cnt])=>{
+          if(!scores[id])scores[id]={score:0,appearances:0,maxCopies:0};
+          scores[id].score+=dl.vsWR*(dl.vsGames||1);
+          scores[id].appearances++;
+          scores[id].maxCopies=Math.max(scores[id].maxCopies,cnt);
+        });
+      });
+      // Only show cards appearing in 2+ lists (genuine consensus), sorted by weighted score
+      const topTotal=withMatchup.slice(0,5).length;
+      const keyCards=Object.entries(scores)
+        .filter(([_,v])=>v.appearances>=Math.min(2,topTotal))
+        .sort((a,b)=>b[1].score-a[1].score)
+        .slice(0,8);
+
+      if(!keyCards.length){
+        kcCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:'Only one decklist found — need more data for key card analysis.'}));return;
+      }
+      const grid=document.createElement('div');
+      grid.style.cssText='display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:4px 0';
+      keyCards.forEach(([id,data])=>{
+        const item=document.createElement('div');item.style.cssText='display:flex;flex-direction:column;align-items:center;gap:4px';
+        const iw=document.createElement('div');iw.className='oh-img-wrap';
+        const im=document.createElement('img');im.alt='';
+        const ph=document.createElement('div');ph.className='oh-img-ph';
+        iw.append(im,ph);applyCardImg(im,ph,id);
+        const copies=document.createElement('div');
+        copies.style.cssText='font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--acc);text-align:center';
+        copies.textContent=`${data.maxCopies}x`;
+        const code=document.createElement('div');code.className='oh-code';code.textContent=id;
+        item.append(iw,copies,code);grid.appendChild(item);
+      });
+      kcCard.appendChild(grid);
+      const note=document.createElement('div');note.className='oh-ds-note';
+      note.textContent=`Based on ${withMatchup.length} decklist${withMatchup.length===1?'':'s'} with recorded games vs ${oppName}`;
+      kcCard.appendChild(note);
+    }).catch(()=>{});
+  } else {
+    kcCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:'Select both decks to see key cards.'}));
+  }
+  wrap.appendChild(kcCard);
+
   // ── Top Decklists vs Opponent ────────────────────────────────────
   const dlCard=document.createElement('div');dlCard.className='dl-card';
   const dlTitle=document.createElement('div');dlTitle.className='dl-title';
@@ -877,54 +992,6 @@ function viewAdvisor(){
     dlCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:'Select both decks to see matchup-specific decklists.'}));
   }
   wrap.appendChild(dlCard);
-
-  // Opening hand guide — both decks side by side
-  const ohCard=document.createElement('div');ohCard.className='oh-card';
-  const ohTitle=document.createElement('div');ohTitle.className='oh-title';
-  ohTitle.textContent='✦ OPENING HAND ANALYSIS';
-  const ohSub=document.createElement('div');ohSub.className='oh-subtitle';
-  ohSub.textContent='Typical opening cards for each side — based on all recorded games';
-  ohTitle.appendChild(ohSub);
-  ohCard.appendChild(ohTitle);
-
-  function buildHandGrid(handsData, leaderId, sideLabel, accentColor){
-    const col=document.createElement('div');
-    const lbl=document.createElement('div');lbl.className='oh-side-label';
-    lbl.innerHTML=`${sideLabel} <span style="color:${accentColor}">[${leaderId}]</span>`;
-    col.appendChild(lbl);
-    if(!MY_DECK&&sideLabel==='YOUR DECK'){
-      const m=document.createElement('div');m.className='oh-empty';m.textContent='Select your deck above';col.appendChild(m);return col;
-    }
-    if(!OPP_DECK&&sideLabel==='OPPONENT'){
-      const m=document.createElement('div');m.className='oh-empty';m.textContent='Select opponent above';col.appendChild(m);return col;
-    }
-    if(!handsData){const m=document.createElement('div');m.className='oh-empty';m.textContent='No data';col.appendChild(m);return col;}
-    const entry=handsData.find(h=>h.leader===leaderId);
-    if(!entry?.common_cards?.length){const m=document.createElement('div');m.className='oh-empty';m.textContent='No hand data';col.appendChild(m);return col;}
-    const grid=document.createElement('div');grid.className='oh-grid';
-    entry.common_cards.slice(0,5).forEach(card=>{
-      const item=document.createElement('div');item.className='oh-item';
-      const iw=document.createElement('div');iw.className='oh-img-wrap';
-      const im=document.createElement('img');im.alt='';
-      const ph=document.createElement('div');ph.className='oh-img-ph';
-      iw.appendChild(im);iw.appendChild(ph);
-      applyCardImg(im,ph,card.card);
-      const rate=document.createElement('div');rate.className='oh-rate';
-      rate.style.color=accentColor;
-      rate.textContent=((card.appearance_rate||0)*100).toFixed(1)+'%';
-      const code=document.createElement('div');code.className='oh-code';
-      code.textContent=card.card;
-      item.append(iw,rate,code);
-      grid.appendChild(item);
-    });
-    col.appendChild(grid);
-    return col;
-  }
-
-  const ohLoading=document.createElement('div');ohLoading.className='oh-empty';
-  ohLoading.textContent='Loading hand data…';
-  ohCard.appendChild(ohLoading);
-  wrap.appendChild(ohCard);
 
   if(MY_DECK||OPP_DECK){
     loadHands(DATASET_ID).then(handsData=>{
@@ -1028,7 +1095,7 @@ function render(){
   heroWrap.appendChild(heroImg);
   left.appendChild(heroWrap);
   const titleBlock=document.createElement('div');
-  const title=document.createElement('div');title.className='hdr-title';title.textContent='OPTCG META ANALYZER';
+  const title=document.createElement('div');title.className='hdr-title';title.textContent='OPTCG: KING OF THE PIRATES';
   titleBlock.appendChild(title);
   left.appendChild(titleBlock);
   const right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap';
