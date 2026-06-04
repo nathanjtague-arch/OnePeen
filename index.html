@@ -287,7 +287,7 @@ function calcAdjWR(deck,activeIds,allDecks){
   activeIds.forEach(oppId=>{
     if(oppId===deck.id)return;
     const mu=deck.mu[oppId];
-    const opp=allDecks.find(d=>d.id===oppId);if(opp&&opp.games!=null&&opp.games<100)return;
+    const opp=allDecks.find(d=>d.id===oppId);if(opp&&opp.games!=null&&opp.games<100&&EXCL_LOW)return;
     const muWR=mu?.wr??(mu?.f!=null&&mu?.s!=null?(mu.f+mu.s)/2:null);if(muWR==null||!opp?.play)return;
     wSum+=muWR*opp.play;wN+=opp.play;
   });
@@ -334,7 +334,7 @@ function loadCache(){
 // ── App state ────────────────────────────────────────────────────
 let STATE='loading',DATA=null,META_UPDATED=null,HIDDEN=new Set();
 let TAB='rank',FILTER='all',PASTE_ERR='';
-let MY_DECK=null,OPP_DECK=null;
+let MY_DECK=null,OPP_DECK=null,EXCL_LOW=false;
 try{MY_DECK=localStorage.getItem(LS_DECK)||null;}catch{}
 
 // ── DOM helper ───────────────────────────────────────────────────
@@ -397,6 +397,7 @@ function visibleDecks(){
   if(!DATA?.decks)return[];
   let d=[...DATA.decks];
   if(FILTER==='top25')d=[...d].sort((a,b)=>(b.play||0)-(a.play||0)).slice(0,25);
+  if(EXCL_LOW)d=d.filter(x=>x.games==null||x.games>=100);
   return d;
 }
 
@@ -410,6 +411,14 @@ function mkFilterBar(){
     b.className='filter-btn'+(FILTER===v?' active':'');b.textContent=l;
     b.onclick=()=>{FILTER=v;render();};fb.appendChild(b);
   });
+  // Low data exclusion checkbox
+  const cbLabel=document.createElement('label');cbLabel.className='cb-row';cbLabel.style.marginLeft='8px';
+  const cbEl=document.createElement('input');cbEl.type='checkbox';cbEl.checked=EXCL_LOW;
+  cbEl.onchange=()=>{EXCL_LOW=cbEl.checked;render();};
+  cbLabel.appendChild(cbEl);
+  cbLabel.appendChild(document.createTextNode(' Exclude low data decks (<100 games)'));
+  fb.appendChild(cbLabel);
+
   if(HIDDEN.size>0){
     const cnt=document.createElement('span');cnt.className='filter-count';cnt.textContent=`· ${HIDDEN.size} hidden`;
     fb.appendChild(cnt);
@@ -542,19 +551,6 @@ function viewAdvisor(){
   const advice=getAdvice(myDeck,oppDeck);
 
   // Advice banner
-  // Matchup context banner
-  const muWR=muData?.wr??null;
-  const ctx=getMatchupCtx(muWR);
-  if(ctx){
-    const cb=document.createElement('div');cb.className='ctx-banner';
-    cb.style.background=`rgba(${ctx.col==='var(--g1)'?'0,232,122':ctx.col==='var(--y)'?'245,208,0':'239,68,68'},.08)`;
-    cb.style.border=`1px solid rgba(${ctx.col==='var(--g1)'?'0,232,122':ctx.col==='var(--y)'?'245,208,0':'239,68,68'},.25)`;
-    const lft=document.createElement('div');
-    const lbl=document.createElement('div');lbl.className='ctx-label';lbl.style.color=ctx.col;lbl.textContent=ctx.icon+' '+ctx.label;
-    const sub=document.createElement('div');sub.style.cssText='font-size:11px;color:#888888;margin-top:2px;font-family:var(--font-mono)';sub.textContent=ctx.sub;
-    lft.append(lbl,sub);cb.appendChild(lft);
-    wrap.appendChild(cb);
-  }
   const ac=document.createElement('div');ac.className='advice-card';
   ac.style.setProperty('--accent-col',advice.col);
   ac.style.borderColor=advice.col.replace('var(--','').replace(')','');
@@ -567,6 +563,22 @@ function viewAdvisor(){
 
   // Matchup stats
   const muData=myDeck.mu?.[oppDeck.id];
+
+  // Matchup context banner — placed after muData is defined
+  {
+    const ctx=getMatchupCtx(muData?.wr??null);
+    if(ctx){
+      const cb=document.createElement('div');cb.className='ctx-banner';
+      const rgb=ctx.col==='var(--g1)'?'0,232,122':ctx.col==='var(--y)'?'245,208,0':'239,68,68';
+      cb.style.cssText=`background:rgba(${rgb},.08);border:1px solid rgba(${rgb},.25);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px`;
+      const lft=document.createElement('div');
+      const lbl=document.createElement('div');lbl.className='ctx-label';lbl.style.color=ctx.col;lbl.textContent=ctx.icon+' '+ctx.label;
+      const sub=document.createElement('div');sub.style.cssText='font-size:11px;color:#888888;margin-top:2px;font-family:var(--font-mono)';sub.textContent=ctx.sub;
+      lft.append(lbl,sub);cb.appendChild(lft);
+      wrap.appendChild(cb);
+    }
+  }
+
   const sg=document.createElement('div');sg.className='mu-grid';
   [{l:'Matchup WR',v:fmt(muData?.wr),c:wrCol(muData?.wr),n:muData?.wr!=null?'matchup-specific':'not available'},
    {l:'Win % going 1st',v:fmt(muData?.f??myDeck.f),c:wrCol(muData?.f??myDeck.f),n:muData?.f!=null?'matchup-specific':'deck average'},
