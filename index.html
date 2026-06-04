@@ -876,7 +876,8 @@ function viewAdvisor(){
       const leaderEntry=dlData.find(e=>e.leader===MY_DECK);
       const withMatchup=(leaderEntry?.best_decklists||[])
         .map(dl=>{const ms=dl.matchup_stats?.find(m=>m.oppLeader===OPP_DECK);return ms?{...dl,vsWR:ms.win_rate,vsGames:ms.games_played}:null;})
-        .filter(Boolean).sort((a,b)=>(b.vsWR-a.vsWR)||(b.vsGames-a.vsGames));
+        .filter(dl=>dl&&dl.vsGames>=50)
+        .sort((a,b)=>(b.vsWR-a.vsWR)||(b.vsGames-a.vsGames));
 
       if(!withMatchup.length){
         kcCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:'Insufficient matchup data to identify key cards.'}));return;
@@ -944,14 +945,15 @@ function viewAdvisor(){
       const entry=dlData.find(e=>e.leader===MY_DECK);
       if(!entry?.best_decklists?.length){dlCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:'No decklists found for this leader.'}));return;}
 
-      // Filter to decklists that have played vs OPP_DECK, sort by WR vs this opponent
+      // Filter to decklists with 50+ games vs OPP_DECK — below this threshold WR% is noise
+      const MIN_GAMES=50;
       const withMatchup=entry.best_decklists
         .map(dl=>{const ms=dl.matchup_stats?.find(m=>m.oppLeader===OPP_DECK);return ms?{...dl,vsWR:ms.win_rate,vsGames:ms.games_played,vsWins:ms.wins}:null;})
-        .filter(Boolean)
+        .filter(dl=>dl&&dl.vsGames>=MIN_GAMES)
         .sort((a,b)=>(b.vsWR-a.vsWR)||(b.vsGames-a.vsGames));
 
       if(!withMatchup.length){
-        dlCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:`No recorded games between these two decks in the current dataset.`}));
+        dlCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:`No decklists have 50+ recorded games vs ${oppName} — sample sizes are too small for reliable analysis.`}));
         return;
       }
 
