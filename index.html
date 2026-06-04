@@ -191,7 +191,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .oh-card{margin-top:16px;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px 16px}
 .oh-title{font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .oh-subtitle{font-size:10px;color:#8a93b0;font-family:var(--font-mono);margin-top:2px}
-.oh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:8px;margin-bottom:8px;justify-items:center}
+.oh-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:8px}
 .oh-item{display:flex;flex-direction:column;align-items:center;gap:4px}
 .oh-img-wrap{width:56px;height:78px;border-radius:5px;overflow:hidden;background:var(--surf);border:1px solid var(--brd)}
 .oh-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
@@ -835,7 +835,7 @@ function viewAdvisor(){
     const entry=handsData.find(h=>h.leader===leaderId);
     if(!entry?.common_cards?.length){const m=document.createElement('div');m.className='oh-empty';m.textContent='No hand data';col.appendChild(m);return col;}
     const grid=document.createElement('div');grid.className='oh-grid';
-    entry.common_cards.slice(0,5).forEach(card=>{
+    entry.common_cards.slice(0,8).forEach(card=>{
       const item=document.createElement('div');item.className='oh-item';
       const iw=document.createElement('div');iw.className='oh-img-wrap';
       const im=document.createElement('img');im.alt='';
