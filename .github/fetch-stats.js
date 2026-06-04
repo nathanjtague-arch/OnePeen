@@ -117,9 +117,7 @@ async function browserFetch(page, url) {
   if (curve) { fs.writeFileSync(path.join(statsDir, 'curve.json'), curve.text); console.log('✓'); }
   else console.log('✗');
 
-  // ── Card images (leader portraits only) ─────────────────────────
-  // Character card images load directly from Bandai CDN in the browser.
-  // Downloading them from GitHub Actions fails (datacenter IPs blocked by Cloudflare).
+  // ── Leader portrait images (via Playwright — needs cf_clearance for cardkaizoku CDN) ──
   if (primaryData) {
     const leaders = [...primaryData].sort((a,b) => (b.play_rate||0)-(a.play_rate||0)).slice(0, 60);
     console.log(`\nDownloading leader portraits for top ${leaders.length} decks...`);
@@ -131,12 +129,14 @@ async function browserFetch(page, url) {
       const outPath = path.join(cardsDir, `${id}.png`);
       if (fs.existsSync(outPath) && fs.statSync(outPath).size > 1000) { skipped++; continue; }
       const set = id.split('-')[0];
-      const urls = [
+      // Try cardkaizoku CDN (via Playwright browser — passes Cloudflare)
+      // then fall back to Bandai which works without auth
+      const cdnUrls = [
         `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`,
         `https://cdn.cardkaizoku.com/cards_en/${set}/${id}_sm.webp`,
       ];
       let saved = false;
-      for (const imgUrl of urls) {
+      for (const imgUrl of cdnUrls) {
         try {
           const res = await page.goto(imgUrl, { waitUntil: 'load', timeout: 10000 });
           if (res && res.ok()) {
@@ -150,6 +150,50 @@ async function browserFetch(page, url) {
     console.log(`Leader images: ${downloaded} downloaded, ${skipped} cached, ${failed} failed`);
   }
   await browser.close();
-  console.log('\nDone.');
-  process.exit(0); // Force exit — Chromium can leave lingering background processes
+
+  // ── Character card images (Bandai/Limitless — no Cloudflare, plain Node fetch works) ──
+  // Collect all character/event card IDs from hands data
+  const charIds = new Set();
+  for (const dsId of ['west_p', 'op16', 'lw_p']) {
+    const handsPath = path.join(statsDir, `hands_${dsId}.json`);
+    if (fs.existsSync(handsPath)) {
+      try {
+        JSON.parse(fs.readFileSync(handsPath, 'utf8'))
+          .forEach(entry => (entry.common_cards || []).forEach(card => {
+            if (card.card) charIds.add(card.card);
+          }));
+      } catch {}
+    }
+  }
+
+  async function nodeFetch(url) {
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } });
+      if (!res.ok) return null;
+      const buf = Buffer.from(await res.arrayBuffer());
+      return buf.length > 1000 ? buf : null;
+    } catch { return null; }
+  }
+
+  const charIdList = [...charIds];
+  console.log(`
+Downloading ${charIdList.length} character card images (Bandai + Limitless)...`);
+  let cDownloaded = 0, cSkipped = 0, cFailed = 0;
+
+  for (const id of charIdList) {
+    const outPath = path.join(cardsDir, `${id}.png`);
+    if (fs.existsSync(outPath) && fs.statSync(outPath).size > 1000) { cSkipped++; continue; }
+    const set = id.split('-')[0];
+    const buf =
+      await nodeFetch(`https://en.onepiece-cardgame.com/images/cardlist/card/${id}.png`) ||
+      await nodeFetch(`https://limitlesstcg.nyc3.digitaloceanspaces.com/one-piece/${set}/${id}_op_en.webp`) ||
+      await nodeFetch(`https://limitlesstcg.nyc3.digitaloceanspaces.com/one-piece/${set}/${id}_en.webp`);
+    if (buf) { fs.writeFileSync(outPath, buf); cDownloaded++; }
+    else cFailed++;
+  }
+  console.log(`Character images: ${cDownloaded} downloaded, ${cSkipped} cached, ${cFailed} not found`);
+
+  console.log('
+Done.');
+  process.exit(0);
 })();
