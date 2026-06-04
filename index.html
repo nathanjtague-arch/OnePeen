@@ -168,6 +168,21 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 
 /* Misc */
 .note{font-size:10px;color:var(--dim);margin-top:10px;line-height:1.7}
+/* Decklist section */
+.dl-card{margin-top:16px;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px 16px}
+.dl-title{font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--text);margin-bottom:4px}
+.dl-subtitle{font-size:10px;color:var(--dim);font-family:var(--font-mono);margin-bottom:12px}
+.dl-entry{background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.dl-entry-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+.dl-entry-wr{font-family:var(--font-mono);font-size:14px;font-weight:700}
+.dl-entry-meta{font-family:var(--font-mono);font-size:10px;color:var(--dim)}
+.dl-cards{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-end}
+.dl-card-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.dl-img-wrap{border-radius:4px;overflow:hidden;background:var(--card);border:1px solid var(--brd);position:relative}
+.dl-img-wrap img{display:none;object-fit:cover;object-position:top center}
+.dl-img-ph{display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);color:var(--dim);text-align:center}
+.dl-count{font-family:var(--font-mono);font-size:9px;font-weight:700;color:var(--acc)}
+.dl-empty{font-size:12px;color:var(--dim);text-align:center;padding:16px 0}
 /* Opening hand guide */
 .oh-dual{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .oh-side-label{font-size:9px;font-family:var(--font-head);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
@@ -415,6 +430,24 @@ async function fetchDataset(prefix){
 const HANDS_CACHE={};
 // Map dataset id to hands file id (we only cache three)
 const HANDS_FILE_MAP={'op16':'op16','west_p':'west_p','west':'west_p','lw_p':'lw_p','lw':'lw_p','exreg_p':'west_p','exreg':'west_p'};
+const DECKLIST_FILE_MAP={'op16':'op16','west_p':'west_p','west':'west_p','lw_p':'lw_p','lw':'lw_p','exreg_p':'west_p','exreg':'west_p'};
+const DECKLIST_CACHE={};
+async function loadDecklist(datasetId){
+  const fileId=DECKLIST_FILE_MAP[datasetId]||'west_p';
+  if(DECKLIST_CACHE[fileId])return DECKLIST_CACHE[fileId];
+  try{
+    const r=await fetch(`./data/stats/decklist_${fileId}.json`);
+    if(r.ok){const j=await r.json();DECKLIST_CACHE[fileId]=j;return j;}
+  }catch{}
+  return null;
+}
+function parseDecklist(str){
+  return (str||'').split('\n').reduce((acc,line)=>{
+    const m=line.match(/^(\d+)x(.+)$/);
+    if(m)acc[m[2]]=parseInt(m[1]);
+    return acc;
+  },{});
+}
 async function loadHands(datasetId){
   const fileId=HANDS_FILE_MAP[datasetId]||'west_p';
   if(HANDS_CACHE[fileId])return HANDS_CACHE[fileId];
@@ -772,6 +805,78 @@ function viewAdvisor(){
   const vs=document.createElement('div');vs.className='vs-label';vs.textContent='vs';
   dp.append(mkDeckTile(myDeck,'My deck'),vs,mkDeckTile(oppDeck,'Opponent'));
   wrap.appendChild(dp);
+
+  // ── Top Decklists vs Opponent ────────────────────────────────────
+  const dlCard=document.createElement('div');dlCard.className='dl-card';
+  const dlTitle=document.createElement('div');dlTitle.className='dl-title';
+  dlTitle.textContent='✦ TOP DECKLISTS VS OPPONENT';
+  const dlSub=document.createElement('div');dlSub.className='dl-subtitle';
+  const oppName=OPP_DECK?(DATA.decks.find(d=>d.id===OPP_DECK)?.name||OPP_DECK):'opponent';
+  dlSub.textContent=`Best performing lists for [${MY_DECK||'your deck'}] specifically against ${oppName} — ranked by WR in this matchup`;
+  dlCard.append(dlTitle,dlSub);
+
+  if(MY_DECK&&OPP_DECK){
+    const dlLoading=document.createElement('div');dlLoading.className='dl-empty';
+    dlLoading.textContent='Loading decklist data…';dlCard.appendChild(dlLoading);
+    loadDecklist(DATASET_ID).then(dlData=>{
+      dlLoading.remove();
+      if(!dlData){dlCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:'No decklist data available for this dataset.'}));return;}
+      const entry=dlData.find(e=>e.leader===MY_DECK);
+      if(!entry?.best_decklists?.length){dlCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:'No decklists found for this leader.'}));return;}
+
+      // Filter to decklists that have played vs OPP_DECK, sort by WR vs this opponent
+      const withMatchup=entry.best_decklists
+        .map(dl=>{const ms=dl.matchup_stats?.find(m=>m.oppLeader===OPP_DECK);return ms?{...dl,vsWR:ms.win_rate,vsGames:ms.games_played,vsWins:ms.wins}:null;})
+        .filter(Boolean)
+        .sort((a,b)=>(b.vsWR-a.vsWR)||(b.vsGames-a.vsGames));
+
+      if(!withMatchup.length){
+        dlCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:`No recorded games between these two decks in the current dataset.`}));
+        return;
+      }
+
+      withMatchup.slice(0,3).forEach((dl,idx)=>{
+        const cards=parseDecklist(dl.decklist);
+        // Sort: 4x first, then 3x, 2x, 1x
+        const sorted=Object.entries(cards).sort((a,b)=>b[1]-a[1]);
+
+        const entry_el=document.createElement('div');entry_el.className='dl-entry';
+        const hdr=document.createElement('div');hdr.className='dl-entry-hdr';
+
+        const wrEl=document.createElement('div');wrEl.className='dl-entry-wr';
+        const wrPct=(dl.vsWR*100).toFixed(1);
+        wrEl.style.color=dl.vsWR>=0.55?'var(--g1)':dl.vsWR>=0.48?'var(--y)':'var(--r)';
+        wrEl.textContent=`#${idx+1} · ${wrPct}% WR vs ${oppName}`;
+
+        const meta=document.createElement('div');meta.className='dl-entry-meta';
+        meta.textContent=`${dl.vsWins}W/${dl.vsGames-dl.vsWins}L (${dl.vsGames} games) · ${dl.unique_pilots} pilot${dl.unique_pilots===1?'':'s'} · ${(dl.adj_win_rate*100).toFixed(1)}% overall adj WR`;
+
+        hdr.append(wrEl,meta);
+        entry_el.appendChild(hdr);
+
+        const grid=document.createElement('div');grid.className='dl-cards';
+        sorted.forEach(([id,count])=>{
+          const set=id.split('-')[0];
+          const item=document.createElement('div');item.className='dl-card-item';
+          // Size by count: 4x=large, 3x=medium, 2x=small, 1x=tiny
+          const sz=[0,32,38,44,50][Math.min(count,4)];
+          const iw=document.createElement('div');iw.className='dl-img-wrap';
+          iw.style.cssText=`width:${sz}px;height:${Math.round(sz*1.4)}px`;
+          const im=document.createElement('img');im.alt='';im.style.cssText=`width:${sz}px;height:${Math.round(sz*1.4)}px`;
+          const ph=document.createElement('div');ph.className='dl-img-ph';
+          ph.style.cssText=`width:${sz}px;height:${Math.round(sz*1.4)}px;font-size:7px`;
+          iw.append(im,ph);applyCardImg(im,ph,id);
+          const cnt=document.createElement('div');cnt.className='dl-count';cnt.textContent=`${count}x`;
+          item.append(iw,cnt);grid.appendChild(item);
+        });
+        entry_el.appendChild(grid);
+        dlCard.appendChild(entry_el);
+      });
+    }).catch(()=>{dlCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:'Failed to load decklist data.'}));});
+  } else {
+    dlCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:'Select both decks to see matchup-specific decklists.'}));
+  }
+  wrap.appendChild(dlCard);
 
   // Opening hand guide — both decks side by side
   const ohCard=document.createElement('div');ohCard.className='oh-card';
