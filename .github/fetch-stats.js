@@ -120,6 +120,46 @@ function parseCookies(str) {
       fs.mkdirSync(path.dirname(OUT), { recursive: true });
       fs.writeFileSync(OUT, captured);
       console.log('Saved ' + captured.length + ' bytes to data/stats.json');
+
+      // Download card images while we have an authenticated session
+      try {
+        const leaders = JSON.parse(captured);
+        const cardsDir = path.join(process.env.GITHUB_WORKSPACE, 'data', 'cards');
+        fs.mkdirSync(cardsDir, { recursive: true });
+
+        // Sort by play_rate descending, take top 50
+        const sorted = [...leaders]
+          .sort((a, b) => (b.play_rate || 0) - (a.play_rate || 0))
+          .slice(0, 50);
+
+        console.log(`Downloading images for ${sorted.length} leaders...`);
+        let downloaded = 0, skipped = 0, failed = 0;
+
+        for (const entry of sorted) {
+          const id = entry.leader;
+          if (!id) continue;
+          const outPath = path.join(cardsDir, `${id}.png`);
+          // Skip if already cached
+          if (fs.existsSync(outPath) && fs.statSync(outPath).size > 1000) { skipped++; continue; }
+          const set = id.split('-')[0];
+          const imgUrl = `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`;
+          try {
+            const resp = await ctx.request.get(imgUrl);
+            if (resp.ok()) {
+              const buf = await resp.body();
+              fs.writeFileSync(outPath, buf);
+              downloaded++;
+            } else {
+              failed++;
+            }
+          } catch (e) {
+            failed++;
+          }
+        }
+        console.log(`Images: ${downloaded} downloaded, ${skipped} already cached, ${failed} failed`);
+      } catch (e) {
+        console.log('Image download error: ' + e.message);
+      }
     } else {
       const currentUrl = page.url();
       console.log('Current URL: ' + currentUrl);
