@@ -129,15 +129,25 @@ async function browserFetch(page, url) {
       const outPath = path.join(cardsDir, `${id}.png`);
       if (fs.existsSync(outPath) && fs.statSync(outPath).size > 1000) { skipped++; continue; }
       const set = id.split('-')[0];
-      const imgUrl = `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`;
-      try {
-        const res = await page.goto(imgUrl, { waitUntil: 'load', timeout: 10000 });
-        if (res && res.ok()) {
-          const buf = await res.body();
-          if (buf && buf.length > 500) { fs.writeFileSync(outPath, buf); downloaded++; continue; }
-        }
-        failed++;
-      } catch { failed++; }
+      // Try full .png first, fall back to _sm.webp (both are used on cardkaizoku)
+      const urls = [
+        `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`,
+        `https://cdn.cardkaizoku.com/cards_en/${set}/${id}_sm.webp`,
+      ];
+      let saved = false;
+      for (const imgUrl of urls) {
+        try {
+          const res = await page.goto(imgUrl, { waitUntil: 'load', timeout: 10000 });
+          if (res && res.ok()) {
+            const buf = await res.body();
+            if (buf && buf.length > 500) {
+              fs.writeFileSync(outPath, buf); // always save as .png regardless of source
+              downloaded++; saved = true; break;
+            }
+          }
+        } catch {}
+      }
+      if (!saved) failed++;
     }
     console.log(`Images: ${downloaded} downloaded, ${skipped} cached, ${failed} failed`);
   }
