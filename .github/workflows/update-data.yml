@@ -1,0 +1,102 @@
+name: Update OPTCG Stats Data
+
+on:
+  schedule:
+    # Runs every 4 hours — cardkaizoku updates more than once daily
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+    # Also allows manual trigger from the Actions tab
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch stats data
+        run: |
+          TODAY=$(date +%Y%m%d)
+          YESTERDAY=$(date -d "yesterday" +%Y%m%d)
+
+          # Common request headers to mimic a real browser visiting cardkaizoku
+          HEADERS=(
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            -H "Accept: application/json, text/plain, */*"
+            -H "Accept-Language: en-US,en;q=0.9"
+            -H "Referer: https://www.cardkaizoku.com/matchups"
+            -H "Origin: https://www.cardkaizoku.com"
+          )
+
+          # Current set identifier — update this when a new set releases (e.g. op17)
+          SET="op16"
+
+          fetch_stats() {
+            local DATE=$1
+            local VERSION=$2
+            local URL="https://cdn.cardkaizoku.com/stats/stats_${SET}_${DATE}.json?v=${VERSION}"
+            echo "Trying: $URL"
+            curl -L --fail --silent --max-time 15 "${HEADERS[@]}" -o data/stats.json "$URL"
+          }
+
+          # Try today then yesterday, across several version numbers
+          SUCCESS=false
+          for DATE in $TODAY $YESTERDAY; do
+            for VER in 8 9 7 10 6 11 5; do
+              if fetch_stats $DATE $VER && [ -s data/stats.json ]; then
+                echo "✓ Fetched stats for $DATE (v=$VER)"
+                SUCCESS=true
+                break 2
+              fi
+            done
+          done
+
+          if [ "$SUCCESS" = false ]; then
+            echo "✗ Could not fetch stats data — keeping existing file"
+            exit 0
+          fi
+
+          # Validate it looks like JSON
+          if ! python3 -c "import json,sys; json.load(open('data/stats.json'))" 2>/dev/null; then
+            echo "✗ Response is not valid JSON — discarding"
+            git checkout -- data/stats.json 2>/dev/null || rm -f data/stats.json
+            exit 0
+          fi
+
+          echo "Stats file size: $(wc -c < data/stats.json) bytes"
+
+      - name: Also fetch hands data (starting hand analysis)
+        run: |
+          TODAY=$(date +%Y%m%d)
+          YESTERDAY=$(date -d "yesterday" +%Y%m%d)
+          HEADERS=(
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            -H "Referer: https://www.cardkaizoku.com/matchups"
+          )
+          SET="op16"
+          for DATE in $TODAY $YESTERDAY; do
+            for VER in 8 9 7 10 6 5; do
+              URL="https://cdn.cardkaizoku.com/stats/hands_${SET}_${DATE}.json?v=${VER}"
+              if curl -L --fail --silent --max-time 15 "${HEADERS[@]}" -o data/hands.json "$URL" && [ -s data/hands.json ]; then
+                echo "✓ Fetched hands data for $DATE (v=$VER)"
+                break 2
+              fi
+            done
+          done
+
+      - name: Write metadata
+        run: |
+          echo "{\"updated\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"date\":\"$(date +%Y%m%d)\"}" > data/meta.json
+
+      - name: Commit and push if data changed
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update stats data $(date -u +%Y-%m-%d\ %H:%M\ UTC)"
+            git push
+          fi
