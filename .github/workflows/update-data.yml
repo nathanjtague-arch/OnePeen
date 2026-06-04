@@ -19,6 +19,7 @@ jobs:
         run: |
           TODAY=$(date +%Y%m%d)
           YESTERDAY=$(date -d "yesterday" +%Y%m%d)
+          mkdir -p data
           SET="op16"
 
           fetch_stats() {
@@ -63,6 +64,7 @@ jobs:
         run: |
           TODAY=$(date +%Y%m%d)
           YESTERDAY=$(date -d "yesterday" +%Y%m%d)
+          mkdir -p data
           SET="op16"
           for DATE in $TODAY $YESTERDAY; do
             for VER in 8 9 7 10 6 5; do
