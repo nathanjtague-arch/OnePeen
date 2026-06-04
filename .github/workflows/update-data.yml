@@ -2,7 +2,7 @@ name: Update OPTCG Stats Data
 
 on:
   schedule:
-    - cron: '0 */6 * * *'   # Every 6 hours
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:
@@ -26,99 +26,33 @@ jobs:
           npm init -y > /dev/null
           npm install playwright > /dev/null 2>&1
           npx playwright install chromium --with-deps > /dev/null 2>&1
-          echo "✓ Playwright ready"
+          echo "Playwright ready"
 
-      - name: Fetch stats by intercepting real browser request
+      - name: Fetch stats via browser interception
         run: |
           mkdir -p data
+          node .github/fetch-stats.js
 
-          cat > /tmp/fetch.js << 'JSEOF'
-const { chromium } = require('/tmp/node_modules/playwright');
-const fs   = require('fs');
-const path = require('path');
-
-const OUT = path.join(process.env.GITHUB_WORKSPACE, 'data', 'stats.json');
-
-(async () => {
-  const browser = await chromium.launch({ headless: true });
-  const ctx = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  });
-  const page = await ctx.newPage();
-  let captured = null;
-
-  // Intercept every CDN response BEFORE we navigate
-  // The page fetches the stats JSON itself — we just grab it
-  page.on('response', async response => {
-    const url = response.url();
-    if (!url.includes('cdn.cardkaizoku.com')) return;
-    if (!url.includes('stats_op16_') || !url.includes('.json')) return;
-    try {
-      const text = await response.text();
-      JSON.parse(text); // validate
-      captured = text;
-      console.log(`✓ Intercepted: ${url} (${text.length} bytes)`);
-    } catch(e) {
-      console.log(`  Skipping non-JSON response from ${url}`);
-    }
-  });
-
-  try {
-    console.log('Loading cardkaizoku.com/matchups...');
-    await page.goto('https://www.cardkaizoku.com/matchups', {
-      waitUntil: 'networkidle',
-      timeout: 60000
-    });
-
-    // Wait a moment for any lazy-loaded requests to complete
-    await page.waitForTimeout(3000);
-
-    if (!captured) {
-      // Page might not have loaded stats — try the rankings page as fallback
-      console.log('No stats intercepted on matchups, trying /ranking...');
-      await page.goto('https://www.cardkaizoku.com/ranking', {
-        waitUntil: 'networkidle',
-        timeout: 30000
-      });
-      await page.waitForTimeout(2000);
-    }
-
-    if (captured) {
-      fs.writeFileSync(OUT, captured);
-      console.log('✓ Stats saved to data/stats.json');
-    } else {
-      console.log('✗ No stats data intercepted from either page');
-    }
-
-  } catch(e) {
-    console.error('Error:', e.message);
-  } finally {
-    await browser.close();
-  }
-})();
-JSEOF
-
-          node /tmp/fetch.js
-
-      - name: Validate result
+      - name: Validate and finalise
         run: |
+          mkdir -p data
           if [ -f data/stats.json ] && [ -s data/stats.json ]; then
             COUNT=$(python3 -c "import json; d=json.load(open('data/stats.json')); print(len(d) if isinstance(d,list) else 'object')" 2>/dev/null || echo "unknown")
-            echo "✓ stats.json valid — $COUNT entries"
+            echo "stats.json valid — $COUNT entries"
           else
-            echo "✗ No valid stats.json produced — nothing to commit"
+            echo "No stats.json produced — skipping commit"
           fi
+          touch data/.nojekyll
+          echo "{\"updated\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > data/meta.json
 
-      - name: Write metadata
-        run: |
-          mkdir -p data
-          echo "{\"updated\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"date\":\"$(date +%Y%m%d)\"}" > data/meta.json
+      - name: Ensure .nojekyll exists at root
+        run: touch .nojekyll
 
       - name: Commit and push
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add data/
+          git add data/ .nojekyll
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
