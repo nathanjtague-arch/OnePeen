@@ -229,8 +229,9 @@ function applyCardImg(imgEl,phEl,id){
   if(phEl)phEl.style.display='none';
   const set=id.split('-')[0];
   const urls=[
-    `./data/cards/${id}.png`,
-    `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`,
+    `./data/cards/${id}.png`,                                                          // cached (may be .png or .webp saved as .png)
+    `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`,                           // CDN full portrait
+    `https://cdn.cardkaizoku.com/cards_en/${set}/${id}_sm.webp`,                       // CDN thumbnail (sm.webp)
     `https://limitlesstcg.nyc3.digitaloceanspaces.com/one-piece/${set}/${id}_op_en.webp`,
     `https://en.onepiece-cardgame.com/images/cardlist/card/${id}.png`,
   ];
