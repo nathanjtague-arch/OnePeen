@@ -117,51 +117,37 @@ async function browserFetch(page, url) {
   if (curve) { fs.writeFileSync(path.join(statsDir, 'curve.json'), curve.text); console.log('✓'); }
   else console.log('✗');
 
-  // ── Card images ─────────────────────────────────────────────────
-  // Collect image IDs: leader portraits + ALL character cards from hands data
-  const imageIds = new Set();
-
+  // ── Card images (leader portraits only) ─────────────────────────
+  // Character card images load directly from Bandai CDN in the browser.
+  // Downloading them from GitHub Actions fails (datacenter IPs blocked by Cloudflare).
   if (primaryData) {
-    [...primaryData].sort((a,b) => (b.play_rate||0)-(a.play_rate||0)).slice(0, 60)
-      .forEach(d => { if (d.leader) imageIds.add(d.leader); });
-  }
+    const leaders = [...primaryData].sort((a,b) => (b.play_rate||0)-(a.play_rate||0)).slice(0, 60);
+    console.log(`\nDownloading leader portraits for top ${leaders.length} decks...`);
+    let downloaded = 0, skipped = 0, failed = 0;
 
-  // Character/event cards from hands data — these appear in opening hand guide
-  for (const dsId of ['west_p', 'op16', 'lw_p']) {
-    const handsPath = path.join(statsDir, `hands_${dsId}.json`);
-    if (fs.existsSync(handsPath)) {
-      try {
-        JSON.parse(fs.readFileSync(handsPath,'utf8'))
-          .forEach(entry => (entry.common_cards||[]).forEach(card => { if(card.card) imageIds.add(card.card); }));
-      } catch {}
+    for (const entry of leaders) {
+      const id = entry.leader;
+      if (!id) continue;
+      const outPath = path.join(cardsDir, `${id}.png`);
+      if (fs.existsSync(outPath) && fs.statSync(outPath).size > 1000) { skipped++; continue; }
+      const set = id.split('-')[0];
+      const urls = [
+        `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`,
+        `https://cdn.cardkaizoku.com/cards_en/${set}/${id}_sm.webp`,
+      ];
+      let saved = false;
+      for (const imgUrl of urls) {
+        try {
+          const res = await page.goto(imgUrl, { waitUntil: 'load', timeout: 10000 });
+          if (res && res.ok()) {
+            const buf = await res.body();
+            if (buf && buf.length > 500) { fs.writeFileSync(outPath, buf); downloaded++; saved = true; break; }
+          }
+        } catch {}
+      }
+      if (!saved) failed++;
     }
+    console.log(`Leader images: ${downloaded} downloaded, ${skipped} cached, ${failed} failed`);
   }
-
-  const allIds = [...imageIds];
-  console.log(`\nDownloading images for ${allIds.length} cards (leaders + hand cards)...`);
-  let downloaded = 0, skipped = 0, failed = 0;
-
-  for (const id of allIds) {
-    const outPath = path.join(cardsDir, `${id}.png`);
-    if (fs.existsSync(outPath) && fs.statSync(outPath).size > 1000) { skipped++; continue; }
-    const set = id.split('-')[0];
-    // Leaders use .png; character/event cards use _sm.webp on cardkaizoku
-    const urls = [
-      `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`,
-      `https://cdn.cardkaizoku.com/cards_en/${set}/${id}_sm.webp`,
-    ];
-    let saved = false;
-    for (const imgUrl of urls) {
-      try {
-        const res = await page.goto(imgUrl, { waitUntil: 'load', timeout: 10000 });
-        if (res && res.ok()) {
-          const buf = await res.body();
-          if (buf && buf.length > 500) { fs.writeFileSync(outPath, buf); downloaded++; saved = true; break; }
-        }
-      } catch {}
-    }
-    if (!saved) failed++;
-  }
-  console.log(`Images: ${downloaded} downloaded, ${skipped} cached, ${failed} failed`);
   console.log('\nDone.');
 })();
