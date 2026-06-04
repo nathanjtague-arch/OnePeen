@@ -168,6 +168,19 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 
 /* Misc */
 .note{font-size:10px;color:var(--dim);margin-top:10px;line-height:1.7}
+/* Opening hand guide */
+.oh-card{margin-top:16px;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px 16px}
+.oh-title{font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.oh-subtitle{font-size:10px;color:var(--dim);font-family:var(--font-mono);margin-top:2px}
+.oh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:8px;margin-bottom:8px}
+.oh-item{display:flex;flex-direction:column;align-items:center;gap:4px}
+.oh-img-wrap{width:56px;height:78px;border-radius:5px;overflow:hidden;background:var(--surf);border:1px solid var(--brd)}
+.oh-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
+.oh-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:8px;color:var(--dim);text-align:center;padding:2px}
+.oh-rate{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--g1)}
+.oh-code{font-family:var(--font-mono);font-size:8px;color:var(--dim);text-align:center;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.oh-empty{font-size:12px;color:var(--dim);text-align:center;padding:16px 0}
+.oh-ds-note{font-size:10px;color:var(--dim);margin-top:6px;text-align:right;font-family:var(--font-mono)}
 .low-badge{font-size:9px;background:rgba(255,140,34,.15);color:#ff8c22;border:1px solid rgba(255,140,34,.3);border-radius:4px;padding:1px 5px;font-family:var(--font-mono);flex-shrink:0;white-space:nowrap}
 .ctx-banner{border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ctx-label{font-family:var(--font-head);font-size:14px;font-weight:700;letter-spacing:.05em}
@@ -381,6 +394,30 @@ async function fetchDataset(prefix){
     try{const r=await fetch(buildCdnUrl(prefix,date));if(r.ok){const j=await r.json();if(Array.isArray(j)&&j.length>0)return j;}
     }catch{}
   }
+  return null;
+}
+
+// ── Opening hand data ─────────────────────────────────────────────
+const HANDS_CACHE={};
+// Map dataset id to hands file id (we only cache three)
+const HANDS_FILE_MAP={'op16':'op16','west_p':'west_p','west':'west_p','lw_p':'lw_p','lw':'lw_p','exreg_p':'west_p','exreg':'west_p'};
+async function loadHands(datasetId){
+  const fileId=HANDS_FILE_MAP[datasetId]||'west_p';
+  if(HANDS_CACHE[fileId])return HANDS_CACHE[fileId];
+  try{
+    const r=await fetch(`./data/stats/hands_${fileId}.json`);
+    if(r.ok){const j=await r.json();HANDS_CACHE[fileId]=j;return j;}
+  }catch{}
+  // Fallback: try CDN directly
+  try{
+    const ds=DATASETS.find(d=>d.id===fileId);
+    if(ds){
+      for(const date of[laDate(0),laDate(1)]){
+        const r=await fetch(`https://cdn.cardkaizoku.com/stats/hands_${ds.period}_${date}.json?v=8`);
+        if(r.ok){const j=await r.json();HANDS_CACHE[fileId]=j;return j;}
+      }
+    }
+  }catch{}
   return null;
 }
 
@@ -683,17 +720,56 @@ function viewAdvisor(){
   dp.append(mkDeckTile(myDeck,'My deck'),vs,mkDeckTile(oppDeck,'Opponent'));
   wrap.appendChild(dp);
 
-  // Opening hand guide (coming soon)
-  const ohCard=document.createElement('div');
-  ohCard.style.cssText='margin-top:16px;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px 16px;';
-  const ohTitle=document.createElement('div');
-  ohTitle.style.cssText='font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:.06em;color:#555555;margin-bottom:6px;display:flex;align-items:center;gap:8px';
-  ohTitle.innerHTML='✦ OPENING HAND GUIDE <span style="font-size:9px;background:#1e1e1e;color:#555;border:1px solid #333;border-radius:10px;padding:1px 8px;font-family:var(--font-mono)">COMING SOON</span>';
-  const ohBody=document.createElement('div');
-  ohBody.style.cssText='font-size:11px;color:#555555;line-height:1.8';
-  ohBody.textContent='This section will show optimal opening hand cards for the selected matchup — e.g. which specific 5-card combinations win most often against this opponent, pulled from the hands dataset.';
-  ohCard.append(ohTitle,ohBody);
+  // Opening hand guide — live data from hands JSON
+  const ohCard=document.createElement('div');ohCard.className='oh-card';
+  const ohTitle=document.createElement('div');ohTitle.className='oh-title';
+  ohTitle.textContent='✦ OPENING HAND';
+  const ohSub=document.createElement('div');ohSub.className='oh-subtitle';
+  ohSub.textContent='Most frequently seen cards in opening 5';
+  ohTitle.appendChild(ohSub);
+  ohCard.appendChild(ohTitle);
+  const ohBody=document.createElement('div');ohBody.className='oh-empty';
+  ohBody.textContent='Loading hand data…';
+  ohCard.appendChild(ohBody);
   wrap.appendChild(ohCard);
+  // Load hands data async and fill in when ready
+  loadHands(DATASET_ID).then(handsData=>{
+    ohBody.remove();
+    if(!handsData){
+      const msg=document.createElement('div');msg.className='oh-empty';
+      msg.textContent='No hand data available for this dataset.';
+      ohCard.appendChild(msg);return;
+    }
+    const entry=handsData.find(h=>h.leader===MY_DECK);
+    if(!entry||!entry.common_cards||entry.common_cards.length===0){
+      const msg=document.createElement('div');msg.className='oh-empty';
+      msg.textContent='No hand data found for this deck.';
+      ohCard.appendChild(msg);return;
+    }
+    const cards=entry.common_cards.slice(0,10);
+    const grid=document.createElement('div');grid.className='oh-grid';
+    cards.forEach(card=>{
+      const item=document.createElement('div');item.className='oh-item';
+      const iw=document.createElement('div');iw.className='oh-img-wrap';
+      const im=document.createElement('img');im.alt='';
+      const ph=document.createElement('div');ph.className='oh-img-ph';
+      iw.appendChild(im);iw.appendChild(ph);
+      applyCardImg(im,ph,card.card);
+      const rate=document.createElement('div');rate.className='oh-rate';
+      rate.textContent=((card.appearance_rate||0)*100).toFixed(1)+'%';
+      const code=document.createElement('div');code.className='oh-code';
+      code.textContent=card.card;
+      item.append(iw,rate,code);
+      grid.appendChild(item);
+    });
+    ohCard.appendChild(grid);
+    const dsNote=document.createElement('div');dsNote.className='oh-ds-note';
+    const fileId=HANDS_FILE_MAP[DATASET_ID]||'west_p';
+    dsNote.textContent='source: hands_'+fileId;
+    ohCard.appendChild(dsNote);
+  }).catch(()=>{
+    ohBody.textContent='Failed to load hand data.';
+  });
 
   return wrap;
 }
@@ -774,15 +850,12 @@ function render(){
   const hdr=document.createElement('div');hdr.className='hdr';
   const left=document.createElement('div');left.style.cssText='display:flex;align-items:center;gap:12px';
   // Luffy hero image
-  const heroWrap=document.createElement('div');heroWrap.style.cssText='width:52px;height:52px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--acc);background:var(--card)';
-  const heroImg=document.createElement('img');heroImg.style.cssText='width:100%;height:100%;object-fit:cover;object-position:center top';
+  const heroWrap=document.createElement('div');heroWrap.style.cssText='width:64px;height:64px;border-radius:10px;overflow:hidden;flex-shrink:0;background:transparent;display:flex;align-items:flex-end';
+  const heroImg=document.createElement('img');heroImg.style.cssText='width:100%;height:100%;object-fit:contain;object-position:bottom center';
   heroImg.alt='';
   // Try Luffy (OP13-001) — falls back to OP15-098 or nothing
-  (function tryHero(urls,i){
-    if(i>=urls.length){heroImg.style.display='none';heroWrap.innerHTML='<div style="font-size:24px;display:flex;align-items:center;justify-content:center;height:100%">⚓</div>';return;}
-    heroImg.onerror=()=>tryHero(urls,i+1);
-    heroImg.src=urls[i];
-  })(['./data/cards/OP13-001.png','https://cdn.cardkaizoku.com/cards_en/OP13/OP13-001.png','https://cdn.cardkaizoku.com/cards_en/OP15/OP15-098.png'],0);
+  heroImg.onerror=()=>{heroImg.style.display='none';};
+  heroImg.src='./assets/luffy.png';
   heroWrap.appendChild(heroImg);
   left.appendChild(heroWrap);
   const titleBlock=document.createElement('div');
