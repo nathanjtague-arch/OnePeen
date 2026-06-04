@@ -2,22 +2,47 @@ const { chromium } = require('/tmp/node_modules/playwright');
 const fs   = require('fs');
 const path = require('path');
 
-const OUT      = path.join(process.env.GITHUB_WORKSPACE, 'data', 'stats.json');
-const COOKIE_STR = process.env.CARDKAIZOKU_COOKIES || '';
+const WORKSPACE    = process.env.GITHUB_WORKSPACE;
+const COOKIE_STR   = process.env.CARDKAIZOKU_COOKIES || '';
 
-// Parse "name=value; name2=value2" into Playwright cookie objects
+// All five dataset variants to fetch
+const DATASETS = [
+  { id: 'op16',     prefix: 'stats_op16_'    },
+  { id: 'west_p',   prefix: 'stats_west_p_'  },
+  { id: 'west',     prefix: 'stats_west_'    },
+  { id: 'exreg_p',  prefix: 'stats_exreg_p_' },
+  { id: 'exreg',    prefix: 'stats_exreg_'   },
+];
+
 function parseCookies(str) {
   if (!str) return [];
   return str.split(';').map(c => {
     const eq = c.indexOf('=');
     if (eq === -1) return null;
-    return {
-      name:   c.slice(0, eq).trim(),
-      value:  c.slice(eq + 1).trim(),
-      domain: '.cardkaizoku.com',
-      path:   '/',
-    };
+    return { name: c.slice(0,eq).trim(), value: c.slice(eq+1).trim(), domain: '.cardkaizoku.com', path: '/' };
   }).filter(Boolean);
+}
+
+// Try recent dates × version numbers for a given prefix via ctx.request (uses auth cookies)
+async function fetchByPrefix(ctx, prefix) {
+  for (let i = 0; i <= 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+    for (const v of [8, 9, 7, 10, 6, 5]) {
+      const url = `https://cdn.cardkaizoku.com/stats/${prefix}${ds}.json?v=${v}`;
+      try {
+        const resp = await ctx.request.get(url, { timeout: 10000 });
+        if (resp.ok()) {
+          const text = await resp.text();
+          const parsed = JSON.parse(text);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return { text, parsed, url };
+          }
+        }
+      } catch {}
+    }
+  }
+  return null;
 }
 
 (async () => {
@@ -26,153 +51,77 @@ function parseCookies(str) {
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36',
   });
 
-  // Inject cookies properly rather than via header — more reliable
   const cookies = parseCookies(COOKIE_STR);
   if (cookies.length > 0) {
     await ctx.addCookies(cookies);
     console.log(`Injected ${cookies.length} cookies`);
   } else {
-    console.log('WARNING: No CARDKAIZOKU_COOKIES secret found — may hit login wall');
+    console.log('WARNING: No CARDKAIZOKU_COOKIES secret found — data will not load');
   }
 
+  // Navigate to matchups once so the site recognises the session
   const page = await ctx.newPage();
-  let captured = null;
-
   try {
-    // Wait specifically for the stats JSON response rather than page networkidle
-    // This avoids timeout from background polling on the page
-    const statsResponsePromise = page.waitForResponse(
-      r => r.url().includes('cdn.cardkaizoku.com/stats/') && r.url().includes('.json'),
-      { timeout: 45000 }
-    );
-
-    console.log('Navigating to cardkaizoku.com/matchups...');
+    console.log('Warming session via cardkaizoku.com/matchups...');
     await page.goto('https://www.cardkaizoku.com/matchups', {
-      waitUntil: 'domcontentloaded',   // less strict — doesn't wait for background requests
-      timeout: 30000,
+      waitUntil: 'domcontentloaded', timeout: 30000
     });
+    console.log('Session ready');
+  } catch(e) {
+    console.log('Navigation warning (continuing anyway): ' + e.message);
+  }
 
-    console.log('Waiting for stats JSON response...');
-    try {
-      const response = await statsResponsePromise;
-      const text = await response.text();
-      JSON.parse(text); // validate
-      captured = text;
-      console.log('✓ Captured: ' + response.url() + ' (' + text.length + ' bytes)');
-    } catch (e) {
-      console.log('Stats response not received on matchups page: ' + e.message);
-    }
+  // Create output dirs
+  const statsDir = path.join(WORKSPACE, 'data', 'stats');
+  const cardsDir = path.join(WORKSPACE, 'data', 'cards');
+  fs.mkdirSync(statsDir, { recursive: true });
+  fs.mkdirSync(cardsDir, { recursive: true });
 
-    // If matchups page didn't trigger the fetch, try ranking
-    if (!captured) {
-      console.log('Trying /ranking page...');
-      const rankingStatsPromise = page.waitForResponse(
-        r => r.url().includes('cdn.cardkaizoku.com/stats/') && r.url().includes('.json'),
-        { timeout: 30000 }
-      );
-      try {
-        await page.goto('https://www.cardkaizoku.com/ranking', {
-          waitUntil: 'domcontentloaded',
-          timeout: 30000,
-        });
-        const response = await rankingStatsPromise;
-        const text = await response.text();
-        JSON.parse(text);
-        captured = text;
-        console.log('✓ Captured from /ranking: ' + response.url());
-      } catch (e) {
-        console.log('/ranking attempt failed: ' + e.message);
-      }
-    }
+  // ── Fetch all five dataset variants ──────────────────────────────
+  let primaryLeaders = null; // used for card image download
 
-    // Last resort: try fetching CDN directly from within the authenticated browser context
-    if (!captured) {
-      console.log('Attempting direct CDN fetch from browser context...');
-      const today = new Date();
-      for (let i = 0; i <= 7 && !captured; i++) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        const ds = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-        for (const prefix of ['stats_west_p_', 'stats_op16_']) {
-          for (const v of [8, 9, 7, 10]) {
-            const url = `https://cdn.cardkaizoku.com/stats/${prefix}${ds}.json?v=${v}`;
-            const res = await page.evaluate(async (url) => {
-              try {
-                const r = await fetch(url, { credentials: 'include' });
-                if (!r.ok) return { ok: false, status: r.status };
-                const text = await r.text();
-                return { ok: true, text };
-              } catch(e) { return { ok: false, error: e.message }; }
-            }, url);
-            if (res.ok) {
-              try { JSON.parse(res.text); captured = res.text; console.log('✓ Direct fetch: ' + url); break; } catch {}
-            } else {
-              console.log(`  ${url} → ${res.status || res.error}`);
-            }
-            if (captured) break;
-          }
-          if (captured) break;
-        }
-      }
-    }
-
-    if (captured) {
-      fs.mkdirSync(path.dirname(OUT), { recursive: true });
-      fs.writeFileSync(OUT, captured);
-      console.log('Saved ' + captured.length + ' bytes to data/stats.json');
-
-      // Download card images while we have an authenticated session
-      try {
-        const leaders = JSON.parse(captured);
-        const cardsDir = path.join(process.env.GITHUB_WORKSPACE, 'data', 'cards');
-        fs.mkdirSync(cardsDir, { recursive: true });
-
-        // Sort by play_rate descending, take top 50
-        const sorted = [...leaders]
-          .sort((a, b) => (b.play_rate || 0) - (a.play_rate || 0))
-          .slice(0, 50);
-
-        console.log(`Downloading images for ${sorted.length} leaders...`);
-        let downloaded = 0, skipped = 0, failed = 0;
-
-        for (const entry of sorted) {
-          const id = entry.leader;
-          if (!id) continue;
-          const outPath = path.join(cardsDir, `${id}.png`);
-          // Skip if already cached
-          if (fs.existsSync(outPath) && fs.statSync(outPath).size > 1000) { skipped++; continue; }
-          const set = id.split('-')[0];
-          const imgUrl = `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`;
-          try {
-            const resp = await ctx.request.get(imgUrl);
-            if (resp.ok()) {
-              const buf = await resp.body();
-              fs.writeFileSync(outPath, buf);
-              downloaded++;
-            } else {
-              failed++;
-            }
-          } catch (e) {
-            failed++;
-          }
-        }
-        console.log(`Images: ${downloaded} downloaded, ${skipped} already cached, ${failed} failed`);
-      } catch (e) {
-        console.log('Image download error: ' + e.message);
+  for (const ds of DATASETS) {
+    process.stdout.write(`Fetching ${ds.id} (${ds.prefix})... `);
+    const result = await fetchByPrefix(ctx, ds.prefix);
+    if (result) {
+      const outPath = path.join(statsDir, `${ds.id}.json`);
+      fs.writeFileSync(outPath, result.text);
+      console.log(`✓ ${result.url} (${result.text.length} bytes)`);
+      // Use first successful dataset (op16 or west_p) for card images
+      if (!primaryLeaders) primaryLeaders = result.parsed;
+      // Keep backward-compatible stats.json as the west_p file (the original default)
+      if (ds.id === 'west_p') {
+        fs.writeFileSync(path.join(WORKSPACE, 'data', 'stats.json'), result.text);
       }
     } else {
-      const currentUrl = page.url();
-      console.log('Current URL: ' + currentUrl);
-      if (currentUrl.includes('login') || currentUrl.includes('auth') || currentUrl.includes('patreon')) {
-        console.log('LOGIN WALL — update CARDKAIZOKU_COOKIES secret with fresh cookies');
-      } else {
-        console.log('No stats data captured');
-      }
+      console.log(`✗ not found (may need Patreon access or data not yet published)`);
     }
-
-  } catch(e) {
-    console.error('Fatal error: ' + e.message);
-  } finally {
-    await browser.close();
   }
+
+  // ── Download card images ─────────────────────────────────────────
+  if (primaryLeaders) {
+    const sorted = [...primaryLeaders]
+      .sort((a, b) => (b.play_rate || 0) - (a.play_rate || 0))
+      .slice(0, 50);
+
+    console.log(`\nDownloading images for top ${sorted.length} leaders...`);
+    let downloaded = 0, skipped = 0, failed = 0;
+
+    for (const entry of sorted) {
+      const id = entry.leader;
+      if (!id) continue;
+      const outPath = path.join(cardsDir, `${id}.png`);
+      if (fs.existsSync(outPath) && fs.statSync(outPath).size > 1000) { skipped++; continue; }
+      const set = id.split('-')[0];
+      try {
+        const resp = await ctx.request.get(`https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`);
+        if (resp.ok()) { fs.writeFileSync(outPath, await resp.body()); downloaded++; }
+        else failed++;
+      } catch { failed++; }
+    }
+    console.log(`Images: ${downloaded} downloaded, ${skipped} already cached, ${failed} failed`);
+  }
+
+  await browser.close();
+  console.log('\nDone.');
 })();
