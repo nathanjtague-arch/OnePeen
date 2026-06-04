@@ -20,35 +20,25 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Playwright + Chromium
+      - name: Fetch stats
         run: |
-          cd /tmp
-          npm init -y > /dev/null
-          npm install playwright > /dev/null 2>&1
-          npx playwright install chromium --with-deps > /dev/null 2>&1
-          echo "Playwright ready"
-
-      - name: Fetch stats via browser interception
-        env:
-          CARDKAIZOKU_COOKIES: ${{ secrets.CARDKAIZOKU_COOKIES }}
-        run: |
-          mkdir -p data
+          mkdir -p data/stats data/cards
           node .github/fetch-stats.js
 
-      - name: Validate and finalise
+      - name: Validate
         run: |
-          mkdir -p data
-          if [ -f data/stats.json ] && [ -s data/stats.json ]; then
-            COUNT=$(python3 -c "import json; d=json.load(open('data/stats.json')); print(len(d) if isinstance(d,list) else 'object')" 2>/dev/null || echo "unknown")
-            echo "stats.json valid — $COUNT entries"
-          else
-            echo "No stats.json produced — skipping commit"
-          fi
-          touch data/.nojekyll
+          COUNT=$(python3 -c "
+          import os, json
+          total = 0
+          for f in os.listdir('data/stats'):
+              if f.endswith('.json'):
+                  d = json.load(open(f'data/stats/{f}'))
+                  total += len(d) if isinstance(d, list) else 1
+          print(total)
+          " 2>/dev/null || echo "0")
+          echo "Total records across all datasets: $COUNT"
           echo "{\"updated\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > data/meta.json
-
-      - name: Ensure .nojekyll exists at root
-        run: touch .nojekyll
+          touch .nojekyll
 
       - name: Commit and push
         run: |
