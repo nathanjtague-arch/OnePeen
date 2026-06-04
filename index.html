@@ -876,7 +876,7 @@ function viewAdvisor(){
       const leaderEntry=dlData.find(e=>e.leader===MY_DECK);
       const withMatchup=(leaderEntry?.best_decklists||[])
         .map(dl=>{const ms=dl.matchup_stats?.find(m=>m.oppLeader===OPP_DECK);return ms?{...dl,vsWR:ms.win_rate,vsGames:ms.games_played}:null;})
-        .filter(dl=>dl&&dl.vsGames>=50)
+        .filter(dl=>dl&&dl.vsGames>=10)
         .sort((a,b)=>(b.vsWR-a.vsWR)||(b.vsGames-a.vsGames));
 
       if(!withMatchup.length){
@@ -946,14 +946,14 @@ function viewAdvisor(){
       if(!entry?.best_decklists?.length){dlCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:'No decklists found for this leader.'}));return;}
 
       // Filter to decklists with 50+ games vs OPP_DECK — below this threshold WR% is noise
-      const MIN_GAMES=50;
+      const MIN_GAMES=10;
       const withMatchup=entry.best_decklists
         .map(dl=>{const ms=dl.matchup_stats?.find(m=>m.oppLeader===OPP_DECK);return ms?{...dl,vsWR:ms.win_rate,vsGames:ms.games_played,vsWins:ms.wins}:null;})
         .filter(dl=>dl&&dl.vsGames>=MIN_GAMES)
         .sort((a,b)=>(b.vsWR-a.vsWR)||(b.vsGames-a.vsGames));
 
       if(!withMatchup.length){
-        dlCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:`No decklists have 50+ recorded games vs ${oppName} — sample sizes are too small for reliable analysis.`}));
+        dlCard.appendChild(Object.assign(document.createElement('div'),{className:'dl-empty',textContent:`No decklists have 50+ recorded games vs ${oppName} — need 10+ games per decklist for reliable analysis for reliable analysis.`}));
         return;
       }
 
