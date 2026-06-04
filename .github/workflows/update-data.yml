@@ -29,6 +29,8 @@ jobs:
           echo "Playwright ready"
 
       - name: Fetch stats via browser interception
+        env:
+          CARDKAIZOKU_COOKIES: ${{ secrets.CARDKAIZOKU_COOKIES }}
         run: |
           mkdir -p data
           node .github/fetch-stats.js
