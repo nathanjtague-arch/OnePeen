@@ -61,16 +61,29 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .clear-btn:hover{color:var(--text);border-color:#444444}
 
 /* Rank table */
-.rank-header{display:grid;grid-template-columns:32px 34px 1fr 62px 52px;gap:10px;align-items:center;padding:0 8px 6px;border-bottom:1px solid var(--brd);margin-bottom:4px}
-.rank-header span{font-size:10px;font-family:var(--font-head);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
-.rank-row{display:grid;grid-template-columns:32px 34px 1fr 62px 52px;gap:10px;align-items:center;padding:6px 8px;border-radius:8px;cursor:pointer;transition:background .12s;border-left:3px solid transparent;margin-bottom:2px}
+.rank-header{display:grid;grid-template-columns:32px 48px 1fr 66px 52px;gap:8px;align-items:center;padding:0 8px 6px;border-bottom:1px solid var(--brd);margin-bottom:4px}
+.rank-header span{font-size:10px;font-family:var(--font-head);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);cursor:pointer;user-select:none}
+.rank-header span.sort-active{color:var(--acc)}
+.rank-header span:hover{color:var(--text)}
+.rank-row{display:grid;grid-template-columns:32px 48px 1fr 66px 52px;gap:8px;align-items:center;padding:4px 8px;border-radius:8px;cursor:pointer;transition:background .12s;border-left:3px solid transparent;margin-bottom:2px}
 .rank-row:hover{background:rgba(255,255,255,.04)}
-.rank-row.off{opacity:.25}
+.rank-row.off{opacity:.3}
 .rank-num{font-family:var(--font-mono);font-size:11px;color:var(--dim);text-align:right}
 .rank-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rank-code{font-family:var(--font-mono);font-size:10px;color:#e06060;margin-top:1px}
 .rank-wr{font-family:var(--font-mono);font-size:14px;font-weight:700;text-align:right}
 .rank-play{font-family:var(--font-mono);font-size:11px;color:var(--dim);text-align:right}
+/* Inline card image */
+.rank-img-wrap{width:48px;height:67px;border-radius:5px;overflow:hidden;background:var(--card);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .12s}
+.rank-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
+.rank-img-ph{font-family:var(--font-mono);font-size:8px;color:var(--dim);text-align:center;padding:2px;line-height:1.3}
+.rank-row.off .rank-img-wrap{opacity:.35}
+/* Sort bar */
+.sort-bar{display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.sort-lbl{font-size:10px;color:var(--dim);font-family:var(--font-head);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.sort-btn{background:transparent;border:0.5px solid var(--brd);border-radius:20px;padding:3px 11px;font-size:11px;color:var(--dim);cursor:pointer;font-family:var(--font-body);transition:all .12s}
+.sort-btn.active{background:var(--acc-dim);border-color:var(--acc);color:var(--acc)}
+.sort-btn:hover{color:var(--text);border-color:#555}
 
 /* Toggle */
 .tog{width:28px;height:15px;border-radius:8px;border:1px solid #3a3a3a;background:var(--surf);position:relative;flex-shrink:0;transition:all .2s}
@@ -349,7 +362,7 @@ const LS_DATASET='optcg_dataset';
 let DATASET_ID=(()=>{try{return localStorage.getItem(LS_DATASET)||'op16';}catch{return 'op16';}})();
 
 let STATE='loading',DATA=null,META_UPDATED=null,HIDDEN=new Set();
-let TAB='rank',FILTER='all',PASTE_ERR='';
+let TAB='rank',FILTER='all',SORT='wtdWR',PASTE_ERR='';
 let MY_DECK=null,OPP_DECK=null,EXCL_LOW=false;
 try{MY_DECK=localStorage.getItem(LS_DECK)||null;}catch{}
 
@@ -471,26 +484,44 @@ function viewRank(){
   if(hasAdj)decks.forEach(d=>{
     if(!HIDDEN.has(d.id)){const a=calcAdjWR(d,activeIds,DATA.decks);if(a!=null)adjMap[d.id]=a;}
   });
-  const active=decks.filter(d=>!HIDDEN.has(d.id)).sort((a,b)=>{
+  // Sort by selected metric
+  const sortFn=(a,b)=>{
+    if(SORT==='rawWR')return(b.rawWR??0)-(a.rawWR??0);
+    if(SORT==='play')return(b.play??0)-(a.play??0);
+    if(SORT==='games')return(b.games??0)-(a.games??0);
+    // default: wtdWR (with adj if available)
     const av=adjMap[a.id]??a.wtdWR??0,bv=adjMap[b.id]??b.wtdWR??0;return bv-av;
-  });
+  };
+  const active=decks.filter(d=>!HIDDEN.has(d.id)).sort(sortFn);
   const inactive=decks.filter(d=>HIDDEN.has(d.id));
   const wrap=document.createElement('div');
   wrap.appendChild(mkFilterBar());
+  // Sort bar
+  const sb=document.createElement('div');sb.className='sort-bar';
+  const sl=document.createElement('span');sl.className='sort-lbl';sl.textContent='Sort:';sb.appendChild(sl);
+  [['wtdWR','Wtd WR'],['rawWR','Raw WR'],['play','Play Rate'],['games','Total Wins']].forEach(([v,l])=>{
+    const btn=document.createElement('button');btn.className='sort-btn'+(SORT===v?' active':'');
+    btn.textContent=l;btn.onclick=()=>{SORT=v;render();};sb.appendChild(btn);
+  });
+  wrap.appendChild(sb);
   if(hasAdj){
     const b=document.createElement('div');b.className='recalc-banner';
     b.innerHTML='<span>★</span><span>WR% recalculated against active decks only</span>';
     wrap.appendChild(b);
   } else if(HIDDEN.size>0&&!canRecalc()){
     const b=document.createElement('div');b.className='no-recalc-banner';
-    b.textContent='Recalculation unavailable — matchup data not found. Check Debug tab and share "FIRST MATCHUP ENTRY" fields with Claude.';
+    b.textContent='Recalculation unavailable — matchup data not found.';
     wrap.appendChild(b);
   }
+  // Determine WR column header label and value fn
+  const wrHdr=SORT==='rawWR'?'Raw WR':'Wtd WR';
+  const sortColHdr=SORT==='play'?'Play %':SORT==='games'?'Wins':wrHdr;
   // Header
   const hdr=document.createElement('div');hdr.className='rank-header';
-  ['#','','[Code] Deck','WR%','Play%'].forEach((t,i)=>{
+  ['#','','[Code] Deck',sortColHdr,'Play %'].forEach((t,i)=>{
     const s=document.createElement('span');s.textContent=t;
-    if(i===1)s.textContent='';
+    if(i===1)s.style.visibility='hidden'; // img column — no label
+    if(i===3)s.className='sort-active';
     hdr.appendChild(s);
   });
   wrap.appendChild(hdr);
@@ -504,26 +535,32 @@ function viewRank(){
     row.onclick=()=>{if(HIDDEN.has(d.id))HIDDEN.delete(d.id);else HIDDEN.add(d.id);render();};
     // Rank number
     const rn=document.createElement('div');rn.className='rank-num';rn.textContent=isOff?'—':'#'+(rank+1);
-    // Toggle
-    const tog=document.createElement('div');tog.className='tog'+(isOff?'':' on');
+    // Inline card image
+    const iw=document.createElement('div');iw.className='rank-img-wrap';
+    const im=document.createElement('img');im.alt='';
+    const ph=document.createElement('div');ph.className='rank-img-ph';
+    iw.appendChild(im);iw.appendChild(ph);
+    applyCardImg(im,ph,d.id);
     // Name + code cell
-    const nc=document.createElement('div');nc.style.cssText='overflow:hidden;display:flex;flex-direction:column;gap:1px';
+    const nc=document.createElement('div');nc.style.cssText='overflow:hidden;display:flex;flex-direction:column;gap:1px;justify-content:center';
     const nmRow=document.createElement('div');nmRow.style.cssText='display:flex;align-items:center;gap:5px;overflow:hidden';
     const nm=document.createElement('div');nm.className='rank-name';nm.textContent=d.name;
     nmRow.appendChild(nm);
     if(d.games!=null&&d.games<100){const lb=document.createElement('span');lb.className='low-badge';lb.textContent='low data';nmRow.appendChild(lb);}
     const cd=document.createElement('div');cd.className='rank-code';cd.textContent='['+d.id+']';
     nc.appendChild(nmRow);nc.appendChild(cd);
-    // WR
+    // Primary sort column value
+    const sortVal=SORT==='rawWR'?fmt(d.rawWR):SORT==='play'?fmt(d.play):SORT==='games'?(d.games!=null?d.games.toLocaleString():'-'):fmt(dWR);
+    const sortCol=SORT==='wtdWR'?wrCol(dWR):SORT==='rawWR'?wrCol(d.rawWR):'var(--text)';
     const wr=document.createElement('div');wr.className='rank-wr';
-    wr.style.color=wrCol(dWR);wr.textContent=fmt(dWR);
-    // Play
+    wr.style.color=sortCol;wr.textContent=sortVal;
+    // Play rate (always shown)
     const pl=document.createElement('div');pl.className='rank-play';pl.textContent=fmt(d.play);
-    row.append(rn,tog,nc,wr,pl);
+    row.append(rn,iw,nc,wr,pl);
     wrap.appendChild(row);
   });
   const note=document.createElement('div');note.className='note';
-  note.textContent='Click any row to toggle · hover for card preview · coloured border = win rate tier';
+  note.textContent='Sort by any metric above · click any row to toggle · hover for detail · border = tier';
   wrap.appendChild(note);
   return wrap;
 }
