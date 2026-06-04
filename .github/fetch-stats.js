@@ -193,7 +193,6 @@ Downloading ${charIdList.length} character card images (Bandai + Limitless)...`)
   }
   console.log(`Character images: ${cDownloaded} downloaded, ${cSkipped} cached, ${cFailed} not found`);
 
-  console.log('
-Done.');
+  console.log('Done.');
   process.exit(0);
 })();
