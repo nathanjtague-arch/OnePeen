@@ -107,16 +107,29 @@ async function nodeFetch(url) {
     }
   }
 
-  // ── Hands data ────────────────────────────────────────────────────
-  console.log('\nHands data:');
-  for (const id of ['west_p', 'op16', 'lw_p']) {
-    const ds = DATASETS.find(d => d.id === id);
-    process.stdout.write(`  ${id}... `);
-    const url1 = `https://cdn.cardkaizoku.com/stats/hands_${ds.period}_${today}.json?v=8`;
-    const url2 = `https://cdn.cardkaizoku.com/stats/hands_${ds.period}_${yesterday}.json?v=8`;
-    const result = await browserFetch(page, url1) || await browserFetch(page, url2);
-    if (result) { fs.writeFileSync(path.join(statsDir, `hands_${id}.json`), result.text); console.log('✓'); }
-    else console.log('✗');
+  // ── Hands, Decklist, Matchuptech data ────────────────────────────
+  // Fetch these extra file types for each primary dataset
+  const EXTRA_TYPES = [
+    { type: 'hands',      datasets: ['west_p', 'op16', 'lw_p'] },
+    { type: 'decklist',   datasets: ['west_p', 'op16', 'lw_p'] },
+    { type: 'matchuptech',datasets: ['west_p', 'op16', 'lw_p'] },
+  ];
+
+  for (const { type, datasets } of EXTRA_TYPES) {
+    console.log(`\n${type} data:`);
+    for (const id of datasets) {
+      const ds = DATASETS.find(d => d.id === id);
+      process.stdout.write(`  ${id}... `);
+      const url1 = `https://cdn.cardkaizoku.com/stats/${type}_${ds.period}_${today}.json?v=8`;
+      const url2 = `https://cdn.cardkaizoku.com/stats/${type}_${ds.period}_${yesterday}.json?v=8`;
+      const result = await browserFetch(page, url1) || await browserFetch(page, url2);
+      if (result) {
+        fs.writeFileSync(path.join(statsDir, `${type}_${id}.json`), result.text);
+        console.log(`✓  (${Math.round(result.text.length/1024)}kB)`);
+      } else {
+        console.log('✗');
+      }
+    }
   }
 
   // ── Curve data ────────────────────────────────────────────────────
