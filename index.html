@@ -203,6 +203,7 @@ function applyCardImg(imgEl,phEl,id){
   if(phEl)phEl.style.display='none';
   const set=id.split('-')[0];
   const urls=[
+    `./data/cards/${id}.png`,
     `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`,
     `https://limitlesstcg.nyc3.digitaloceanspaces.com/one-piece/${set}/${id}_op_en.webp`,
     `https://en.onepiece-cardgame.com/images/cardlist/card/${id}.png`,
@@ -739,7 +740,7 @@ function render(){
     if(i>=urls.length){heroImg.style.display='none';heroWrap.innerHTML='<div style="font-size:24px;display:flex;align-items:center;justify-content:center;height:100%">⚓</div>';return;}
     heroImg.onerror=()=>tryHero(urls,i+1);
     heroImg.src=urls[i];
-  })(['https://cdn.cardkaizoku.com/cards_en/OP13/OP13-001.png','https://cdn.cardkaizoku.com/cards_en/OP15/OP15-098.png'],0);
+  })(['./data/cards/OP13-001.png','https://cdn.cardkaizoku.com/cards_en/OP13/OP13-001.png','https://cdn.cardkaizoku.com/cards_en/OP15/OP15-098.png'],0);
   heroWrap.appendChild(heroImg);
   left.appendChild(heroWrap);
   const titleBlock=document.createElement('div');
