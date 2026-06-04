@@ -196,10 +196,11 @@ function applyCardImg(imgEl,phEl,id){
   // Start hidden — only reveal once a URL successfully loads (avoids flash)
   imgEl.style.display='none';
   if(phEl)phEl.style.display='none';
+  const set=id.split('-')[0];
   const urls=[
-    `https://cdn.cardkaizoku.com/imgs/cards/en/${id}.png`,
+    `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`,
+    `https://limitlesstcg.nyc3.digitaloceanspaces.com/one-piece/${set}/${id}_op_en.webp`,
     `https://en.onepiece-cardgame.com/images/cardlist/card/${id}.png`,
-    `https://limitlesstcg.nyc3.digitaloceanspaces.com/one-piece/${id.split('-')[0]}/${id}_op_en.webp`,
   ];
   let idx=0;
   function next(){
@@ -271,7 +272,7 @@ function parseData(json){
       s:   asPct(fld(d,'second_win_rate','secondWinRate','secondWR','second')),
       mu:  Object.keys(mu).length?mu:null,
     };
-  }).filter(d=>d.wtdWR!=null);
+  }).filter(d=>d.wtdWR!=null).filter(d=>d.games==null||d.games>=100);
   return{decks:decks.length?decks:null,topKeys,sampleKeys,sampleVals,firstMuEntry};
 }
 
@@ -282,7 +283,7 @@ function calcAdjWR(deck,activeIds,allDecks){
   activeIds.forEach(oppId=>{
     if(oppId===deck.id)return;
     const mu=deck.mu[oppId];
-    const opp=allDecks.find(d=>d.id===oppId);
+    const opp=allDecks.find(d=>d.id===oppId);if(opp&&opp.games!=null&&opp.games<100)return;
     const muWR=mu?.wr??(mu?.f!=null&&mu?.s!=null?(mu.f+mu.s)/2:null);if(muWR==null||!opp?.play)return;
     wSum+=muWR*opp.play;wN+=opp.play;
   });
@@ -411,7 +412,7 @@ function mkFilterBar(){
 function viewRank(){
   const decks=visibleDecks();
   const activeIds=decks.filter(d=>!HIDDEN.has(d.id)).map(d=>d.id);
-  const hasAdj=HIDDEN.size>0&&canRecalc();
+  const top25Mode=FILTER==='top25';const hasAdj=(HIDDEN.size>0||top25Mode)&&canRecalc();
   const adjMap={};
   if(hasAdj)decks.forEach(d=>{
     if(!HIDDEN.has(d.id)){const a=calcAdjWR(d,activeIds,DATA.decks);if(a!=null)adjMap[d.id]=a;}
@@ -674,7 +675,7 @@ function render(){
   if(STATE==='paste'){
     const today=new Date();
     const ds=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
-    const url=`https://cdn.cardkaizoku.com/stats/stats_op16_${ds}.json?v=8`;
+    const url=`https://cdn.cardkaizoku.com/stats/stats_west_p_${ds}.json?v=8`;
     const card=document.createElement('div');card.className='paste-card';
     const pt=document.createElement('div');pt.className='paste-title';pt.textContent='Manual Data Load';
     const step1=document.createElement('div');step1.className='paste-step';step1.textContent='1. Open this URL in a new tab:';
@@ -754,7 +755,7 @@ async function boot(){
   try{
     const today=new Date();
     const ds=`${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
-    const r=await fetch(`https://cdn.cardkaizoku.com/stats/stats_op16_${ds}.json?v=8`);
+    const r=await fetch(`https://cdn.cardkaizoku.com/stats/stats_west_p_${ds}.json?v=8`);
     if(r.ok){const j=await r.json();loadData(j,false);return;}
   }catch{}
   // 4. Manual paste
