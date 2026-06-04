@@ -337,11 +337,13 @@ function loadCache(){
 // ── App state ────────────────────────────────────────────────────
 // Dataset configuration — add new entries here when cardkaizoku adds new periods
 const DATASETS=[
-  {id:'op16',        label:'OP16',                    prefix:'stats_op16_',    patreon:false},
-  {id:'west_p',      label:'Standard (Private)',       prefix:'stats_west_p_',  patreon:true },
-  {id:'west',        label:'Standard',                 prefix:'stats_west_',    patreon:false},
-  {id:'exreg_p',     label:'Extra Reg (Private)',       prefix:'stats_exreg_p_', patreon:true },
-  {id:'exreg',       label:'Extra Reg',                prefix:'stats_exreg_',   patreon:false},
+  {id:'op16',    label:'OP16',           prefix:'stats_op16_'   },
+  {id:'west_p',  label:'Standard+',      prefix:'stats_west_p_' },
+  {id:'west',    label:'Standard',       prefix:'stats_west_'   },
+  {id:'lw_p',    label:'Last Week+',     prefix:'stats_lw_p_'   },
+  {id:'lw',      label:'Last Week',      prefix:'stats_lw_'     },
+  {id:'exreg_p', label:'Extra Reg+',     prefix:'stats_exreg_p_'},
+  {id:'exreg',   label:'Extra Reg',      prefix:'stats_exreg_'  },
 ];
 const LS_DATASET='optcg_dataset';
 let DATASET_ID=(()=>{try{return localStorage.getItem(LS_DATASET)||'op16';}catch{return 'op16';}})();
@@ -352,16 +354,19 @@ let MY_DECK=null,OPP_DECK=null,EXCL_LOW=false;
 try{MY_DECK=localStorage.getItem(LS_DECK)||null;}catch{}
 
 // ── Dataset URL helpers ───────────────────────────────────────────
-const DS=(()=>{const t=new Date();return`${t.getFullYear()}${String(t.getMonth()+1).padStart(2,'0')}${String(t.getDate()).padStart(2,'0')}`;})();
+function laDate(offset=0){
+  const d=new Date(new Date().toLocaleString('en-US',{timeZone:'America/Los_Angeles'}));
+  d.setDate(d.getDate()-offset);
+  const s=d.toLocaleDateString('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'});
+  const[m,dy,y]=s.split('/');return`${y}${m}${dy}`;
+}
+const DS=laDate(0);
 function datasetPrefix(){return(DATASETS.find(d=>d.id===DATASET_ID)||DATASETS[0]).prefix;}
-function buildCdnUrl(prefix,date,v=8){return`https://cdn.cardkaizoku.com/stats/${prefix}${date}.json?v=${v}`;}
+function buildCdnUrl(prefix,date){return`https://cdn.cardkaizoku.com/stats/${prefix}${date}.json?v=8`;}
 async function fetchDataset(prefix){
-  for(let i=0;i<=7;i++){
-    const d=new Date();d.setDate(d.getDate()-i);
-    const ds=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-    for(const v of[8,9,7,10,6,5]){
-      try{const r=await fetch(buildCdnUrl(prefix,ds,v));if(r.ok){const j=await r.json();if(Array.isArray(j)&&j.length>0)return j;}}catch{}
-    }
+  for(const date of[laDate(0),laDate(1)]){
+    try{const r=await fetch(buildCdnUrl(prefix,date));if(r.ok){const j=await r.json();if(Array.isArray(j)&&j.length>0)return j;}
+    }catch{}
   }
   return null;
 }
@@ -750,7 +755,7 @@ function render(){
   const right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap';
   // Dataset picker
   const dsPick=document.createElement('select');dsPick.style.cssText='width:auto;min-width:170px;font-size:12px;padding:5px 10px;border-color:var(--brd)';
-  DATASETS.forEach(ds=>{const o=document.createElement('option');o.value=ds.id;o.textContent=ds.label+(ds.patreon?' 🔒':'');if(ds.id===DATASET_ID)o.selected=true;dsPick.appendChild(o);});
+  DATASETS.forEach(ds=>{const o=document.createElement('option');o.value=ds.id;o.textContent=ds.label;if(ds.id===DATASET_ID)o.selected=true;dsPick.appendChild(o);});
   dsPick.onchange=()=>{DATASET_ID=dsPick.value;try{localStorage.setItem(LS_DATASET,DATASET_ID);}catch{}STATE='loading';DATA=null;HIDDEN=new Set();render();boot();};
   right.appendChild(dsPick);
   if(META_UPDATED){
