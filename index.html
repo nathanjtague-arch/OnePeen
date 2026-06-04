@@ -835,16 +835,13 @@ function render(){
 // ── Boot sequence ────────────────────────────────────────────────
 render();
 async function boot(){
-  // 1. Try GitHub Pages cached data
+  // Load meta timestamp if available
+  try{const m=await fetch('./data/meta.json');if(m.ok){const md=await m.json();META_UPDATED=md.updated?new Date(md.updated).toLocaleString():null;}}catch{}
+  // 1. Try GitHub Pages cached file for the selected dataset
   try{
-    const r=await fetch('./data/stats.json');
-    if(r.ok&&DATASET_ID==='op16'){  // cached file is always OP16
-      const j=await r.json();
-      try{const m=await fetch('./data/meta.json');if(m.ok){const md=await m.json();META_UPDATED=md.updated?new Date(md.updated).toLocaleString():null;}}catch{}
-      loadData(j,true); // don't overwrite localStorage cache with the served file
-      return;
-    }
-  }catch(e){}
+    const r=await fetch(`./data/stats/${DATASET_ID}.json`);
+    if(r.ok){const j=await r.json();if(Array.isArray(j)&&j.length>0){loadData(j,true);return;}}
+  }catch{}
   // 2. Try localStorage cache
   const cached=loadCache();
   if(cached){loadData(cached,true);return;}
