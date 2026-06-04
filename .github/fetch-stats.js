@@ -1,103 +1,123 @@
-// Pure Node.js — no Playwright, no cookies, no browser.
-// The cardkaizoku CDN is publicly accessible. Auth is UI-only on their site.
-// URL pattern: https://cdn.cardkaizoku.com/stats/{type}_{period}_{YYYYMMDD}.json?v=8
+// Uses Playwright purely as a Cloudflare-friendly HTTP client.
+// CDN is publicly accessible but Cloudflare blocks non-browser TLS fingerprints.
+// We navigate Chromium directly to each CDN URL — no cardkaizoku.com interaction needed.
 
+const { chromium } = require('/tmp/node_modules/playwright');
 const fs   = require('fs');
 const path = require('path');
 
-const WORKSPACE = process.env.GITHUB_WORKSPACE;
+const WORKSPACE  = process.env.GITHUB_WORKSPACE;
+const COOKIE_STR = process.env.CARDKAIZOKU_COOKIES || '';
 
-// All known datasets — all publicly accessible
 const DATASETS = [
   { id: 'op16',    period: 'op16'    },
   { id: 'west_p',  period: 'west_p'  },
   { id: 'west',    period: 'west'    },
-  { id: 'lw_p',    period: 'lw_p'   },
+  { id: 'lw_p',    period: 'lw_p'    },
   { id: 'lw',      period: 'lw'      },
   { id: 'exreg_p', period: 'exreg_p' },
   { id: 'exreg',   period: 'exreg'   },
 ];
 
-// Exact date format used by cardkaizoku's fetchFile.js — LA timezone, YYYYMMDD
-function laDate(offsetDays = 0) {
-  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-  d.setDate(d.getDate() - offsetDays);
-  const str = d.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' });
-  const [month, day, year] = str.split('/');
-  return `${year}${month}${day}`;
+function parseCookies(str) {
+  if (!str) return [];
+  return str.split(';').map(c => {
+    const eq = c.indexOf('=');
+    if (eq === -1) return null;
+    return { name: c.slice(0,eq).trim(), value: c.slice(eq+1).trim(), domain: '.cardkaizoku.com', path: '/' };
+  }).filter(Boolean);
 }
 
-async function fetchJSON(type, period, date) {
-  const url = `https://cdn.cardkaizoku.com/stats/${type}_${period}_${date}.json?v=8`;
+// LA timezone date (YYYYMMDD) — matches cardkaizoku's fetchFile.js
+function laDate(offset = 0) {
+  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+  d.setDate(d.getDate() - offset);
+  const s = d.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const [m, dy, y] = s.split('/');
+  return `${y}${m}${dy}`;
+}
+
+// Navigate browser directly to a CDN JSON URL and read the response body
+async function browserFetch(page, url) {
   try {
-    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    if (!res.ok) return null;
-    const text = await res.text();
+    const res = await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+    if (!res || !res.ok()) {
+      console.log(`  HTTP ${res?.status()} — ${url}`);
+      return null;
+    }
+    const text = await page.evaluate(() => document.body.innerText);
     const data = JSON.parse(text);
     if (!Array.isArray(data) || data.length === 0) return null;
-    return { text, data, url };
-  } catch { return null; }
-}
-
-async function fetchBinary(url) {
-  try {
-    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    if (!res.ok) return null;
-    return Buffer.from(await res.arrayBuffer());
-  } catch { return null; }
+    return { text: JSON.stringify(data), data, url };
+  } catch(e) {
+    console.log(`  Error: ${e.message}`);
+    return null;
+  }
 }
 
 (async () => {
+  const today     = laDate(0);
+  const yesterday = laDate(1);
+  console.log(`Dates: today=${today}, yesterday=${yesterday} (LA timezone)\n`);
+
+  const browser = await chromium.launch({ headless: true });
+  const ctx = await browser.newContext({
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  });
+
+  const cookies = parseCookies(COOKIE_STR);
+  if (cookies.length > 0) {
+    await ctx.addCookies(cookies);
+    console.log(`Injected ${cookies.length} cookies (cf_clearance passes Cloudflare)\n`);
+  } else {
+    console.log('No cookies — CDN requests may be challenged by Cloudflare\n');
+  }
+
   const statsDir = path.join(WORKSPACE, 'data', 'stats');
   const cardsDir = path.join(WORKSPACE, 'data', 'cards');
   fs.mkdirSync(statsDir, { recursive: true });
   fs.mkdirSync(cardsDir, { recursive: true });
 
-  const today    = laDate(0);
-  const yesterday = laDate(1);
-  console.log(`Dates: today=${today}, yesterday=${yesterday} (LA timezone)\n`);
-
-  // ── Fetch all stats datasets ──────────────────────────────────────
+  const page = await ctx.newPage();
   let primaryData = null;
 
+  // ── Stats datasets ────────────────────────────────────────────────
   for (const ds of DATASETS) {
     process.stdout.write(`${ds.id}... `);
-    const result = await fetchJSON('stats', ds.period, today)
-                || await fetchJSON('stats', ds.period, yesterday);
+    const url1 = `https://cdn.cardkaizoku.com/stats/stats_${ds.period}_${today}.json?v=8`;
+    const url2 = `https://cdn.cardkaizoku.com/stats/stats_${ds.period}_${yesterday}.json?v=8`;
+    const result = await browserFetch(page, url1) || await browserFetch(page, url2);
     if (result) {
       fs.writeFileSync(path.join(statsDir, `${ds.id}.json`), result.text);
-      console.log(`✓  ${result.url}`);
+      console.log(`✓  (${result.data.length} leaders)`);
       if (!primaryData) primaryData = result.data;
       if (ds.id === 'west_p') fs.writeFileSync(path.join(WORKSPACE, 'data', 'stats.json'), result.text);
-    } else {
-      console.log('✗  not found');
-    }
-  }
-
-  // ── Fetch hands data (Patreon feature on their site, public on CDN) ──
-  console.log('\nFetching hands data...');
-  for (const ds of DATASETS.filter(d => ['west_p', 'op16', 'lw_p'].includes(d.id))) {
-    process.stdout.write(`  hands/${ds.id}... `);
-    const result = await fetchJSON('hands', ds.period, today)
-                || await fetchJSON('hands', ds.period, yesterday);
-    if (result) {
-      fs.writeFileSync(path.join(statsDir, `hands_${ds.id}.json`), result.text);
-      console.log(`✓`);
     } else {
       console.log('✗');
     }
   }
 
-  // ── Fetch curve data (always uses 'lw' period per their source code) ─
-  console.log('\nFetching curve data...');
-  const curve = await fetchJSON('curve', 'lw', today)
-             || await fetchJSON('curve', 'lw', yesterday);
-  if (curve) {
-    fs.writeFileSync(path.join(statsDir, 'curve.json'), curve.text);
-    console.log('  curve/lw ✓');
+  // ── Hands data ────────────────────────────────────────────────────
+  console.log('\nHands data:');
+  for (const id of ['west_p', 'op16', 'lw_p']) {
+    const ds = DATASETS.find(d => d.id === id);
+    process.stdout.write(`  ${id}... `);
+    const url1 = `https://cdn.cardkaizoku.com/stats/hands_${ds.period}_${today}.json?v=8`;
+    const url2 = `https://cdn.cardkaizoku.com/stats/hands_${ds.period}_${yesterday}.json?v=8`;
+    const result = await browserFetch(page, url1) || await browserFetch(page, url2);
+    if (result) { fs.writeFileSync(path.join(statsDir, `hands_${id}.json`), result.text); console.log('✓'); }
+    else console.log('✗');
   }
 
-  // ── Download card images ──────────────────────────────────────────
+  // ── Curve data ────────────────────────────────────────────────────
+  console.log('\nCurve data:');
+  process.stdout.write('  curve/lw... ');
+  const curve = await browserFetch(page, `https://cdn.cardkaizoku.com/stats/curve_lw_${today}.json?v=8`)
+             || await browserFetch(page, `https://cdn.cardkaizoku.com/stats/curve_lw_${yesterday}.json?v=8`);
+  if (curve) { fs.writeFileSync(path.join(statsDir, 'curve.json'), curve.text); console.log('✓'); }
+  else console.log('✗');
+
+  // ── Card images ───────────────────────────────────────────────────
   if (primaryData) {
     const sorted = [...primaryData].sort((a,b) => (b.play_rate||0)-(a.play_rate||0)).slice(0, 60);
     console.log(`\nDownloading images for top ${sorted.length} leaders...`);
@@ -109,12 +129,19 @@ async function fetchBinary(url) {
       const outPath = path.join(cardsDir, `${id}.png`);
       if (fs.existsSync(outPath) && fs.statSync(outPath).size > 1000) { skipped++; continue; }
       const set = id.split('-')[0];
-      const buf = await fetchBinary(`https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`);
-      if (buf && buf.length > 500) { fs.writeFileSync(outPath, buf); downloaded++; }
-      else failed++;
+      const imgUrl = `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`;
+      try {
+        const res = await page.goto(imgUrl, { waitUntil: 'load', timeout: 10000 });
+        if (res && res.ok()) {
+          const buf = await res.body();
+          if (buf && buf.length > 500) { fs.writeFileSync(outPath, buf); downloaded++; continue; }
+        }
+        failed++;
+      } catch { failed++; }
     }
     console.log(`Images: ${downloaded} downloaded, ${skipped} cached, ${failed} failed`);
   }
 
+  await browser.close();
   console.log('\nDone.');
 })();
