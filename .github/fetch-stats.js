@@ -149,5 +149,7 @@ async function browserFetch(page, url) {
     }
     console.log(`Leader images: ${downloaded} downloaded, ${skipped} cached, ${failed} failed`);
   }
+  await browser.close();
   console.log('\nDone.');
+  process.exit(0); // Force exit — Chromium can leave lingering background processes
 })();
