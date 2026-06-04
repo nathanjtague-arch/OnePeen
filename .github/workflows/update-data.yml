@@ -2,85 +2,116 @@ name: Update OPTCG Stats Data
 
 on:
   schedule:
-    - cron: '0 */4 * * *'
+    - cron: '0 */6 * * *'   # Every 6 hours
   workflow_dispatch:
 
 jobs:
   update-data:
     runs-on: ubuntu-latest
     permissions:
-      contents: write        # ← KEY FIX: allows the job to commit and push
+      contents: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Fetch stats data
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright + Chromium
         run: |
-          TODAY=$(date +%Y%m%d)
-          YESTERDAY=$(date -d "yesterday" +%Y%m%d)
-          mkdir -p data
-          SET="op16"
+          cd /tmp
+          npm init -y > /dev/null
+          npm install playwright > /dev/null 2>&1
+          npx playwright install chromium --with-deps > /dev/null 2>&1
+          echo "✓ Playwright ready"
 
-          fetch_stats() {
-            local DATE=$1
-            local VERSION=$2
-            local URL="https://cdn.cardkaizoku.com/stats/stats_${SET}_${DATE}.json?v=${VERSION}"
-            echo "Trying: $URL"
-            curl -L --fail --silent --max-time 15 \
-              -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
-              -H "Accept: application/json, text/plain, */*" \
-              -H "Accept-Language: en-US,en;q=0.9" \
-              -H "Referer: https://www.cardkaizoku.com/matchups" \
-              -H "Origin: https://www.cardkaizoku.com" \
-              -o data/stats.json "$URL"
-          }
-
-          SUCCESS=false
-          for DATE in $TODAY $YESTERDAY; do
-            for VER in 8 9 7 10 6 11 5; do
-              if fetch_stats $DATE $VER && [ -s data/stats.json ]; then
-                echo "✓ Fetched stats for $DATE (v=$VER)"
-                SUCCESS=true
-                break 2
-              fi
-            done
-          done
-
-          if [ "$SUCCESS" = false ]; then
-            echo "✗ Could not fetch stats — keeping existing file"
-            exit 0
-          fi
-
-          if ! python3 -c "import json,sys; json.load(open('data/stats.json'))" 2>/dev/null; then
-            echo "✗ Response is not valid JSON — discarding"
-            git checkout -- data/stats.json 2>/dev/null || rm -f data/stats.json
-            exit 0
-          fi
-
-          echo "Stats file: $(wc -c < data/stats.json) bytes"
-
-      - name: Fetch hands data
+      - name: Fetch stats by intercepting real browser request
         run: |
-          TODAY=$(date +%Y%m%d)
-          YESTERDAY=$(date -d "yesterday" +%Y%m%d)
           mkdir -p data
-          SET="op16"
-          for DATE in $TODAY $YESTERDAY; do
-            for VER in 8 9 7 10 6 5; do
-              URL="https://cdn.cardkaizoku.com/stats/hands_${SET}_${DATE}.json?v=${VER}"
-              if curl -L --fail --silent --max-time 15 \
-                -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-                -H "Referer: https://www.cardkaizoku.com/" \
-                -o data/hands.json "$URL" && [ -s data/hands.json ]; then
-                echo "✓ Fetched hands data for $DATE (v=$VER)"
-                break 2
-              fi
-            done
-          done
+
+          cat > /tmp/fetch.js << 'JSEOF'
+const { chromium } = require('/tmp/node_modules/playwright');
+const fs   = require('fs');
+const path = require('path');
+
+const OUT = path.join(process.env.GITHUB_WORKSPACE, 'data', 'stats.json');
+
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const ctx = await browser.newContext({
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  });
+  const page = await ctx.newPage();
+  let captured = null;
+
+  // Intercept every CDN response BEFORE we navigate
+  // The page fetches the stats JSON itself — we just grab it
+  page.on('response', async response => {
+    const url = response.url();
+    if (!url.includes('cdn.cardkaizoku.com')) return;
+    if (!url.includes('stats_op16_') || !url.includes('.json')) return;
+    try {
+      const text = await response.text();
+      JSON.parse(text); // validate
+      captured = text;
+      console.log(`✓ Intercepted: ${url} (${text.length} bytes)`);
+    } catch(e) {
+      console.log(`  Skipping non-JSON response from ${url}`);
+    }
+  });
+
+  try {
+    console.log('Loading cardkaizoku.com/matchups...');
+    await page.goto('https://www.cardkaizoku.com/matchups', {
+      waitUntil: 'networkidle',
+      timeout: 60000
+    });
+
+    // Wait a moment for any lazy-loaded requests to complete
+    await page.waitForTimeout(3000);
+
+    if (!captured) {
+      // Page might not have loaded stats — try the rankings page as fallback
+      console.log('No stats intercepted on matchups, trying /ranking...');
+      await page.goto('https://www.cardkaizoku.com/ranking', {
+        waitUntil: 'networkidle',
+        timeout: 30000
+      });
+      await page.waitForTimeout(2000);
+    }
+
+    if (captured) {
+      fs.writeFileSync(OUT, captured);
+      console.log('✓ Stats saved to data/stats.json');
+    } else {
+      console.log('✗ No stats data intercepted from either page');
+    }
+
+  } catch(e) {
+    console.error('Error:', e.message);
+  } finally {
+    await browser.close();
+  }
+})();
+JSEOF
+
+          node /tmp/fetch.js
+
+      - name: Validate result
+        run: |
+          if [ -f data/stats.json ] && [ -s data/stats.json ]; then
+            COUNT=$(python3 -c "import json; d=json.load(open('data/stats.json')); print(len(d) if isinstance(d,list) else 'object')" 2>/dev/null || echo "unknown")
+            echo "✓ stats.json valid — $COUNT entries"
+          else
+            echo "✗ No valid stats.json produced — nothing to commit"
+          fi
 
       - name: Write metadata
         run: |
+          mkdir -p data
           echo "{\"updated\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"date\":\"$(date +%Y%m%d)\"}" > data/meta.json
 
       - name: Commit and push
