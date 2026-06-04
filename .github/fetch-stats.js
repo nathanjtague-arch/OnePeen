@@ -55,6 +55,16 @@ async function browserFetch(page, url) {
   }
 }
 
+// Plain Node.js fetch — works for Bandai/Limitless (no Cloudflare on those hosts)
+async function nodeFetch(url) {
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } });
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    return buf.length > 1000 ? buf : null;
+  } catch { return null; }
+}
+
 (async () => {
   const today     = laDate(0);
   const yesterday = laDate(1);
@@ -145,6 +155,14 @@ async function browserFetch(page, url) {
           }
         } catch {}
       }
+      // CDN failed — try Bandai and Limitless via plain fetch (no Cloudflare)
+      if (!saved) {
+        const buf =
+          await nodeFetch(`https://en.onepiece-cardgame.com/images/cardlist/card/${id}.png`) ||
+          await nodeFetch(`https://limitlesstcg.nyc3.digitaloceanspaces.com/one-piece/${set}/${id}_op_en.webp`) ||
+          await nodeFetch(`https://limitlesstcg.nyc3.digitaloceanspaces.com/one-piece/${set}/${id}_en.webp`);
+        if (buf) { fs.writeFileSync(outPath, buf); downloaded++; saved = true; }
+      }
       if (!saved) failed++;
     }
     console.log(`Leader images: ${downloaded} downloaded, ${skipped} cached, ${failed} failed`);
@@ -164,15 +182,6 @@ async function browserFetch(page, url) {
           }));
       } catch {}
     }
-  }
-
-  async function nodeFetch(url) {
-    try {
-      const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } });
-      if (!res.ok) return null;
-      const buf = Buffer.from(await res.arrayBuffer());
-      return buf.length > 1000 ? buf : null;
-    } catch { return null; }
   }
 
   const charIdList = [...charIds];
