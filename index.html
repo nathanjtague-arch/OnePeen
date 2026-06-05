@@ -32,7 +32,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 
 /* Header */
 .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;flex-wrap:wrap;gap:12px}
-.hdr-title{font-family:var(--font-head);font-size:24px;font-weight:900;letter-spacing:.02em;color:var(--acc);line-height:1}
+.hdr-title{font-family:var(--font-head);font-size:24px;font-weight:900;letter-spacing:.02em;color:var(--acc);line-height:1;transition:opacity .15s}.hdr-title:hover{opacity:.8}
 .hdr-sub{font-size:11px;color:var(--dim);margin-top:4px;font-family:var(--font-mono)}
 .hdr-badge{background:var(--card);border:1px solid var(--brd);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--dim);font-family:var(--font-mono)}
 .hdr-ds{width:auto!important;min-width:160px;font-size:12px!important;padding:5px 10px!important}
@@ -1094,7 +1094,9 @@ function render(){
   const hdr=document.createElement('div');hdr.className='hdr';
   const left=document.createElement('div');left.style.cssText='display:flex;align-items:center;gap:12px';
   // Luffy hero image
-  const heroWrap=document.createElement('div');heroWrap.style.cssText='width:64px;height:64px;border-radius:10px;overflow:hidden;flex-shrink:0;background:transparent;display:flex;align-items:flex-end';
+  const heroWrap=document.createElement('div');heroWrap.style.cssText='width:64px;height:64px;border-radius:10px;overflow:hidden;flex-shrink:0;background:transparent;display:flex;align-items:flex-end;cursor:pointer';
+  heroWrap.title='Back to Rankings';
+  heroWrap.onclick=()=>{TAB='rank';render();};
   const heroImg=document.createElement('img');heroImg.style.cssText='width:100%;height:100%;object-fit:contain;object-position:bottom center';
   heroImg.alt='';
   // Try Luffy (OP13-001) — falls back to OP15-098 or nothing
@@ -1103,6 +1105,8 @@ function render(){
   left.appendChild(heroWrap);
   const titleBlock=document.createElement('div');
   const title=document.createElement('div');title.className='hdr-title';title.textContent='OPTCG: KING OF THE PIRATES';
+  title.style.cursor='pointer';title.title='Back to Rankings';
+  title.onclick=()=>{TAB='rank';render();};
   titleBlock.appendChild(title);
   left.appendChild(titleBlock);
   const right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap';
@@ -1115,7 +1119,7 @@ function render(){
   if(META_UPDATED){
     const b=document.createElement('div');b.className='hdr-badge';b.textContent='Updated '+META_UPDATED;right.appendChild(b);
   }
-  if(STATE==='ok'||STATE==='debug'){
+  if(false&&(STATE==='ok'||STATE==='debug')){  // Reload button hidden — data auto-updates every 6h
     const rb=document.createElement('button');rb.className='btn-ghost';rb.textContent='↻ Reload data';
     rb.onclick=()=>{STATE='paste';DATA=null;HIDDEN=new Set();MY_DECK=null;OPP_DECK=null;META_UPDATED=null;render();};
     right.appendChild(rb);
