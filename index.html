@@ -1138,9 +1138,19 @@ function render(){
     const url=buildCdnUrl(datasetPrefix(),ds);
     const card=document.createElement('div');card.className='paste-card';
     const backBtn=document.createElement('button');backBtn.className='btn-ghost';
-    backBtn.textContent='← Back to Rankings';backBtn.style.marginBottom='12px';
+    backBtn.textContent='← Back to Rankings';backBtn.style.cssText='margin-bottom:8px;margin-right:8px';
     backBtn.onclick=()=>{if(DATA){TAB='rank';STATE='ok';render();}else{STATE='loading';boot();render();}};
     if(DATA)card.appendChild(backBtn);
+    const retryBtn=document.createElement('button');retryBtn.className='btn-ghost';
+    retryBtn.textContent='↻ Try reloading data';retryBtn.style.marginBottom='12px';
+    retryBtn.onclick=async()=>{
+      // Force browser to bypass its cache
+      try{const r=await fetch(`./data/stats/${DATASET_ID}.json`,{cache:'reload'});
+        if(r.ok){const j=await r.json();if(Array.isArray(j)&&j.length>0){loadData(j,false);return;}}
+      }catch{}
+      STATE='loading';boot();render();
+    };
+    card.appendChild(retryBtn);
     const pt=document.createElement('div');pt.className='paste-title';pt.textContent='Manual Data Load';
     const step1=document.createElement('div');step1.className='paste-step';step1.textContent='1. Open this URL in a new tab:';
     const link=document.createElement('a');link.className='paste-url';link.href=url;link.target='_blank';link.textContent=url;
@@ -1216,7 +1226,7 @@ async function boot(){
   try{const m=await fetch('./data/meta.json');if(m.ok){const md=await m.json();META_UPDATED=md.updated?new Date(md.updated).toLocaleString():null;}}catch{}
   // 1. Try GitHub Pages cached file for the selected dataset
   try{
-    const r=await fetch(`./data/stats/${DATASET_ID}.json`);
+    const r=await fetch(`./data/stats/${DATASET_ID}.json`,{cache:'no-store'});
     if(r.ok){const j=await r.json();if(Array.isArray(j)&&j.length>0){loadData(j,true);return;}}
   }catch{}
   // 2. Try localStorage cache
@@ -1227,7 +1237,23 @@ async function boot(){
     const j=await fetchDataset(datasetPrefix());
     if(j){loadData(j,false);return;}
   }catch{}
-  // 4. Manual paste
+  // 4. Last resort: try stale localStorage regardless of expiry
+  try{
+    const raw=localStorage.getItem(LS_CACHE);
+    if(raw){
+      const {data}=JSON.parse(raw);
+      if(Array.isArray(data)&&data.length>0){
+        console.warn('Showing stale cached data — fresh fetch failed');
+        loadData(data,true);return;
+      }
+    }
+  }catch{}
+  // 5. Try legacy stats.json (backward compat)
+  try{
+    const r=await fetch('./data/stats.json',{cache:'no-store'});
+    if(r.ok){const j=await r.json();if(Array.isArray(j)&&j.length>0){loadData(j,false);return;}}
+  }catch{}
+  // 6. Paste screen only if truly nothing available
   STATE='paste';render();
 }
 boot();
