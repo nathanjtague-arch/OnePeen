@@ -1096,7 +1096,7 @@ function render(){
   // Luffy hero image
   const heroWrap=document.createElement('div');heroWrap.style.cssText='width:64px;height:64px;border-radius:10px;overflow:hidden;flex-shrink:0;background:transparent;display:flex;align-items:flex-end;cursor:pointer';
   heroWrap.title='Back to Rankings';
-  heroWrap.onclick=()=>{TAB='rank';render();};
+  heroWrap.onclick=()=>{TAB='rank';if(DATA){STATE='ok';}else{STATE='loading';boot();}render();};
   const heroImg=document.createElement('img');heroImg.style.cssText='width:100%;height:100%;object-fit:contain;object-position:bottom center';
   heroImg.alt='';
   // Try Luffy (OP13-001) — falls back to OP15-098 or nothing
@@ -1106,7 +1106,7 @@ function render(){
   const titleBlock=document.createElement('div');
   const title=document.createElement('div');title.className='hdr-title';title.textContent='OPTCG: KING OF THE PIRATES';
   title.style.cursor='pointer';title.title='Back to Rankings';
-  title.onclick=()=>{TAB='rank';render();};
+  title.onclick=()=>{TAB='rank';if(DATA){STATE='ok';}else{STATE='loading';boot();}render();};
   titleBlock.appendChild(title);
   left.appendChild(titleBlock);
   const right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap';
@@ -1137,6 +1137,10 @@ function render(){
     const ds=DS;
     const url=buildCdnUrl(datasetPrefix(),ds);
     const card=document.createElement('div');card.className='paste-card';
+    const backBtn=document.createElement('button');backBtn.className='btn-ghost';
+    backBtn.textContent='← Back to Rankings';backBtn.style.marginBottom='12px';
+    backBtn.onclick=()=>{if(DATA){TAB='rank';STATE='ok';render();}else{STATE='loading';boot();render();}};
+    if(DATA)card.appendChild(backBtn);
     const pt=document.createElement('div');pt.className='paste-title';pt.textContent='Manual Data Load';
     const step1=document.createElement('div');step1.className='paste-step';step1.textContent='1. Open this URL in a new tab:';
     const link=document.createElement('a');link.className='paste-url';link.href=url;link.target='_blank';link.textContent=url;
