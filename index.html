@@ -18,7 +18,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;line-height:1.5;
-  background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(224,27,27,.05),transparent)}
+  background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(224,27,27,.05),transparent);position:relative;overflow-x:hidden}
 a{color:var(--acc)}
 kbd{background:var(--card);border:0.5px solid var(--brd);padding:1px 6px;border-radius:3px;font-family:var(--font-mono);font-size:11px}
 button,select,textarea{font-family:var(--font-body);cursor:pointer}
@@ -36,6 +36,103 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .hdr-sub{font-size:11px;color:var(--dim);margin-top:4px;font-family:var(--font-mono)}
 .hdr-badge{background:var(--card);border:1px solid var(--brd);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--dim);font-family:var(--font-mono)}
 .hdr-ds{width:auto!important;min-width:160px;font-size:12px!important;padding:5px 10px!important}
+
+/* ═══════════════════════════════════════════════════════════════
+   VISUAL THEME — CDA clean + Wispr ambient
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Animated ambient orbs (Wispr-inspired) */
+@keyframes orb-drift {
+  0%,100%{transform:translate(0,0) scale(1)}
+  25%{transform:translate(40px,-30px) scale(1.08)}
+  50%{transform:translate(-20px,40px) scale(0.94)}
+  75%{transform:translate(30px,20px) scale(1.04)}
+}
+@keyframes orb-drift-r {
+  0%,100%{transform:translate(0,0) scale(1)}
+  25%{transform:translate(-30px,40px) scale(0.96)}
+  50%{transform:translate(40px,-20px) scale(1.06)}
+  75%{transform:translate(-40px,-30px) scale(0.98)}
+}
+.ambient-orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(90px)}
+.orb-1{width:700px;height:700px;top:-250px;left:-200px;
+  background:radial-gradient(circle,rgba(224,27,27,.12) 0%,transparent 70%);
+  animation:orb-drift 18s ease-in-out infinite}
+.orb-2{width:500px;height:500px;bottom:-100px;right:-150px;
+  background:radial-gradient(circle,rgba(220,70,20,.08) 0%,transparent 70%);
+  animation:orb-drift-r 22s ease-in-out infinite}
+.orb-3{width:400px;height:400px;top:40%;left:50%;
+  background:radial-gradient(circle,rgba(180,20,20,.05) 0%,transparent 70%);
+  animation:orb-drift 28s ease-in-out infinite;animation-delay:-8s}
+
+/* Header — premium gradient wash */
+.hdr{background:linear-gradient(135deg,rgba(224,27,27,.06) 0%,rgba(10,10,10,0) 60%);
+  border-bottom:1px solid rgba(224,27,27,.18);
+  box-shadow:0 1px 0 rgba(224,27,27,.08)}
+
+/* Glowing title */
+@keyframes title-glow{
+  0%,100%{text-shadow:0 0 20px rgba(224,27,27,.3),0 0 40px rgba(224,27,27,.1)}
+  50%{text-shadow:0 0 30px rgba(224,27,27,.5),0 0 60px rgba(224,27,27,.15)}}
+.hdr-title{animation:title-glow 4s ease-in-out infinite}
+
+/* Stat cards — CDA panel style */
+.stat-card{border:1px solid rgba(255,255,255,.07);
+  background:linear-gradient(135deg,rgba(255,255,255,.03) 0%,rgba(255,255,255,0) 100%);
+  transition:border-color .2s,box-shadow .2s,transform .2s}
+.stat-card:hover{border-color:rgba(224,27,27,.45);
+  box-shadow:0 0 24px rgba(224,27,27,.12),0 4px 20px rgba(0,0,0,.4);
+  transform:translateY(-2px)}
+
+/* Tabs — cleaner active state */
+.tab-btn{transition:all .2s;border-bottom:2px solid transparent}
+.tab-btn.active{border-bottom-color:var(--acc);
+  box-shadow:0 4px 16px rgba(224,27,27,.25);
+  background:rgba(224,27,27,.1)}
+
+/* Rank rows — CDA-style clean hover */
+.rank-row{transition:background .15s,border-left-color .15s}
+.rank-row:hover{background:rgba(255,255,255,.035);
+  box-shadow:inset 3px 0 0 rgba(224,27,27,.6)}
+
+/* WR numbers — tier glow */
+.rank-wr[style*="--g1"]{text-shadow:0 0 12px rgba(0,232,122,.4)}
+.rank-wr[style*="--g2"]{text-shadow:0 0 10px rgba(110,232,122,.25)}
+
+/* Matchup context banner */
+.ctx-banner{border-radius:10px;border:1px solid rgba(255,255,255,.08);
+  background:linear-gradient(135deg,rgba(255,255,255,.03),rgba(255,255,255,0));
+  box-shadow:0 4px 24px rgba(0,0,0,.3)}
+
+/* Advice box */
+.adv-box{border-radius:12px;
+  background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.01) 100%);
+  box-shadow:0 8px 32px rgba(0,0,0,.4)}
+
+/* Deck tiles */
+.deck-tile{transition:transform .2s,box-shadow .2s}
+.deck-tile:hover{transform:translateY(-3px);
+  box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 20px rgba(224,27,27,.1)}
+
+/* Cards general — subtle depth */
+.oh-card,.dl-card{
+  background:linear-gradient(135deg,rgba(255,255,255,.025) 0%,rgba(255,255,255,0) 100%);
+  border-color:rgba(255,255,255,.08);
+  box-shadow:0 4px 24px rgba(0,0,0,.25)}
+
+/* Dataset picker — styled */
+.dataset-row select{
+  background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+  border:1px solid rgba(255,255,255,.1);
+  box-shadow:0 2px 12px rgba(0,0,0,.3);
+  transition:border-color .2s,box-shadow .2s}
+.dataset-row select:focus{
+  border-color:rgba(224,27,27,.5);
+  box-shadow:0 0 0 3px rgba(224,27,27,.12);
+  outline:none}
+
+/* Make app content sit above orbs */
+#app{position:relative;z-index:1}
 
 /* Stats strip */
 .stats-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem}
@@ -222,7 +319,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 </div>
 
 <div class="wrap">
-  <div id="app"></div>
+  <div class="ambient-orb orb-1"></div><div class="ambient-orb orb-2"></div><div class="ambient-orb orb-3"></div><div id="app"></div>
 </div>
 
 <script>
