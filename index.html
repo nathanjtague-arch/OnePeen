@@ -85,7 +85,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
   transform:translateY(-2px)}
 
 /* Tabs — cleaner active state */
-.tab-btn{transition:all .2s;border-bottom:2px solid transparent}
+.tab-btn{transition:all .2s;border-bottom:2px solid transparent;font-size:14px;font-weight:700;padding:9px 20px;letter-spacing:.03em}
 .tab-btn.active{border-bottom-color:var(--acc);
   box-shadow:0 4px 16px rgba(224,27,27,.25);
   background:rgba(224,27,27,.1)}
@@ -339,12 +339,16 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
   transform:scale(3.3);
   box-shadow:0 12px 40px rgba(0,0,0,.85),0 0 16px rgba(224,27,27,.2)}
 
-/* Ranking inline image zoom */
-.rank-img-wrap{transition:transform .25s cubic-bezier(.34,1.56,.64,1),
-               box-shadow .25s ease;transform-origin:bottom center;z-index:1}
-.rank-row:hover .rank-img-wrap{
-  transform:scale(2.4);z-index:20;
-  box-shadow:0 8px 30px rgba(0,0,0,.8)}
+/* Rank image */
+.rank-img-wrap{position:relative;z-index:1}
+/* Toggle dot overlay on rank card image */
+.rank-img-wrap{position:relative}
+.rank-toggle-dot{position:absolute;top:4px;left:4px;width:10px;height:10px;
+  border-radius:50%;background:var(--g1);
+  box-shadow:0 0 6px rgba(0,232,122,.6);
+  transition:background .15s,box-shadow .15s;pointer-events:none;z-index:2}
+.rank-row.off .rank-toggle-dot{background:#3a3a3a;box-shadow:none}
+
 
 
 /* Key cards hover zoom */
@@ -784,7 +788,7 @@ function mkFilterBar(){
   const fb=document.createElement('div');fb.className='filter-bar';
   const lbl=document.createElement('span');lbl.className='label';lbl.textContent='Show:';
   fb.appendChild(lbl);
-  [['all','All decks'],['top25','Top 25 by play rate']].forEach(([v,l])=>{
+  [['all','All decks']].forEach(([v,l])=>{
     const b=document.createElement('button');
     b.className='filter-btn'+(FILTER===v?' active':'');b.textContent=l;
     b.onclick=()=>{FILTER=v;render();};fb.appendChild(b);
@@ -866,11 +870,12 @@ function viewRank(){
     row.onclick=()=>{if(HIDDEN.has(d.id))HIDDEN.delete(d.id);else HIDDEN.add(d.id);render();};
     // Rank number
     const rn=document.createElement('div');rn.className='rank-num';rn.textContent=isOff?'—':'#'+(rank+1);
-    // Inline card image
+    // Inline card image with toggle dot
     const iw=document.createElement('div');iw.className='rank-img-wrap';
     const im=document.createElement('img');im.alt='';
     const ph=document.createElement('div');ph.className='rank-img-ph';
-    iw.appendChild(im);iw.appendChild(ph);
+    const dot=document.createElement('div');dot.className='rank-toggle-dot';
+    iw.append(im,ph,dot);
     applyCardImg(im,ph,d.id);
     // Name + code cell
     const nc=document.createElement('div');nc.style.cssText='overflow:hidden;display:flex;flex-direction:column;gap:1px;justify-content:center';
@@ -1101,7 +1106,8 @@ function viewAdvisor(){
       const iw=document.createElement('div');iw.className='oh-img-wrap';
       const im=document.createElement('img');im.alt='';
       const ph=document.createElement('div');ph.className='oh-img-ph';
-      iw.appendChild(im);iw.appendChild(ph);
+      const tdot=document.createElement('div');tdot.className='rank-toggle-dot';
+    iw.append(im,ph,tdot);
       applyCardImg(im,ph,card.card);
       const rate=document.createElement('div');rate.className='oh-rate';
       rate.style.color=accentColor;
@@ -1466,13 +1472,14 @@ function render(){
 
     // Tabs
     const tabs=document.createElement('div');tabs.className='tabs';
-    [['rank','Rankings'],['advisor','Matchup Data'],['debug','Debug']].forEach(([id,l])=>{
+    [['rank','Rankings'],['top25','Top 25'],['advisor','Matchup Data'],['debug','Debug']].forEach(([id,l])=>{
       const b=document.createElement('button');b.className='tab-btn'+(TAB===id?' active':'');b.textContent=l;
       b.onclick=()=>{TAB=id;render();};tabs.appendChild(b);
     });
     app.appendChild(tabs);
 
-    if(TAB==='rank')app.appendChild(viewRank());
+    if(TAB==='rank'){const sf=FILTER;FILTER='all';app.appendChild(viewRank());FILTER=sf;}
+    else if(TAB==='top25'){const sf=FILTER;FILTER='top25';app.appendChild(viewRank());FILTER=sf;}
     else if(TAB==='advisor')app.appendChild(viewAdvisor());
     else app.appendChild(viewDebug());
   } else if(STATE==='debug'&&DATA){
