@@ -224,6 +224,129 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .deck-tile-play{font-size:10px;color:#9aa3c0;font-family:var(--font-mono)}
 .vs-label{text-align:center;display:flex;align-items:center;justify-content:center;padding:4px}.vs-label img{width:90px;height:auto;}
 
+
+/* ═══════════════════════════════════════════════════════
+   BATTLE ANIMATIONS
+   ═══════════════════════════════════════════════════════ */
+
+.deck-pair{position:relative;overflow:visible}
+
+/* FAVOURABLE — My card attacks */
+@keyframes my-attack{
+  0%  {transform:translateX(0) scale(1) rotate(0deg);filter:brightness(1)}
+  15% {transform:translateX(-12px) scale(0.93) rotate(-4deg);filter:brightness(0.85)} /* wind-up */
+  45% {transform:translateX(min(260px,32vw)) scale(1.18) rotate(10deg);
+       filter:brightness(1.6) drop-shadow(0 0 24px rgba(224,27,27,.9))} /* strike */
+  58% {transform:translateX(min(250px,31vw)) scale(1.05) rotate(6deg);filter:brightness(1.3)}
+  100%{transform:translateX(0) scale(1) rotate(0deg);filter:brightness(1)}
+}
+@keyframes opp-recoil{
+  0%,40%{transform:translateX(0) scale(1) rotate(0deg);filter:brightness(1)}
+  50%    {transform:translateX(min(40px,5vw)) scale(0.88) rotate(12deg);
+          filter:brightness(2) saturate(2) drop-shadow(0 0 16px rgba(255,60,60,.8))}
+  65%    {transform:translateX(min(12px,2vw)) scale(0.94) rotate(4deg)}
+  100%   {transform:translateX(0) scale(1) rotate(0deg);filter:brightness(1)}
+}
+
+/* DISADVANTAGED — Opponent attacks */
+@keyframes opp-attack{
+  0%  {transform:translateX(0) scale(1) rotate(0deg);filter:brightness(1)}
+  15% {transform:translateX(12px) scale(0.93) rotate(4deg);filter:brightness(0.85)}
+  45% {transform:translateX(min(-260px,-32vw)) scale(1.18) rotate(-10deg);
+       filter:brightness(1.6) drop-shadow(0 0 24px rgba(224,27,27,.9))}
+  58% {transform:translateX(min(-250px,-31vw)) scale(1.05) rotate(-6deg)}
+  100%{transform:translateX(0) scale(1) rotate(0deg);filter:brightness(1)}
+}
+@keyframes my-recoil{
+  0%,40%{transform:translateX(0) scale(1) rotate(0deg);filter:brightness(1)}
+  50%   {transform:translateX(min(-40px,-5vw)) scale(0.88) rotate(-12deg);
+         filter:brightness(2) saturate(2) drop-shadow(0 0 16px rgba(255,60,60,.8))}
+  65%   {transform:translateX(min(-12px,-2vw)) scale(0.94) rotate(-4deg)}
+  100%  {transform:translateX(0) scale(1) rotate(0deg);filter:brightness(1)}
+}
+
+/* EVEN — Both clash in the middle */
+@keyframes my-clash{
+  0%  {transform:translateX(0) scale(1);filter:brightness(1)}
+  12% {transform:translateX(-10px) scale(0.95);filter:brightness(0.9)}
+  42% {transform:translateX(min(190px,24vw)) scale(1.12);
+       filter:brightness(1.5) drop-shadow(0 0 18px rgba(245,208,0,.8))}
+  56% {transform:translateX(min(185px,23vw)) scale(1.06)}
+  100%{transform:translateX(0) scale(1);filter:brightness(1)}
+}
+@keyframes opp-clash{
+  0%  {transform:translateX(0) scale(1);filter:brightness(1)}
+  12% {transform:translateX(10px) scale(0.95);filter:brightness(0.9)}
+  42% {transform:translateX(min(-190px,-24vw)) scale(1.12);
+       filter:brightness(1.5) drop-shadow(0 0 18px rgba(245,208,0,.8))}
+  56% {transform:translateX(min(-185px,-23vw)) scale(1.06)}
+  100%{transform:translateX(0) scale(1);filter:brightness(1)}
+}
+
+/* Shockwave on deck-pair at impact */
+@keyframes shockwave{
+  0%,38%{transform:none}
+  42%   {transform:translate(-4px,2px)}
+  46%   {transform:translate(4px,-2px)}
+  50%   {transform:translate(-2px,3px)}
+  54%   {transform:translate(3px,-1px)}
+  58%   {transform:none}
+}
+
+/* Crossed swords flash for EVEN */
+@keyframes swords-flash{
+  0%,35%{opacity:0;transform:translate(-50%,-50%) scale(0) rotate(-30deg)}
+  45%   {opacity:1;transform:translate(-50%,-50%) scale(2.4) rotate(0deg);
+         filter:drop-shadow(0 0 20px rgba(245,208,0,1)) drop-shadow(0 0 40px rgba(255,150,0,.6))}
+  58%   {opacity:0.9;transform:translate(-50%,-50%) scale(2.2) rotate(8deg)}
+  75%   {opacity:0;transform:translate(-50%,-50%) scale(1.4) rotate(-5deg)}
+  100%  {opacity:0}
+}
+.clash-swords{
+  position:absolute;top:40%;left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  font-size:48px;pointer-events:none;
+  opacity:0;z-index:20;
+}
+
+/* Apply animations via data attribute */
+.deck-pair[data-anim='favourable']       {animation:shockwave .9s ease-out forwards}
+.deck-pair[data-anim='favourable'] .deck-tile:first-child {animation:my-attack  .9s cubic-bezier(.4,0,.2,1) forwards}
+.deck-pair[data-anim='favourable'] .deck-tile:last-child  {animation:opp-recoil .9s cubic-bezier(.4,0,.2,1) forwards}
+
+.deck-pair[data-anim='disadvantaged']       {animation:shockwave .9s ease-out forwards}
+.deck-pair[data-anim='disadvantaged'] .deck-tile:first-child {animation:my-recoil  .9s cubic-bezier(.4,0,.2,1) forwards}
+.deck-pair[data-anim='disadvantaged'] .deck-tile:last-child  {animation:opp-attack .9s cubic-bezier(.4,0,.2,1) forwards}
+
+.deck-pair[data-anim='even']       {animation:shockwave 1.1s ease-out forwards}
+.deck-pair[data-anim='even'] .deck-tile:first-child {animation:my-clash  1.1s cubic-bezier(.4,0,.2,1) forwards}
+.deck-pair[data-anim='even'] .deck-tile:last-child  {animation:opp-clash 1.1s cubic-bezier(.4,0,.2,1) forwards}
+.deck-pair[data-anim='even'] .clash-swords          {animation:swords-flash 1.1s ease-out forwards}
+
+/* ─── Card hover zoom ─────────────────────────────────── */
+.oh-item{transition:z-index 0s .25s}
+.oh-item:hover{z-index:50;transition:z-index 0s}
+.oh-item .oh-img-wrap{transition:transform .25s cubic-bezier(.34,1.56,.64,1),
+                      box-shadow .25s ease;transform-origin:bottom center}
+.oh-item:hover .oh-img-wrap{
+  transform:scale(2.6);
+  box-shadow:0 12px 40px rgba(0,0,0,.85),0 0 20px rgba(224,27,27,.25)}
+
+.dl-card-item{position:relative;transition:z-index 0s .25s}
+.dl-card-item:hover{z-index:50;transition:z-index 0s}
+.dl-card-item .dl-img-wrap{transition:transform .25s cubic-bezier(.34,1.56,.64,1),
+                            box-shadow .25s ease;transform-origin:bottom center}
+.dl-card-item:hover .dl-img-wrap{
+  transform:scale(3);
+  box-shadow:0 12px 40px rgba(0,0,0,.85),0 0 16px rgba(224,27,27,.2)}
+
+/* Ranking inline image zoom */
+.rank-img-wrap{transition:transform .25s cubic-bezier(.34,1.56,.64,1),
+               box-shadow .25s ease;transform-origin:bottom center;z-index:1}
+.rank-row:hover .rank-img-wrap{
+  transform:scale(2.2);z-index:20;
+  box-shadow:0 8px 30px rgba(0,0,0,.8)}
+
 /* Tooltip */
 #tt{position:fixed;display:none;background:#161616;border:1px solid #333333;border-radius:12px;padding:12px;z-index:9999;width:200px;pointer-events:none;box-shadow:0 12px 40px rgba(0,0,0,.7)}
 .tt-img-wrap{width:100%;aspect-ratio:716/1000;border-radius:6px;overflow:hidden;background:var(--card);margin-bottom:10px;display:flex;align-items:center;justify-content:center}
@@ -269,11 +392,11 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .dl-card{margin-top:16px;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px 16px}
 .dl-title{font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--text);margin-bottom:4px}
 .dl-subtitle{font-size:10px;color:#8a93b0;font-family:var(--font-mono);margin-bottom:12px}
-.dl-entry{background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.dl-entry{background:var(--surf);border:1px solid var(--brd);border-radius:8px;padding:10px 12px;margin-bottom:10px;overflow:visible}
 .dl-entry-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px}
 .dl-entry-wr{font-family:var(--font-mono);font-size:14px;font-weight:700}
 .dl-entry-meta{font-family:var(--font-mono);font-size:10px;color:#b8c0d8}
-.dl-cards{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-end}
+.dl-cards{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-end;overflow:visible}
 .dl-card-item{display:flex;flex-direction:column;align-items:center;gap:2px}
 .dl-img-wrap{border-radius:4px;overflow:hidden;background:var(--card);border:1px solid var(--brd);position:relative}
 .dl-img-wrap img{display:none;object-fit:cover;object-position:top center}
@@ -281,14 +404,14 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .dl-count{font-family:var(--font-mono);font-size:9px;font-weight:700;color:var(--acc)}
 .dl-empty{font-size:12px;color:var(--dim);text-align:center;padding:16px 0}
 /* Opening hand guide */
-.oh-dual{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.oh-dual{display:grid;grid-template-columns:1fr 1fr;gap:16px;overflow:visible}
 .oh-side-label{font-size:9px;font-family:var(--font-head);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
 .oh-side-label span{color:var(--acc);font-size:10px}
 @media(max-width:600px){.oh-dual{grid-template-columns:1fr}}
-.oh-card{margin-top:16px;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px 16px}
+.oh-card{margin-top:16px;overflow:visible;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px 16px}
 .oh-title{font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .oh-subtitle{font-size:10px;color:#8a93b0;font-family:var(--font-mono);margin-top:2px}
-.oh-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:8px}
+.oh-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:8px;overflow:visible}
 .oh-item{display:flex;flex-direction:column;align-items:center;gap:4px}
 .oh-img-wrap{width:56px;height:78px;border-radius:5px;overflow:hidden;background:var(--surf);border:1px solid var(--brd)}
 .oh-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
@@ -900,6 +1023,8 @@ function viewAdvisor(){
     tile.append(lbl,imgWrap,code,name,wr,play);return tile;
   }
   const vs=document.createElement('div');vs.className='vs-label';
+  // Crossed swords — appears during even clash
+  const swords=document.createElement('div');swords.className='clash-swords';swords.textContent='⚔️';
   const vsImg=document.createElement('img');
   vsImg.src='data:image/png;base64,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';
   vsImg.style.cssText='width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 2px 14px rgba(200,80,0,.7))';
@@ -907,6 +1032,15 @@ function viewAdvisor(){
   vs.appendChild(vsImg);
   dp.append(mkDeckTile(myDeck,'My deck'),vs,mkDeckTile(oppDeck,'Opponent'));
   wrap.appendChild(dp);
+  // Trigger battle animation based on matchup outcome
+  if(muData?.wr!=null){
+    const outcome=muData.wr>=55?'favourable':muData.wr>=48?'even':'disadvantaged';
+    requestAnimationFrame(()=>{
+      dp.removeAttribute('data-anim');
+      void dp.offsetWidth; // force reflow so animation restarts
+      dp.setAttribute('data-anim',outcome);
+    });
+  }
 
   // Opening hand guide — both decks side by side
   const ohCard=document.createElement('div');ohCard.className='oh-card';
