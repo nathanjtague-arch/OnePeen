@@ -102,7 +102,8 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 /* Matchup context banner */
 .ctx-banner{border-radius:10px;border:1px solid rgba(255,255,255,.08);
   background:linear-gradient(135deg,rgba(255,255,255,.03),rgba(255,255,255,0));
-  box-shadow:0 4px 24px rgba(0,0,0,.3)}
+  box-shadow:0 4px 24px rgba(0,0,0,.3);
+  text-align:center;justify-content:center;flex-direction:column;align-items:center;gap:4px}
 
 /* Advice box */
 .adv-box{border-radius:12px;
@@ -630,9 +631,14 @@ function getAdvice(myDeck,oppDeck){
 
 function getMatchupCtx(wr){
   if(wr==null)return null;
-  if(wr>=55)return{label:'Favourable matchup',sub:fmt(wr)+' overall WR',col:'var(--g1)',icon:'▲'};
-  if(wr>=48)return{label:'Even matchup',sub:fmt(wr)+' overall WR',col:'var(--y)',icon:'◆'};
-  return{label:'Disadvantaged matchup',sub:fmt(wr)+' overall WR',col:'var(--r)',icon:'▼'};
+  const s=fmt(wr)+' overall WR';
+  if(wr>=75)return{label:'Hydrogen bomb vs Coughing Baby',sub:s,col:'var(--g1)',icon:'☢️'};
+  if(wr>=60)return{label:'Heavily Favoured',sub:s,col:'var(--g1)',icon:'▲▲'};
+  if(wr>=55)return{label:'Favourable matchup',sub:s,col:'var(--g2)',icon:'▲'};
+  if(wr>=48)return{label:'Even matchup',sub:s,col:'var(--y)',icon:'◆'};
+  if(wr>=40)return{label:'Disadvantaged matchup',sub:s,col:'var(--o)',icon:'▼'};
+  if(wr>=30)return{label:'Time to lock in',sub:s,col:'var(--r)',icon:'▼▼'};
+  return{label:'GG, Go next...',sub:s,col:'var(--rr)',icon:'💀'};
 }
 
 
@@ -1032,12 +1038,14 @@ function viewAdvisor(){
     const ctx=getMatchupCtx(muData?.wr??null);
     if(ctx){
       const cb=document.createElement('div');cb.className='ctx-banner';
-      const rgb=ctx.col==='var(--g1)'?'0,232,122':ctx.col==='var(--y)'?'245,208,0':'239,68,68';
-      cb.style.cssText=`background:rgba(${rgb},.08);border:1px solid rgba(${rgb},.25);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px`;
-      const lft=document.createElement('div');
-      const lbl=document.createElement('div');lbl.className='ctx-label';lbl.style.color=ctx.col;lbl.textContent=ctx.icon+' '+ctx.label;
-      const sub=document.createElement('div');sub.style.cssText='font-size:11px;color:#888888;margin-top:2px;font-family:var(--font-mono)';sub.textContent=ctx.sub;
-      lft.append(lbl,sub);cb.appendChild(lft);
+      const rgbMap={'var(--g1)':'0,232,122','var(--g2)':'110,232,122','var(--y)':'245,208,0','var(--o)':'249,115,22','var(--r)':'239,68,68','var(--rr)':'180,30,30'};
+      const rgb=rgbMap[ctx.col]||'239,68,68';
+      cb.style.cssText=`background:rgba(${rgb},.1);border:1px solid rgba(${rgb},.3);border-radius:10px;padding:14px 20px;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center`;
+      const lbl=document.createElement('div');lbl.className='ctx-label';
+      lbl.style.cssText=`color:${ctx.col};font-size:20px;font-weight:900;font-family:var(--font-head);letter-spacing:.04em;text-shadow:0 0 20px rgba(${rgb},.4)`;
+      lbl.textContent=ctx.icon+' '+ctx.label+' '+ctx.icon;
+      const sub=document.createElement('div');sub.style.cssText='font-size:13px;color:#b0bbd8;font-family:var(--font-mono);font-weight:600';sub.textContent=ctx.sub;
+      cb.append(lbl,sub);
       wrap.appendChild(cb);
     }
   }
