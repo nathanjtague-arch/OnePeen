@@ -38,6 +38,75 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .hdr-ds{width:auto!important;min-width:160px;font-size:12px!important;padding:5px 10px!important}
 
 
+
+/* ═══════════════════════════════════════════════════════
+   META TRENDS
+   ═══════════════════════════════════════════════════════ */
+.trends-hero{text-align:center;padding:20px 0 12px}
+.trends-hero-title{font-family:var(--font-head);font-size:34px;font-weight:900;
+  color:var(--text);letter-spacing:.04em}
+.trends-hero-sub{font-size:13px;color:#9aa8cc;margin-top:4px;font-weight:600}
+.trends-compare-lbl{font-size:11px;color:#666;font-family:var(--font-mono);margin-top:6px}
+
+.trends-sort-bar{display:flex;gap:8px;margin:14px 0;align-items:center;flex-wrap:wrap}
+.trends-sort-lbl{font-size:12px;color:#b0bbd8;font-weight:700;font-family:var(--font-head);
+  letter-spacing:.06em;text-transform:uppercase;margin-right:4px}
+
+/* Highlights row */
+.trends-highlights{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+@media(max-width:600px){.trends-highlights{grid-template-columns:1fr}}
+.trends-panel{background:var(--card);border:1px solid var(--brd);border-radius:12px;padding:14px 16px;
+  background:linear-gradient(135deg,rgba(255,255,255,.025),rgba(255,255,255,0))}
+.trends-panel-title{font-family:var(--font-head);font-size:13px;font-weight:800;
+  letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+
+/* Trend rows */
+.trend-row{display:grid;grid-template-columns:32px 44px 1fr 72px 72px 60px;
+  gap:8px;align-items:center;padding:7px 10px;
+  border-bottom:1px solid rgba(255,255,255,.04);transition:background .12s}
+.trend-row:hover{background:rgba(255,255,255,.03)}
+.trend-header-row{display:grid;grid-template-columns:32px 44px 1fr 72px 72px 60px;
+  gap:8px;align-items:center;padding:5px 10px 8px;
+  border-bottom:2px solid var(--brd);margin-bottom:0}
+.trend-header-row span{font-size:10px;font-family:var(--font-head);font-weight:800;
+  letter-spacing:.08em;text-transform:uppercase;color:#a0aac8;cursor:pointer}
+.trend-header-row span:hover{color:var(--text)}
+.trend-header-row span.active{color:var(--acc)}
+.trend-rank{font-family:var(--font-mono);font-size:11px;color:#666;text-align:right;font-weight:700}
+.trend-img-wrap{width:44px;height:62px;border-radius:5px;overflow:hidden;
+  background:var(--surf);flex-shrink:0}
+.trend-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
+.trend-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:7px;color:var(--dim);text-align:center}
+.trend-name{font-size:14px;font-weight:700;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trend-code{font-family:var(--font-mono);font-size:10px;color:#e87070;margin-top:1px}
+.trend-wr{font-family:var(--font-mono);font-size:14px;font-weight:700;text-align:right}
+.trend-delta{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.trend-pill{font-family:var(--font-mono);font-size:12px;font-weight:700;
+  padding:2px 8px;border-radius:20px;white-space:nowrap;display:inline-block}
+.trend-pill.up{background:rgba(0,232,122,.15);color:var(--g1);border:1px solid rgba(0,232,122,.3)}
+.trend-pill.down{background:rgba(239,68,68,.15);color:var(--r);border:1px solid rgba(239,68,68,.3)}
+.trend-pill.flat{background:rgba(255,255,255,.05);color:#666;border:1px solid #333}
+.trend-play-delta{font-family:var(--font-mono);font-size:10px;color:#888}
+.trend-score{font-family:var(--font-mono);font-size:13px;font-weight:700;text-align:right}
+
+/* Mini highlight card */
+.trend-mini{display:flex;align-items:center;gap:10px;padding:6px 0;
+  border-bottom:1px solid rgba(255,255,255,.04)}
+.trend-mini:last-child{border-bottom:none}
+.trend-mini-img{width:36px;height:50px;border-radius:4px;overflow:hidden;
+  background:var(--surf);flex-shrink:0}
+.trend-mini-img img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
+.trend-mini-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-size:6px;color:var(--dim)}
+.trend-mini-name{font-size:13px;font-weight:700;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.trend-mini-delta{font-family:var(--font-mono);font-size:13px;font-weight:800}
+
+.trends-loading{text-align:center;padding:60px;color:#666;font-size:14px}
+.trends-no-data{text-align:center;padding:40px;color:#555;font-size:14px;line-height:1.8}
+
 /* ═══════════════════════════════════════════════════════
    DECKBUSTER
    ═══════════════════════════════════════════════════════ */
@@ -761,6 +830,8 @@ let STATE='loading',DATA=null,META_UPDATED=null,HIDDEN=new Set();
 let TAB='rank',FILTER='all',SORT='wtdWR',PASTE_ERR='';
 let MY_DECK=null,OPP_DECK=null,EXCL_LOW=false;
 let BUSTED_DECKS=[],BUST_RESULTS=null;
+const TREND_CACHE={};
+let TREND_SORT='wr';
 try{MY_DECK=localStorage.getItem(LS_DECK)||null;}catch{}
 
 // ── Dataset URL helpers ───────────────────────────────────────────
@@ -1009,6 +1080,207 @@ function viewRank(){
   wrap.appendChild(note);
   return wrap;
 }
+
+
+// ── Meta Trends ───────────────────────────────────────────────────
+// Compare pairs: current period vs last-week equivalent
+const TREND_PAIRS=[
+  {label:'Standard (Private)',curr:'west_p',prev:'lw_p'},
+  {label:'Standard',          curr:'west',  prev:'lw'},
+];
+let TREND_PAIR_IDX=0;
+
+async function loadTrendDecks(datasetId){
+  if(TREND_CACHE[datasetId])return TREND_CACHE[datasetId];
+  try{
+    const r=await fetch(`./data/stats/${datasetId}.json`,{cache:'no-store'});
+    if(!r.ok)return null;
+    const j=await r.json();
+    const parsed=parseData(j);
+    TREND_CACHE[datasetId]=parsed.decks||null;
+    return parsed.decks||null;
+  }catch{return null;}
+}
+
+function calcTrends(currDecks,prevDecks){
+  if(!currDecks||!prevDecks)return[];
+  const prevMap=new Map(prevDecks.map(d=>[d.id,d]));
+  return currDecks
+    .filter(d=>prevMap.has(d.id)&&d.wtdWR!=null)
+    .map(d=>{
+      const p=prevMap.get(d.id);
+      const wrDelta=(d.wtdWR??0)-(p.wtdWR??0);
+      const playDelta=(d.play??0)-(p.play??0);
+      // Momentum score: WR trend weighted more heavily than play rate trend
+      const momentum=wrDelta*0.7+playDelta*0.3;
+      return{deck:d,wrDelta,playDelta,momentum,prevWR:p.wtdWR,prevPlay:p.play};
+    });
+}
+
+function mkTrendPill(delta,suffix='%'){
+  const pill=document.createElement('span');
+  pill.className='trend-pill '+(delta>0.2?'up':delta<-0.2?'down':'flat');
+  const abs=Math.abs(delta);
+  const arrow=delta>0.2?'↑':delta<-0.2?'↓':'→';
+  pill.textContent=arrow+' '+(delta>0?'+':'')+delta.toFixed(1)+suffix;
+  return pill;
+}
+
+function mkTrendImgWrap(id,cls='trend-img-wrap'){
+  const iw=document.createElement('div');iw.className=cls;
+  const im=document.createElement('img');im.alt='';
+  const ph=document.createElement('div');ph.className=cls+'-ph';ph.textContent=id;
+  iw.append(im,ph);applyCardImg(im,ph,id);
+  return iw;
+}
+
+function viewTrends(){
+  const wrap=document.createElement('div');
+
+  // Hero
+  const hero=document.createElement('div');hero.className='trends-hero';
+  const ht=document.createElement('div');ht.className='trends-hero-title';
+  ht.textContent='📈 META TRENDS';
+  const pair=TREND_PAIRS[TREND_PAIR_IDX];
+  const hs=document.createElement('div');hs.className='trends-hero-sub';
+  hs.textContent='Win rate & play rate movement across the meta';
+  const cl=document.createElement('div');cl.className='trends-compare-lbl';
+  cl.textContent=`Comparing: ${pair.label} (current) vs Last Week`;
+  hero.append(ht,hs,cl);wrap.appendChild(hero);
+
+  // Pair selector + sort bar
+  const ctrlRow=document.createElement('div');ctrlRow.className='trends-sort-bar';
+  const sl=document.createElement('span');sl.className='trends-sort-lbl';sl.textContent='Dataset:';
+  const pairSel=document.createElement('select');
+  pairSel.style.cssText='padding:6px 12px;font-size:13px;font-family:var(--font-body);font-weight:600;border:1px solid #3a4060;border-radius:8px;background:var(--card);color:var(--text)';
+  TREND_PAIRS.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.label;if(i===TREND_PAIR_IDX)o.selected=true;pairSel.appendChild(o);});
+  pairSel.onchange=()=>{TREND_PAIR_IDX=parseInt(pairSel.value);Object.keys(TREND_CACHE).forEach(k=>{/* keep cache */});render();};
+
+  const sl2=document.createElement('span');sl2.className='trends-sort-lbl';sl2.style.marginLeft='16px';sl2.textContent='Sort:';
+  const sortBtns=[['wr','WR Change'],['play','Play Rate Δ'],['momentum','Momentum'],['absolute','Current WR']];
+  sortBtns.forEach(([v,l])=>{
+    const b=document.createElement('button');b.className='sort-btn'+(TREND_SORT===v?' active':'');
+    b.textContent=l;b.onclick=()=>{TREND_SORT=v;render();};ctrlRow.appendChild(b);
+  });
+  ctrlRow.prepend(sl,pairSel,sl2);
+  wrap.appendChild(ctrlRow);
+
+  // Loading state
+  const loadDiv=document.createElement('div');loadDiv.className='trends-loading';
+  loadDiv.textContent='Loading trend data…';wrap.appendChild(loadDiv);
+
+  // Async: load both datasets and render
+  Promise.all([loadTrendDecks(pair.curr),loadTrendDecks(pair.prev)]).then(([curr,prev])=>{
+    loadDiv.remove();
+    if(!curr||!prev){
+      const nd=document.createElement('div');nd.className='trends-no-data';
+      nd.innerHTML='Trend data not available for this pair.<br>The Action needs to run at least twice to accumulate last-week data.<br><br>Try switching to a different dataset above.';
+      wrap.appendChild(nd);return;
+    }
+
+    const trends=calcTrends(curr,prev);
+    if(!trends.length){
+      const nd=document.createElement('div');nd.className='trends-no-data';
+      nd.textContent='No overlapping decks found between current and last-week datasets.';
+      wrap.appendChild(nd);return;
+    }
+
+    // Sort
+    const sorted=[...trends].sort((a,b)=>{
+      if(TREND_SORT==='wr')return b.wrDelta-a.wrDelta;
+      if(TREND_SORT==='play')return b.playDelta-a.playDelta;
+      if(TREND_SORT==='momentum')return b.momentum-a.momentum;
+      return(b.deck.wtdWR??0)-(a.deck.wtdWR??0);
+    });
+
+    // ── Highlights ───────────────────────────────────────────────
+    const hlRow=document.createElement('div');hlRow.className='trends-highlights';
+
+    function mkHighlightPanel(title,color,icon,items,deltaKey){
+      const panel=document.createElement('div');panel.className='trends-panel';
+      panel.style.borderLeftColor=color;panel.style.borderLeftWidth='3px';
+      const pt=document.createElement('div');pt.className='trends-panel-title';
+      pt.style.color=color;pt.textContent=icon+' '+title;
+      panel.appendChild(pt);
+      items.slice(0,5).forEach(t=>{
+        const row=document.createElement('div');row.className='trend-mini';
+        const iw=document.createElement('div');iw.className='trend-mini-img';
+        const im=document.createElement('img');im.alt='';
+        const ph=document.createElement('div');ph.className='trend-mini-img-ph';ph.textContent=t.deck.id;
+        iw.append(im,ph);applyCardImg(im,ph,t.deck.id);
+        const nm=document.createElement('div');nm.className='trend-mini-name';nm.textContent=t.deck.name;
+        const dv=document.createElement('div');dv.className='trend-mini-delta';
+        dv.style.color=color;
+        const d=t[deltaKey];
+        dv.textContent=(d>0?'+':'')+d.toFixed(1)+'%';
+        row.append(iw,nm,dv);panel.appendChild(row);
+      });
+      return panel;
+    }
+
+    const risers=[...trends].sort((a,b)=>b.wrDelta-a.wrDelta).filter(t=>t.wrDelta>0);
+    const fallers=[...trends].sort((a,b)=>a.wrDelta-b.wrDelta).filter(t=>t.wrDelta<0);
+    const trending=[...trends].sort((a,b)=>b.playDelta-a.playDelta).filter(t=>t.playDelta>0);
+    const fading=[...trends].sort((a,b)=>a.playDelta-b.playDelta).filter(t=>t.playDelta<0);
+
+    hlRow.appendChild(mkHighlightPanel('Rising WR','var(--g1)','🔥',risers,'wrDelta'));
+    hlRow.appendChild(mkHighlightPanel('Falling WR','var(--r)','❄️',fallers,'wrDelta'));
+    wrap.appendChild(hlRow);
+
+    const hlRow2=document.createElement('div');hlRow2.className='trends-highlights';
+    hlRow2.style.marginTop='0';
+    hlRow2.appendChild(mkHighlightPanel('Gaining Popularity','var(--g2)','📈',trending,'playDelta'));
+    hlRow2.appendChild(mkHighlightPanel('Losing Popularity','var(--o)','📉',fading,'playDelta'));
+    wrap.appendChild(hlRow2);
+
+    // ── Full table ────────────────────────────────────────────────
+    const tblWrap=document.createElement('div');
+    tblWrap.style.cssText='margin-top:20px;background:var(--card);border:1px solid var(--brd);border-radius:12px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.025),rgba(255,255,255,0))';
+
+    const hdrs=[['#',''],['',''],['[Code] Deck',''],['WR %','wr'],['WR Δ','wr'],['Play Δ','play']];
+    const hdrRow=document.createElement('div');hdrRow.className='trend-header-row';
+    hdrs.forEach(([t,s])=>{
+      const sp=document.createElement('span');sp.textContent=t;
+      if(s){sp.className=TREND_SORT===s?'active':'';sp.onclick=()=>{TREND_SORT=s;render();};}
+      hdrRow.appendChild(sp);
+    });
+    tblWrap.appendChild(hdrRow);
+
+    sorted.forEach((t,i)=>{
+      const row=document.createElement('div');row.className='trend-row';
+      const rn=document.createElement('div');rn.className='trend-rank';rn.textContent='#'+(i+1);
+      const iw=document.createElement('div');iw.className='trend-img-wrap';
+      const im=document.createElement('img');im.alt='';
+      const ph=document.createElement('div');ph.className='trend-img-ph';ph.textContent=t.deck.id;
+      iw.append(im,ph);applyCardImg(im,ph,t.deck.id);
+      const nc=document.createElement('div');nc.style.cssText='overflow:hidden';
+      const nm=document.createElement('div');nm.className='trend-name';nm.textContent=t.deck.name;
+      const cd=document.createElement('div');cd.className='trend-code';cd.textContent='['+t.deck.id+']';
+      nc.append(nm,cd);
+      const wr=document.createElement('div');wr.className='trend-wr';
+      wr.style.color=wrCol(t.deck.wtdWR);wr.textContent=fmt(t.deck.wtdWR);
+      const wrd=document.createElement('div');wrd.className='trend-delta';
+      wrd.appendChild(mkTrendPill(t.wrDelta));
+      const prevWrEl=document.createElement('div');prevWrEl.style.cssText='font-family:var(--font-mono);font-size:10px;color:#555';
+      prevWrEl.textContent='was '+fmt(t.prevWR);
+      wrd.appendChild(prevWrEl);
+      const pld=document.createElement('div');pld.className='trend-delta';
+      pld.appendChild(mkTrendPill(t.playDelta));
+      row.append(rn,iw,nc,wr,wrd,pld);
+      tblWrap.appendChild(row);
+    });
+    wrap.appendChild(tblWrap);
+
+    // Stats footer
+    const footer=document.createElement('div');
+    footer.style.cssText='font-family:var(--font-mono);font-size:11px;color:#555;text-align:right;margin-top:8px;padding:0 4px';
+    footer.textContent=`${trends.length} decks tracked · ${risers.length} rising · ${fallers.length} falling`;
+    wrap.appendChild(footer);
+  });
+
+  return wrap;
+}
+
 
 // ── Deckbuster algorithm ─────────────────────────────────────────
 function computeDeckbuster(oppIds){
@@ -1764,7 +2036,7 @@ function render(){
 
     // Tabs
     const tabs=document.createElement('div');tabs.className='tabs';
-    [['rank','Rankings'],['top25','Top 25 Decks'],['deckbuster','Deckbuster'],['advisor','Matchup Mastery'],['debug','Debug']].forEach(([id,l])=>{
+    [['rank','Rankings'],['top25','Top 25 Decks'],['trends','Meta Trends'],['deckbuster','Deckbuster'],['advisor','Matchup Mastery'],['debug','Debug']].forEach(([id,l])=>{
       const b=document.createElement('button');b.className='tab-btn'+(TAB===id?' active':'');b.textContent=l;
       b.onclick=()=>{TAB=id;render();};tabs.appendChild(b);
     });
@@ -1772,6 +2044,7 @@ function render(){
 
     if(TAB==='rank'){const sf=FILTER;FILTER='all';app.appendChild(viewRank());FILTER=sf;}
     else if(TAB==='top25'){const sf=FILTER;FILTER='top25';app.appendChild(viewRank());FILTER=sf;}
+    else if(TAB==='trends')app.appendChild(viewTrends());
     else if(TAB==='deckbuster')app.appendChild(viewDeckbuster());
     else if(TAB==='advisor')app.appendChild(viewAdvisor());
     else app.appendChild(viewDebug());
