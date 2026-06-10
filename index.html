@@ -1017,9 +1017,6 @@ function computeDeckbuster(oppIds){
   const results=[];
 
   DATA.decks.forEach(deck=>{
-    // Skip decks that are one of the selected opponents
-    if(oppIds.includes(deck.id))return;
-
     const matchupData=oppIds.map(oppId=>{
       const mu=deck.mu?.[oppId];
       if(!mu||mu.wr==null)return{oppId,wr:null,games:0,f:null,s:null,hasData:false};
