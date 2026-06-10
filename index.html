@@ -642,7 +642,7 @@ function parseMuEntry(m){
     opp,wr,
     f:asPct(fld(m,'first_win_rate','firstWinRate','firstWR','first')),
     s:asPct(fld(m,'second_win_rate','secondWinRate','secondWR','second')),
-    n:parseFloat(fld(m,'number_of_matches','total_matches','total','games','count','n'))||null,
+    n:parseFloat(fld(m,'number_of_matches','total_games','total_matches','total','games','count','n','game_count','numGames'))||null,
   };
 }
 
@@ -1022,8 +1022,10 @@ function computeDeckbuster(oppIds){
 
     const matchupData=oppIds.map(oppId=>{
       const mu=deck.mu?.[oppId];
-      if(!mu||!mu.n||mu.n<MIN_GAMES)return{oppId,wr:null,games:0,f:null,s:null,hasData:false};
-      return{oppId,wr:mu.wr,games:mu.n,f:mu.f,s:mu.s,hasData:true};
+      if(!mu||mu.wr==null)return{oppId,wr:null,games:0,f:null,s:null,hasData:false};
+      const gamesN=mu.n||MIN_GAMES; // fall back to MIN_GAMES as weight if count unknown
+      if(gamesN<MIN_GAMES)return{oppId,wr:null,games:0,f:null,s:null,hasData:false};
+      return{oppId,wr:mu.wr,games:gamesN,f:mu.f,s:mu.s,hasData:true};
     });
 
     const withData=matchupData.filter(m=>m.hasData);
