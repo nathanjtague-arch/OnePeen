@@ -37,6 +37,91 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .hdr-badge{background:var(--card);border:1px solid #3a4060;border-radius:20px;padding:5px 14px;font-size:12px;color:#b0bbd8;font-family:var(--font-mono);font-weight:600}
 .hdr-ds{width:auto!important;min-width:160px;font-size:12px!important;padding:5px 10px!important}
 
+
+/* ═══════════════════════════════════════════════════════
+   DECKBUSTER
+   ═══════════════════════════════════════════════════════ */
+.db-hero{text-align:center;padding:24px 0 16px}
+.db-hero-title{font-family:var(--font-head);font-size:36px;font-weight:900;
+  color:var(--acc);letter-spacing:.04em;
+  text-shadow:0 0 30px rgba(224,27,27,.5),0 0 60px rgba(224,27,27,.2)}
+.db-hero-sub{font-size:14px;color:#9aa8cc;margin-top:6px;font-weight:600}
+
+.db-selector{display:flex;gap:8px;margin:16px 0;align-items:center;flex-wrap:wrap}
+.db-selector select{flex:1;min-width:200px;padding:10px 14px;font-size:14px;
+  font-family:var(--font-body);font-weight:600;
+  border:1px solid #3a4060;border-radius:8px;background:var(--card);color:var(--text)}
+.db-add-btn{padding:10px 20px;font-size:14px;font-weight:700;font-family:var(--font-head);
+  background:rgba(224,27,27,.15);border:1px solid rgba(224,27,27,.4);border-radius:8px;
+  color:var(--acc);cursor:pointer;transition:all .15s;letter-spacing:.04em;white-space:nowrap}
+.db-add-btn:hover{background:rgba(224,27,27,.25);box-shadow:0 0 16px rgba(224,27,27,.3)}
+
+.db-selected{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0;min-height:60px;
+  background:rgba(255,255,255,.02);border:1px dashed #2a3050;border-radius:10px;
+  padding:12px;align-items:center}
+.db-empty-hint{color:#555;font-size:13px;font-style:italic;margin:auto}
+.db-opp-card{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;
+  cursor:pointer}
+.db-opp-img{width:56px;height:78px;border-radius:6px;overflow:hidden;
+  border:2px solid rgba(224,27,27,.4);transition:all .15s}
+.db-opp-img img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
+.db-opp-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:8px;color:var(--dim);text-align:center;padding:2px}
+.db-opp-remove{position:absolute;top:-6px;right:-6px;width:18px;height:18px;
+  border-radius:50%;background:var(--r);color:#fff;border:none;cursor:pointer;
+  font-size:11px;font-weight:900;line-height:18px;text-align:center;display:none;z-index:5}
+.db-opp-card:hover .db-opp-remove{display:block}
+.db-opp-card:hover .db-opp-img{border-color:var(--r)}
+.db-opp-name{font-size:9px;color:#8a93b0;font-family:var(--font-mono);max-width:56px;
+  text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.db-bust-row{display:flex;gap:10px;margin:16px 0;align-items:center;flex-wrap:wrap}
+.db-bust-btn{flex:1;padding:16px 24px;font-size:20px;font-weight:900;
+  font-family:var(--font-head);letter-spacing:.06em;
+  background:linear-gradient(135deg,rgba(224,27,27,.2),rgba(200,10,10,.3));
+  border:2px solid rgba(224,27,27,.6);border-radius:12px;color:#fff;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 0 24px rgba(224,27,27,.25),inset 0 1px 0 rgba(255,255,255,.1)}
+.db-bust-btn:hover{background:linear-gradient(135deg,rgba(224,27,27,.35),rgba(200,10,10,.45));
+  box-shadow:0 0 40px rgba(224,27,27,.5),inset 0 1px 0 rgba(255,255,255,.15);
+  transform:translateY(-2px)}
+.db-bust-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.db-clear-btn{padding:10px 16px;font-size:13px;font-weight:600;
+  background:transparent;border:1px solid #3a4060;border-radius:8px;
+  color:#8a93b0;cursor:pointer;transition:all .15s}
+.db-clear-btn:hover{border-color:#666;color:#ccc}
+
+.db-results{margin-top:20px}
+.db-result-card{background:var(--card);border:1px solid var(--brd);border-radius:12px;
+  padding:16px 20px;margin-bottom:12px;
+  border-left:4px solid;transition:all .2s;
+  background:linear-gradient(135deg,rgba(255,255,255,.025),rgba(255,255,255,0))}
+.db-result-card:hover{box-shadow:0 8px 32px rgba(0,0,0,.4);transform:translateY(-1px)}
+.db-result-header{display:flex;gap:16px;align-items:flex-start;margin-bottom:14px}
+.db-result-img-wrap{width:70px;height:98px;border-radius:8px;overflow:hidden;
+  flex-shrink:0;border:2px solid var(--brd)}
+.db-result-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
+.db-result-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:8px;color:var(--dim);text-align:center;padding:4px}
+.db-result-meta{flex:1}
+.db-result-rank{font-family:var(--font-mono);font-size:11px;color:var(--dim);margin-bottom:4px;font-weight:600}
+.db-result-name{font-size:20px;font-weight:800;font-family:var(--font-body);color:var(--text);margin-bottom:2px}
+.db-result-code{font-family:var(--font-mono);font-size:11px;color:#e87070;margin-bottom:10px}
+.db-result-score{font-family:var(--font-mono);font-size:28px;font-weight:700}
+.db-result-score-lbl{font-size:11px;color:#8a93b0;margin-top:2px;font-weight:600}
+.db-mu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:12px}
+.db-mu-row{background:rgba(255,255,255,.03);border-radius:7px;padding:8px 10px;
+  display:flex;align-items:center;gap:8px}
+.db-mu-img{width:28px;height:39px;border-radius:3px;overflow:hidden;flex-shrink:0;background:var(--surf)}
+.db-mu-img img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
+.db-mu-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:6px;color:var(--dim)}
+.db-mu-info{flex:1;min-width:0}
+.db-mu-name{font-size:9px;color:#9aa8cc;font-family:var(--font-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.db-mu-wr{font-family:var(--font-mono);font-size:14px;font-weight:700}
+.db-mu-games{font-size:9px;color:#666;font-family:var(--font-mono)}
+.db-coverage{font-size:12px;color:#8a93b0;margin-top:8px;font-family:var(--font-mono);font-weight:600}
+.db-no-data{text-align:center;padding:40px;color:#555;font-size:14px}
+
 /* ═══════════════════════════════════════════════════════════════
    VISUAL THEME — CDA clean + Wispr ambient
    ═══════════════════════════════════════════════════════════════ */
@@ -675,6 +760,7 @@ let DATASET_ID=(()=>{try{return localStorage.getItem(LS_DATASET)||'op16';}catch{
 let STATE='loading',DATA=null,META_UPDATED=null,HIDDEN=new Set();
 let TAB='rank',FILTER='all',SORT='wtdWR',PASTE_ERR='';
 let MY_DECK=null,OPP_DECK=null,EXCL_LOW=false;
+let BUSTED_DECKS=[],BUST_RESULTS=null;
 try{MY_DECK=localStorage.getItem(LS_DECK)||null;}catch{}
 
 // ── Dataset URL helpers ───────────────────────────────────────────
@@ -921,6 +1007,187 @@ function viewRank(){
   const note=document.createElement('div');note.className='note';
   note.textContent='Sort by any metric above · click any row to toggle · hover for detail · border = tier';
   wrap.appendChild(note);
+  return wrap;
+}
+
+// ── Deckbuster algorithm ─────────────────────────────────────────
+function computeDeckbuster(oppIds){
+  if(!DATA||!oppIds.length)return[];
+  const MIN_GAMES=10;
+  const results=[];
+
+  DATA.decks.forEach(deck=>{
+    // Skip decks that are one of the selected opponents
+    if(oppIds.includes(deck.id))return;
+
+    const matchupData=oppIds.map(oppId=>{
+      const mu=deck.mu?.[oppId];
+      if(!mu||mu.games<MIN_GAMES)return{oppId,wr:null,games:0,f:null,s:null,hasData:false};
+      return{oppId,wr:mu.wr,games:mu.games,f:mu.f,s:mu.s,hasData:true};
+    });
+
+    const withData=matchupData.filter(m=>m.hasData);
+    if(!withData.length)return; // no data at all
+
+    // Weighted average WR (by games in each matchup)
+    const totalGames=withData.reduce((s,m)=>s+m.games,0);
+    const weightedWR=withData.reduce((s,m)=>s+m.wr*m.games,0)/totalGames;
+
+    // Coverage factor: penalise missing matchup data
+    const coverage=withData.length/oppIds.length;
+
+    // Final score: weighted WR blended with overall WR, scaled by coverage
+    // 80% matchup performance, 20% overall meta standing
+    const score=(weightedWR*0.8+deck.wtdWR*0.2)*coverage;
+
+    results.push({deck,weightedWR,coverage,score,totalGames,matchupData,overallWR:deck.wtdWR});
+  });
+
+  return results.sort((a,b)=>b.score-a.score).slice(0,5);
+}
+
+// ── Deckbuster view ───────────────────────────────────────────────
+function viewDeckbuster(){
+  const wrap=document.createElement('div');
+  if(!DATA){const m=document.createElement('div');m.className='db-no-data';m.textContent='Load data first.';wrap.appendChild(m);return wrap;}
+
+  // Hero header
+  const hero=document.createElement('div');hero.className='db-hero';
+  const ht=document.createElement('div');ht.className='db-hero-title';ht.textContent='💥 DECKBUSTER';
+  const hs=document.createElement('div');hs.className='db-hero-sub';
+  hs.textContent='Select the decks you are likely to face. Find the optimal counter.';
+  hero.append(ht,hs);wrap.appendChild(hero);
+
+  // Opponent selector
+  const selRow=document.createElement('div');selRow.className='db-selector';
+  const sel=document.createElement('select');
+  const blank=document.createElement('option');blank.value='';blank.textContent='— Add an opponent deck —';
+  sel.appendChild(blank);
+  const byPlay=[...DATA.decks].sort((a,b)=>(b.play||0)-(a.play||0));
+  byPlay.forEach(d=>{
+    if(BUSTED_DECKS.includes(d.id))return; // already selected
+    const o=document.createElement('option');o.value=d.id;
+    o.textContent=`[${d.id}] ${d.name}  (${fmt(d.play,1)} play rate)`;
+    sel.appendChild(o);
+  });
+  const addBtn=document.createElement('button');addBtn.className='db-add-btn';addBtn.textContent='+ Add';
+  addBtn.onclick=()=>{
+    const v=sel.value;if(!v||BUSTED_DECKS.includes(v))return;
+    BUSTED_DECKS=[...BUSTED_DECKS,v];BUST_RESULTS=null;render();
+  };
+  selRow.append(sel,addBtn);wrap.appendChild(selRow);
+
+  // Selected opponents visual list
+  const selLabel=document.createElement('div');
+  selLabel.style.cssText='font-size:12px;font-weight:700;color:#a0aac8;font-family:var(--font-head);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px';
+  selLabel.textContent='Selected Opponents';
+  wrap.appendChild(selLabel);
+
+  const board=document.createElement('div');board.className='db-selected';
+  if(!BUSTED_DECKS.length){
+    const hint=document.createElement('div');hint.className='db-empty-hint';
+    hint.textContent='Add decks above to build your hit list...';board.appendChild(hint);
+  } else {
+    BUSTED_DECKS.forEach(id=>{
+      const deck=DATA.decks.find(d=>d.id===id);
+      const card=document.createElement('div');card.className='db-opp-card';
+      const iw=document.createElement('div');iw.className='db-opp-img';
+      const im=document.createElement('img');im.alt='';
+      const ph=document.createElement('div');ph.className='db-opp-img-ph';ph.textContent=id;
+      iw.append(im,ph);applyCardImg(im,ph,id);
+      const rm=document.createElement('button');rm.className='db-opp-remove';rm.textContent='×';
+      rm.onclick=()=>{BUSTED_DECKS=BUSTED_DECKS.filter(x=>x!==id);BUST_RESULTS=null;render();};
+      const nm=document.createElement('div');nm.className='db-opp-name';nm.textContent=deck?.name||id;
+      card.append(iw,rm,nm);board.appendChild(card);
+    });
+  }
+  wrap.appendChild(board);
+
+  // Action buttons
+  const btnsRow=document.createElement('div');btnsRow.className='db-bust-row';
+  const bustBtn=document.createElement('button');bustBtn.className='db-bust-btn';
+  bustBtn.textContent='💥 BUST THESE DECKS!';
+  bustBtn.disabled=!BUSTED_DECKS.length;
+  bustBtn.onclick=()=>{BUST_RESULTS=computeDeckbuster(BUSTED_DECKS);render();};
+  const clearBtn=document.createElement('button');clearBtn.className='db-clear-btn';
+  clearBtn.textContent='✕ Clear all';
+  clearBtn.onclick=()=>{BUSTED_DECKS=[];BUST_RESULTS=null;render();};
+  btnsRow.append(bustBtn,clearBtn);wrap.appendChild(btnsRow);
+
+  // Results
+  if(BUST_RESULTS){
+    const resSection=document.createElement('div');resSection.className='db-results';
+    if(!BUST_RESULTS.length){
+      const nd=document.createElement('div');nd.className='db-no-data';
+      nd.textContent='No decks found with sufficient matchup data against all selected opponents. Try fewer opponents or switch dataset.';
+      resSection.appendChild(nd);
+    } else {
+      const rlbl=document.createElement('div');
+      rlbl.style.cssText='font-size:12px;font-weight:700;color:#a0aac8;font-family:var(--font-head);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px';
+      const oppNames=BUSTED_DECKS.map(id=>DATA.decks.find(d=>d.id===id)?.name||id).join(', ');
+      rlbl.textContent=`Best counters vs: ${oppNames}`;
+      resSection.appendChild(rlbl);
+
+      BUST_RESULTS.forEach((r,idx)=>{
+        const card=document.createElement('div');card.className='db-result-card';
+        const tierCol=r.weightedWR>=60?'var(--g1)':r.weightedWR>=50?'var(--g2)':r.weightedWR>=45?'var(--y)':'var(--r)';
+        card.style.borderLeftColor=tierCol;
+
+        // Header
+        const hdr=document.createElement('div');hdr.className='db-result-header';
+        const iw=document.createElement('div');iw.className='db-result-img-wrap';
+        iw.style.borderColor=tierCol;
+        const im=document.createElement('img');im.alt='';
+        const ph=document.createElement('div');ph.className='db-result-img-ph';
+        iw.append(im,ph);applyCardImg(im,ph,r.deck.id);
+
+        const meta=document.createElement('div');meta.className='db-result-meta';
+        const rank=document.createElement('div');rank.className='db-result-rank';
+        rank.textContent=idx===0?'🏆 TOP COUNTER':'#'+(idx+1)+' COUNTER';
+        const name=document.createElement('div');name.className='db-result-name';name.textContent=r.deck.name;
+        const code=document.createElement('div');code.className='db-result-code';code.textContent='['+r.deck.id+']';
+
+        const scoreWrap=document.createElement('div');
+        const score=document.createElement('div');score.className='db-result-score';
+        score.style.color=tierCol;score.textContent=r.weightedWR.toFixed(1)+'%';
+        const scoreLbl=document.createElement('div');scoreLbl.className='db-result-score-lbl';
+        scoreLbl.textContent='combined WR vs selected opponents';
+        scoreWrap.append(score,scoreLbl);
+
+        meta.append(rank,name,code,scoreWrap);
+        hdr.append(iw,meta);card.appendChild(hdr);
+
+        // Per-opponent breakdown
+        const muGrid=document.createElement('div');muGrid.className='db-mu-grid';
+        r.matchupData.forEach(mu=>{
+          const oppDeck=DATA.decks.find(d=>d.id===mu.oppId);
+          const row=document.createElement('div');row.className='db-mu-row';
+          const miw=document.createElement('div');miw.className='db-mu-img';
+          const mim=document.createElement('img');mim.alt='';
+          const mph=document.createElement('div');mph.className='db-mu-img-ph';mph.textContent=mu.oppId;
+          miw.append(mim,mph);applyCardImg(mim,mph,mu.oppId);
+          const info=document.createElement('div');info.className='db-mu-info';
+          const mname=document.createElement('div');mname.className='db-mu-name';
+          mname.textContent=oppDeck?.name||mu.oppId;
+          const mwr=document.createElement('div');mwr.className='db-mu-wr';
+          if(!mu.hasData){mwr.textContent='—';mwr.style.color='#555';}
+          else{mwr.textContent=(mu.wr*100).toFixed(1)+'%';mwr.style.color=wrCol(mu.wr*100);}
+          const mgames=document.createElement('div');mgames.className='db-mu-games';
+          mgames.textContent=mu.hasData?mu.games+' games':'no data';
+          info.append(mname,mwr,mgames);
+          row.append(miw,info);muGrid.appendChild(row);
+        });
+        card.appendChild(muGrid);
+
+        // Coverage + overall WR note
+        const cov=document.createElement('div');cov.className='db-coverage';
+        cov.textContent=`Coverage: ${r.matchupData.filter(m=>m.hasData).length}/${BUSTED_DECKS.length} matchups · Overall WR: ${fmt(r.overallWR)} · ${r.totalGames.toLocaleString()} games analysed`;
+        card.appendChild(cov);
+        resSection.appendChild(card);
+      });
+    }
+    wrap.appendChild(resSection);
+  }
   return wrap;
 }
 
@@ -1496,7 +1763,7 @@ function render(){
 
     // Tabs
     const tabs=document.createElement('div');tabs.className='tabs';
-    [['rank','Rankings'],['top25','Top 25 Decks'],['advisor','Matchup Mastery'],['debug','Debug']].forEach(([id,l])=>{
+    [['rank','Rankings'],['top25','Top 25 Decks'],['deckbuster','Deckbuster'],['advisor','Matchup Mastery'],['debug','Debug']].forEach(([id,l])=>{
       const b=document.createElement('button');b.className='tab-btn'+(TAB===id?' active':'');b.textContent=l;
       b.onclick=()=>{TAB=id;render();};tabs.appendChild(b);
     });
@@ -1504,6 +1771,7 @@ function render(){
 
     if(TAB==='rank'){const sf=FILTER;FILTER='all';app.appendChild(viewRank());FILTER=sf;}
     else if(TAB==='top25'){const sf=FILTER;FILTER='top25';app.appendChild(viewRank());FILTER=sf;}
+    else if(TAB==='deckbuster')app.appendChild(viewDeckbuster());
     else if(TAB==='advisor')app.appendChild(viewAdvisor());
     else app.appendChild(viewDebug());
   } else if(STATE==='debug'&&DATA){
