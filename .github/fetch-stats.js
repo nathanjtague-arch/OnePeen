@@ -11,6 +11,7 @@ const COOKIE_STR = process.env.CARDKAIZOKU_COOKIES || '';
 
 const DATASETS = [
   { id: 'op16',    period: 'op16'    },
+  { id: 'op16_lw', period: 'op16_lw' }, // OP16 last week — needed for Meta Trends
   { id: 'west_p',  period: 'west_p'  },
   { id: 'west',    period: 'west'    },
   { id: 'lw_p',    period: 'lw_p'    },
