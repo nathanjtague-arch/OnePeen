@@ -1022,8 +1022,8 @@ function computeDeckbuster(oppIds){
 
     const matchupData=oppIds.map(oppId=>{
       const mu=deck.mu?.[oppId];
-      if(!mu||mu.games<MIN_GAMES)return{oppId,wr:null,games:0,f:null,s:null,hasData:false};
-      return{oppId,wr:mu.wr,games:mu.games,f:mu.f,s:mu.s,hasData:true};
+      if(!mu||!mu.n||mu.n<MIN_GAMES)return{oppId,wr:null,games:0,f:null,s:null,hasData:false};
+      return{oppId,wr:mu.wr,games:mu.n,f:mu.f,s:mu.s,hasData:true};
     });
 
     const withData=matchupData.filter(m=>m.hasData);
@@ -1171,7 +1171,7 @@ function viewDeckbuster(){
           mname.textContent=oppDeck?.name||mu.oppId;
           const mwr=document.createElement('div');mwr.className='db-mu-wr';
           if(!mu.hasData){mwr.textContent='—';mwr.style.color='#555';}
-          else{mwr.textContent=(mu.wr*100).toFixed(1)+'%';mwr.style.color=wrCol(mu.wr*100);}
+          else{mwr.textContent=mu.wr.toFixed(1)+'%';mwr.style.color=wrCol(mu.wr);}
           const mgames=document.createElement('div');mgames.className='db-mu-games';
           mgames.textContent=mu.hasData?mu.games+' games':'no data';
           info.append(mname,mwr,mgames);
