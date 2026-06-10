@@ -1018,14 +1018,16 @@ function computeDeckbuster(oppIds){
 
   DATA.decks.forEach(deck=>{
     const matchupData=oppIds.map(oppId=>{
+      const isMirror=oppId===deck.id;
       const mu=deck.mu?.[oppId];
-      if(!mu||mu.wr==null)return{oppId,wr:null,games:0,f:null,s:null,hasData:false};
-      const gamesN=mu.n||MIN_GAMES; // fall back to MIN_GAMES as weight if count unknown
-      if(gamesN<MIN_GAMES)return{oppId,wr:null,games:0,f:null,s:null,hasData:false};
-      return{oppId,wr:mu.wr,games:gamesN,f:mu.f,s:mu.s,hasData:true};
+      if(!mu||mu.wr==null)return{oppId,wr:null,games:0,f:null,s:null,hasData:false,isMirror};
+      const gamesN=mu.n||MIN_GAMES;
+      if(gamesN<MIN_GAMES)return{oppId,wr:null,games:0,f:null,s:null,hasData:false,isMirror};
+      return{oppId,wr:mu.wr,games:gamesN,f:mu.f,s:mu.s,hasData:true,isMirror};
     });
 
-    const withData=matchupData.filter(m=>m.hasData);
+    // Exclude mirror matches from the weighted average — they reflect skill not structural advantage
+    const withData=matchupData.filter(m=>m.hasData&&!m.isMirror);
     if(!withData.length)return; // no data at all
 
     // Weighted average WR (by games in each matchup)
@@ -1167,12 +1169,12 @@ function viewDeckbuster(){
           miw.append(mim,mph);applyCardImg(mim,mph,mu.oppId);
           const info=document.createElement('div');info.className='db-mu-info';
           const mname=document.createElement('div');mname.className='db-mu-name';
-          mname.textContent=oppDeck?.name||mu.oppId;
+          mname.textContent=(mu.isMirror?'🪞 ':''+(oppDeck?.name||mu.oppId));
           const mwr=document.createElement('div');mwr.className='db-mu-wr';
           if(!mu.hasData){mwr.textContent='—';mwr.style.color='#555';}
           else{mwr.textContent=mu.wr.toFixed(1)+'%';mwr.style.color=wrCol(mu.wr);}
           const mgames=document.createElement('div');mgames.className='db-mu-games';
-          mgames.textContent=mu.hasData?mu.games+' games':'no data';
+          mgames.textContent=mu.hasData?(mu.games+' games'+(mu.isMirror?' · not in score':'')):'no data';
           info.append(mname,mwr,mgames);
           row.append(miw,info);muGrid.appendChild(row);
         });
