@@ -143,8 +143,8 @@ async function nodeFetch(url) {
 
   // ── Leader portrait images (via Playwright — needs cf_clearance for cardkaizoku CDN) ──
   if (primaryData) {
-    const leaders = [...primaryData].sort((a,b) => (b.play_rate||0)-(a.play_rate||0)).slice(0, 60);
-    console.log(`\nDownloading leader portraits for top ${leaders.length} decks...`);
+    const leaders = [...primaryData].sort((a,b) => (b.play_rate||0)-(a.play_rate||0)); // no limit — cache all leaders
+    console.log(`\nDownloading leader portraits for all ${leaders.length} decks...`);
     let downloaded = 0, skipped = 0, failed = 0;
 
     for (const entry of leaders) {
