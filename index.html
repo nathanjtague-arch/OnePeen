@@ -624,6 +624,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .fav-btn.starred{color:#f5c518}
 .fav-group-label{font-size:9px;color:var(--dim);font-family:var(--font-head);letter-spacing:.1em;text-transform:uppercase;padding:4px 8px 2px;border-bottom:1px solid var(--brd);margin-bottom:2px}
 .deck-sel-wrap{display:flex;align-items:center;gap:6px;width:100%}
+.deck-search-input:focus{border-color:rgba(224,27,27,.5)!important}
 .low-badge{font-size:9px;background:rgba(255,140,34,.15);color:#ff8c22;border:1px solid rgba(255,140,34,.3);border-radius:4px;padding:1px 5px;font-family:var(--font-mono);flex-shrink:0;white-space:nowrap}
 .ctx-banner{border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ctx-label{font-family:var(--font-head);font-size:14px;font-weight:700;letter-spacing:.05em}
@@ -812,19 +813,20 @@ function loadCache(){
 // ── App state ────────────────────────────────────────────────────
 // Dataset configuration — add new entries here when cardkaizoku adds new periods
 const DATASETS=[
-  {id:'op16',    label:'OP16',           prefix:'stats_op16_'   },
-  {id:'west_p',  label:'Standard+',      prefix:'stats_west_p_' },
-  {id:'west',    label:'Standard',       prefix:'stats_west_'   },
-  {id:'lw_p',    label:'Last Week+',     prefix:'stats_lw_p_'   },
-  {id:'lw',      label:'Last Week',      prefix:'stats_lw_'     },
-  {id:'exreg_p', label:'Extra Reg+',     prefix:'stats_exreg_p_'},
-  {id:'exreg',   label:'Extra Reg',      prefix:'stats_exreg_'  },
+  {id:'west_p',  label:'Standard (Full)', prefix:'stats_west_p_' },
+  {id:'west',    label:'Standard',        prefix:'stats_west_'   },
+  {id:'lw_p',    label:'Standard Last Week (Full)', prefix:'stats_lw_p_' },
+  {id:'lw',      label:'Standard Last Week',        prefix:'stats_lw_'   },
+  {id:'exreg_p', label:'Extra Reg (Full)',prefix:'stats_exreg_p_'},
+  {id:'exreg',   label:'Extra Reg',       prefix:'stats_exreg_'  },
+  {id:'op17',    label:'OP17 (Pending)',  prefix:'stats_op17_'   },
+  {id:'op16',    label:'OP16 (Legacy)',   prefix:'stats_op16_'   },
 ];
 const LS_DATASET='optcg_dataset';
 const LS_FAVS='optcg_favs';
 let FAVS=new Set(JSON.parse(localStorage.getItem(LS_FAVS)||'[]'));
 function saveFavs(){try{localStorage.setItem(LS_FAVS,JSON.stringify([...FAVS]));}catch{}}
-let DATASET_ID=(()=>{try{return localStorage.getItem(LS_DATASET)||'op16';}catch{return 'op16';}})();
+let DATASET_ID=(()=>{try{return localStorage.getItem(LS_DATASET)||'west_p';}catch{return 'west_p';}})();
 
 let STATE='loading',DATA=null,META_UPDATED=null,HIDDEN=new Set();
 let TAB='rank',FILTER='all',SORT='wtdWR',PASTE_ERR='';
@@ -998,7 +1000,7 @@ function viewRank(){
   const sortFn=(a,b)=>{
     if(SORT==='rawWR')return(b.rawWR??0)-(a.rawWR??0);
     if(SORT==='play')return(b.play??0)-(a.play??0);
-    if(SORT==='games')return(b.games??0)-(a.games??0);
+    if(SORT==='games'){const aw=Math.round(((a.rawWR??0)/100)*(a.games??0)),bw=Math.round(((b.rawWR??0)/100)*(b.games??0));return bw-aw;}
     // default: wtdWR (with adj if available)
     const av=adjMap[a.id]??a.wtdWR??0,bv=adjMap[b.id]??b.wtdWR??0;return bv-av;
   };
@@ -1066,7 +1068,7 @@ function viewRank(){
     const cd=document.createElement('div');cd.className='rank-code';cd.textContent='['+d.id+']';
     nc.appendChild(nmRow);nc.appendChild(cd);
     // Primary sort column value
-    const sortVal=SORT==='rawWR'?fmt(d.rawWR):SORT==='play'?fmt(d.play):SORT==='games'?(d.games!=null?d.games.toLocaleString():'-'):fmt(dWR);
+    const sortVal=SORT==='rawWR'?fmt(d.rawWR):SORT==='play'?fmt(d.play):SORT==='games'?(d.games!=null?Math.round(((d.rawWR??0)/100)*(d.games??0)).toLocaleString():'-'):fmt(dWR);
     const sortCol=SORT==='wtdWR'?wrCol(dWR):SORT==='rawWR'?wrCol(d.rawWR):'var(--text)';
     const wr=document.createElement('div');wr.className='rank-wr';
     wr.style.color=sortCol;wr.textContent=sortVal;
@@ -1085,9 +1087,10 @@ function viewRank(){
 // ── Meta Trends ───────────────────────────────────────────────────
 // Compare pairs: current period vs last-week equivalent
 const TREND_PAIRS=[
-  {label:'OP16',              curr:'op16',  prev:'op16_lw'},
-  {label:'Standard (Private)',curr:'west_p',prev:'lw_p'},
+  {label:'Standard (Full)',   curr:'west_p',prev:'lw_p'},
   {label:'Standard',          curr:'west',  prev:'lw'},
+  {label:'Extra Reg (Full)',  curr:'exreg_p',prev:'exreg_p'},
+  {label:'OP16 (Legacy)',     curr:'op16',  prev:'op16_lw'},
 ];
 let TREND_PAIR_IDX=0;
 
@@ -1478,56 +1481,62 @@ function viewAdvisor(){
   function mkDropdown(lbl,current,onchange,withFavs=false){
     const dw=document.createElement('div');
     const dl=document.createElement('div');dl.className='drop-label';dl.textContent=lbl;
+
+    // Search input
+    const searchInput=document.createElement('input');
+    searchInput.type='text';searchInput.placeholder='Search leaders...';
+    searchInput.style.cssText='width:100%;padding:7px 12px;font-size:13px;font-family:var(--font-body);font-weight:500;border:1px solid #3a4060;border-radius:8px;background:var(--surf);color:var(--text);margin-bottom:6px;outline:none;transition:border-color .15s';
+    searchInput.onfocus=()=>searchInput.style.borderColor='rgba(224,27,27,.5)';
+    searchInput.onblur=()=>searchInput.style.borderColor='#3a4060';
+
     const selRow=document.createElement('div');selRow.className='deck-sel-wrap';
     const sel=document.createElement('select');sel.style.flex='1';
     sel.onchange=e=>onchange(e.target.value||null);
+
+    // Store all deck options for filtering
+    const allOptions=[];
     const blank=document.createElement('option');blank.value='';blank.textContent='— Select deck —';
-    sel.appendChild(blank);
-    if(withFavs){
-      const favDecks=byPlay.filter(d=>FAVS.has(d.id));
-      const restDecks=byPlay.filter(d=>!FAVS.has(d.id));
-      if(favDecks.length>0){
-        const grp=document.createElement('optgroup');grp.label='★ Favourites';
-        favDecks.forEach(d=>{
-          const opt=document.createElement('option');opt.value=d.id;
-          opt.textContent=`★ [${d.id}] ${d.name}  (${fmt(d.play,1)} play rate)`;
-          if(d.id===current)opt.selected=true;grp.appendChild(opt);
-        });
-        sel.appendChild(grp);
-        const grp2=document.createElement('optgroup');grp2.label='All Decks';
-        restDecks.forEach(d=>{
-          const opt=document.createElement('option');opt.value=d.id;
-          opt.textContent=`[${d.id}] ${d.name}  (${fmt(d.play,1)} play rate)`;
-          if(d.id===current)opt.selected=true;grp2.appendChild(opt);
-        });
+    allOptions.push(blank);
+
+    function buildOptions(filter=''){
+      const f=filter.toLowerCase();
+      sel.innerHTML='';
+      // Always add blank
+      const b=document.createElement('option');b.value='';b.textContent='— Select deck —';
+      if(!current)b.selected=true;
+      sel.appendChild(b);
+      if(withFavs){
+        const favDecks=byPlay.filter(d=>FAVS.has(d.id)&&(!f||d.name.toLowerCase().includes(f)||d.id.toLowerCase().includes(f)));
+        const restDecks=byPlay.filter(d=>!FAVS.has(d.id)&&(!f||d.name.toLowerCase().includes(f)||d.id.toLowerCase().includes(f)));
+        if(favDecks.length>0){
+          const grp=document.createElement('optgroup');grp.label='★ Favourites';
+          favDecks.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=`★ [${d.id}] ${d.name}  (${fmt(d.play,1)} play rate)`;if(d.id===current)o.selected=true;grp.appendChild(o);});
+          sel.appendChild(grp);
+        }
+        const grp2=document.createElement('optgroup');grp2.label=f?'Matching Decks':'All Decks';
+        restDecks.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=`[${d.id}] ${d.name}  (${fmt(d.play,1)} play rate)`;if(d.id===current)o.selected=true;grp2.appendChild(o);});
         sel.appendChild(grp2);
       } else {
-        byPlay.forEach(d=>{
-          const opt=document.createElement('option');opt.value=d.id;
-          opt.textContent=`[${d.id}] ${d.name}  (${fmt(d.play,1)} play rate)`;
-          if(d.id===current)opt.selected=true;sel.appendChild(opt);
-        });
+        byPlay.filter(d=>!f||d.name.toLowerCase().includes(f)||d.id.toLowerCase().includes(f))
+          .forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=`[${d.id}] ${d.name}  (${fmt(d.play,1)} play rate)`;if(d.id===current)o.selected=true;sel.appendChild(o);});
       }
-      // Star button to favourite/unfavourite current selection
+    }
+
+    buildOptions();
+    searchInput.oninput=()=>buildOptions(searchInput.value);
+
+    if(withFavs){
       const starBtn=document.createElement('button');starBtn.className='fav-btn'+(FAVS.has(current||'')?' starred':'');
       starBtn.title=FAVS.has(current||'')?'Remove from favourites':'Add to favourites';
       starBtn.textContent='★';
-      starBtn.onclick=()=>{
-        const v=sel.value;if(!v)return;
-        if(FAVS.has(v))FAVS.delete(v);else FAVS.add(v);
-        saveFavs();render();
-      };
+      starBtn.onclick=()=>{const v=sel.value;if(!v)return;if(FAVS.has(v))FAVS.delete(v);else FAVS.add(v);saveFavs();render();};
       selRow.appendChild(sel);selRow.appendChild(starBtn);
     } else {
-      byPlay.forEach(d=>{
-        const opt=document.createElement('option');opt.value=d.id;
-        opt.textContent=`[${d.id}] ${d.name}  (${fmt(d.play,1)} play rate)`;
-        if(d.id===current)opt.selected=true;sel.appendChild(opt);
-      });
       selRow.appendChild(sel);
     }
-    dw.appendChild(dl);dw.appendChild(selRow);return dw;
+    dw.append(dl,searchInput,selRow);return dw;
   }
+
   const myWrap=document.createElement('div');
   myWrap.appendChild(mkDropdown('My deck',MY_DECK,v=>{MY_DECK=v;render();},true));
   // Default deck checkbox
