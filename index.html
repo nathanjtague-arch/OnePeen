@@ -167,7 +167,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .exp-row{cursor:pointer}
 .exp-row-expanded{grid-column:1/-1;padding:14px 16px 16px;
   border-top:1px solid rgba(255,255,255,.05);
-  background:rgba(255,255,255,.015)}
+  background:rgba(255,255,255,.015);overflow:visible}
 .exp-detail-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .exp-detail-stat{padding:8px 12px;border-left:2px solid rgba(255,255,255,.1);border-radius:0}
 .exp-detail-stat-lbl{font-size:9px;color:#666;font-family:var(--font-body);
@@ -175,7 +175,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .exp-detail-stat-val{font-family:var(--font-mono);font-size:16px;font-weight:800}
 .exp-detail-kc-title{font-size:10px;font-family:var(--font-head);font-weight:800;
   letter-spacing:.08em;text-transform:uppercase;color:#a0aac8;margin-bottom:8px}
-.exp-detail-kc-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start}
+.exp-detail-kc-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start;overflow:visible;padding:10px 0}
 .exp-detail-loading{font-size:11px;color:#555;font-style:italic}
 
 .exp-min-games-note{font-size:11px;color:#666;font-family:var(--font-mono);margin-top:12px;text-align:right}
@@ -598,20 +598,16 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 
 
 
-/* Key cards hover zoom — fixed-position centre overlay so it's never clipped or cut off at edges */
-.key-card-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px}
-.key-card-item .oh-img-wrap{transition:transform .2s ease}
+/* Key cards hover zoom — stays anchored in place within its matchup box.
+   The overflow:hidden that used to clip this has been removed from .exp-panel,
+   so scaling in place no longer cuts cards off at the edges. */
+.key-card-item{position:relative;transition:z-index 0s .2s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.key-card-item:hover{z-index:100;transition:z-index 0s}
+.key-card-item .oh-img-wrap{transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease;
+  transform-origin:center center}
 .key-card-item:hover .oh-img-wrap{
-  position:fixed;top:50%;left:50%;
-  transform:translate(-50%,-50%) scale(3.4);
-  z-index:999;
-  box-shadow:0 20px 60px rgba(0,0,0,.9),0 0 30px rgba(224,27,27,.3);
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
-/* Dim the page behind the zoomed card for focus */
-.key-card-item:hover::before{
-  content:'';position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:998;
-  animation:kc-fade-in .15s ease forwards}
-@keyframes kc-fade-in{from{opacity:0}to{opacity:1}}
+  transform:scale(3);
+  box-shadow:0 16px 48px rgba(0,0,0,.85),0 0 24px rgba(224,27,27,.3)}
 
 /* Manga-style impact burst */
 @keyframes impact-burst{
