@@ -107,6 +107,64 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .trends-loading{text-align:center;padding:60px;color:#666;font-size:14px}
 .trends-no-data{text-align:center;padding:40px;color:#555;font-size:14px;line-height:1.8}
 
+
+/* ═══════════════════════════════════════════════════════
+   EXPERIMENTAL — Best/Worst Matchups
+   ═══════════════════════════════════════════════════════ */
+.exp-hero{padding:8px 0 16px}
+.exp-hero-title{font-family:var(--font-head);font-size:22px;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--text)}
+.exp-hero-sub{font-size:13px;color:#8a93b0;margin-top:4px;font-weight:500}
+.exp-tag{display:inline-block;font-size:9px;font-family:var(--font-mono);
+  color:#f5c518;border:1px solid rgba(245,197,24,.4);background:rgba(245,197,24,.08);
+  padding:2px 8px;border-radius:20px;letter-spacing:.08em;text-transform:uppercase;
+  margin-left:10px;vertical-align:middle}
+
+.exp-controls{display:flex;gap:12px;margin:16px 0 20px;flex-wrap:wrap;align-items:flex-end}
+.exp-controls>div{flex:1;min-width:220px}
+
+.exp-summary{display:flex;gap:16px;align-items:center;margin-bottom:16px;
+  padding:12px 16px;border:1px solid rgba(255,255,255,.06);border-radius:4px;
+  background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,0))}
+.exp-summary-img{width:52px;height:73px;border-radius:5px;overflow:hidden;
+  background:var(--surf);flex-shrink:0;border:1px solid rgba(255,255,255,.08)}
+.exp-summary-img img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
+.exp-summary-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:7px;color:var(--dim)}
+.exp-summary-name{font-size:17px;font-weight:800;font-family:var(--font-head);color:var(--text)}
+.exp-summary-code{font-family:var(--font-mono);font-size:11px;color:#e87070;margin-top:2px}
+.exp-summary-meta{font-size:12px;color:#8a93b0;font-family:var(--font-mono);margin-top:4px}
+
+.exp-columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.exp-columns{grid-template-columns:1fr}}
+.exp-panel{border:1px solid rgba(255,255,255,.06);border-radius:4px;
+  background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,0));
+  overflow:hidden}
+.exp-panel-hdr{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06);
+  display:flex;align-items:center;gap:8px}
+.exp-panel-title{font-family:var(--font-head);font-size:13px;font-weight:800;
+  letter-spacing:.08em;text-transform:uppercase}
+
+.exp-row{display:grid;grid-template-columns:28px 40px 1fr 64px 64px;gap:10px;
+  align-items:center;padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.03);
+  transition:background .1s}
+.exp-row:last-child{border-bottom:none}
+.exp-row:hover{background:rgba(255,255,255,.02)}
+.exp-row-rank{font-family:var(--font-mono);font-size:11px;color:#555;text-align:right;font-weight:700}
+.exp-row-img{width:40px;height:56px;border-radius:4px;overflow:hidden;
+  background:var(--surf);flex-shrink:0}
+.exp-row-img img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
+.exp-row-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:6px;color:var(--dim)}
+.exp-row-name{font-size:13px;font-weight:700;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-row-code{font-family:var(--font-mono);font-size:9px;color:#e87070;margin-top:1px}
+.exp-row-wr{font-family:var(--font-mono);font-size:15px;font-weight:800;text-align:right}
+.exp-row-games{font-family:var(--font-mono);font-size:10px;color:#666;text-align:right}
+
+.exp-empty{text-align:center;padding:40px 20px;color:#555;font-size:13px;line-height:1.8}
+.exp-min-games-note{font-size:11px;color:#666;font-family:var(--font-mono);margin-top:12px;text-align:right}
+
 /* ═══════════════════════════════════════════════════════
    DECKBUSTER
    ═══════════════════════════════════════════════════════ */
@@ -838,6 +896,7 @@ let DATASET_ID=(()=>{try{return localStorage.getItem(LS_DATASET)||'west_p';}catc
 let STATE='loading',DATA=null,META_UPDATED=null,HIDDEN=new Set();
 let TAB='rank',FILTER='all',SORT='wtdWR',PASTE_ERR='';
 let MY_DECK=null,OPP_DECK=null,EXCL_LOW=false;
+let EXP_DECK=null;
 let BUSTED_DECKS=[],BUST_RESULTS=null;
 const TREND_CACHE={};
 let TREND_SORT='wr';
@@ -1288,6 +1347,165 @@ function viewTrends(){
     footer.textContent=`${trends.length} decks tracked · ${risers.length} rising · ${fallers.length} falling`;
     wrap.appendChild(footer);
   });
+
+  return wrap;
+}
+
+
+
+// ── Experimental: Best/Worst Matchups ────────────────────────────
+function viewExperimental(){
+  const wrap=document.createElement('div');
+
+  const hero=document.createElement('div');hero.className='exp-hero';
+  const ht=document.createElement('div');ht.className='exp-hero-title';
+  ht.innerHTML='Best &amp; Worst Matchups<span class="exp-tag">Experimental</span>';
+  const hs=document.createElement('div');hs.className='exp-hero-sub';
+  hs.textContent='Pick a deck to see its strongest and weakest matchups at a glance.';
+  hero.append(ht,hs);wrap.appendChild(hero);
+
+  if(!DATA){const m=document.createElement('div');m.className='exp-empty';m.textContent='Load data first.';wrap.appendChild(m);return wrap;}
+
+  const byPlay=[...DATA.decks].sort((a,b)=>(b.play||0)-(a.play||0));
+  const MIN_GAMES=30; // filter out anomalous low-sample matchups
+
+  // Controls row: dataset picker + deck search combobox
+  const ctrlRow=document.createElement('div');ctrlRow.className='exp-controls';
+
+  // Dataset picker (matches style used elsewhere on the page)
+  const dsWrap=document.createElement('div');
+  const dsLbl=document.createElement('div');dsLbl.className='drop-label';dsLbl.textContent='Dataset';
+  const dsSel=document.createElement('select');
+  dsSel.style.cssText='width:100%;padding:10px 14px;font-size:13px;font-family:var(--font-body);font-weight:600;border:1px solid rgba(255,255,255,.1);border-radius:4px;background:#111;color:#c8d0e8;cursor:pointer;outline:none';
+  DATASETS.forEach(ds=>{const o=document.createElement('option');o.value=ds.id;o.textContent=ds.label;if(ds.id===DATASET_ID)o.selected=true;dsSel.appendChild(o);});
+  dsSel.onchange=()=>{DATASET_ID=dsSel.value;try{localStorage.setItem(LS_DATASET,DATASET_ID);}catch{}STATE='loading';DATA=null;EXP_DECK=null;render();boot();};
+  dsWrap.append(dsLbl,dsSel);
+
+  // Deck combobox (self-contained — mirrors mkDropdown in viewAdvisor)
+  const deckWrap=document.createElement('div');
+  const deckLbl=document.createElement('div');deckLbl.className='drop-label';deckLbl.textContent='Deck';
+  const comboWrap=document.createElement('div');comboWrap.className='combo-wrap';
+  const input=document.createElement('input');input.type='text';input.className='combo-input';
+  input.placeholder='Search leaders...';input.autocomplete='off';
+  const list=document.createElement('div');list.className='combo-list';
+
+  function setDisplay(id){
+    EXP_DECK=id;
+    const d=byPlay.find(x=>x.id===id);
+    input.value=d?`[${d.id}] ${d.name}`:'';
+    input.className='combo-input'+(id?' has-value':'');
+    list.classList.remove('open');
+  }
+  setDisplay(EXP_DECK||null);
+
+  function buildList(filter=''){
+    list.innerHTML='';
+    const f=filter.toLowerCase();
+    const matches=byPlay.filter(d=>!f||d.name.toLowerCase().includes(f)||d.id.toLowerCase().includes(f));
+    if(!matches.length){
+      const nm=document.createElement('div');nm.className='combo-no-results';nm.textContent='No leaders found';
+      list.appendChild(nm);return;
+    }
+    matches.forEach(d=>{
+      const item=document.createElement('div');item.className='combo-item'+(d.id===EXP_DECK?' selected':'');
+      const code=document.createElement('span');code.className='combo-item-code';code.textContent='['+d.id+']';
+      const name=document.createElement('span');name.textContent=d.name;name.style.flex='1';
+      const play=document.createElement('span');play.className='combo-item-play';play.textContent=fmt(d.play,1);
+      item.append(code,name,play);
+      item.onmousedown=e=>{e.preventDefault();setDisplay(d.id);render();};
+      list.appendChild(item);
+    });
+  }
+  input.onfocus=()=>{buildList('');list.classList.add('open');};
+  input.oninput=()=>{buildList(input.value);list.classList.add('open');};
+  input.onblur=()=>setTimeout(()=>list.classList.remove('open'),150);
+  comboWrap.append(input,list);
+  deckWrap.append(deckLbl,comboWrap);
+
+  ctrlRow.append(dsWrap,deckWrap);
+  wrap.appendChild(ctrlRow);
+
+  if(!EXP_DECK){
+    const nd=document.createElement('div');nd.className='exp-empty';
+    nd.textContent='Select a deck above to see its best and worst matchups.';
+    wrap.appendChild(nd);return wrap;
+  }
+
+  const deck=DATA.decks.find(d=>d.id===EXP_DECK);
+  if(!deck){EXP_DECK=null;const nd=document.createElement('div');nd.className='exp-empty';nd.textContent='Deck not found in this dataset.';wrap.appendChild(nd);return wrap;}
+
+  // Summary strip
+  const summary=document.createElement('div');summary.className='exp-summary';
+  const simg=document.createElement('div');simg.className='exp-summary-img';
+  const sim=document.createElement('img');sim.alt='';
+  const sph=document.createElement('div');sph.className='exp-summary-img-ph';
+  simg.append(sim,sph);applyCardImg(sim,sph,deck.id);
+  const smeta=document.createElement('div');
+  const sname=document.createElement('div');sname.className='exp-summary-name';sname.textContent=deck.name;
+  const scode=document.createElement('div');scode.className='exp-summary-code';scode.textContent='['+deck.id+']';
+  const sstat=document.createElement('div');sstat.className='exp-summary-meta';
+  sstat.textContent=`Overall WR: ${fmt(deck.wtdWR)} · Play rate: ${fmt(deck.play,1)} · ${(deck.games??0).toLocaleString()} games recorded`;
+  smeta.append(sname,scode,sstat);
+  summary.append(simg,smeta);wrap.appendChild(summary);
+
+  // Build matchup list, filtered by MIN_GAMES
+  const allMu=DATA.decks
+    .filter(opp=>opp.id!==deck.id)
+    .map(opp=>{
+      const mu=deck.mu?.[opp.id];
+      if(!mu||mu.wr==null)return null;
+      const games=mu.n||0;
+      if(games<MIN_GAMES)return null;
+      return{opp,wr:mu.wr,games};
+    })
+    .filter(Boolean);
+
+  if(!allMu.length){
+    const nd=document.createElement('div');nd.className='exp-empty';
+    nd.innerHTML=`No matchups with ${MIN_GAMES}+ recorded games for this deck yet.<br>Try a different dataset with more accumulated data.`;
+    wrap.appendChild(nd);return wrap;
+  }
+
+  const best=[...allMu].sort((a,b)=>b.wr-a.wr).slice(0,10);
+  const worst=[...allMu].sort((a,b)=>a.wr-b.wr).slice(0,10);
+
+  function mkPanel(title,color,icon,items){
+    const panel=document.createElement('div');panel.className='exp-panel';
+    const hdr=document.createElement('div');hdr.className='exp-panel-hdr';
+    hdr.style.borderBottomColor='rgba(255,255,255,.06)';
+    const pt=document.createElement('div');pt.className='exp-panel-title';pt.style.color=color;
+    pt.textContent=icon+' '+title;
+    hdr.appendChild(pt);panel.appendChild(hdr);
+
+    items.forEach((m,i)=>{
+      const row=document.createElement('div');row.className='exp-row';
+      const rn=document.createElement('div');rn.className='exp-row-rank';rn.textContent='#'+(i+1);
+      const iw=document.createElement('div');iw.className='exp-row-img';
+      const im=document.createElement('img');im.alt='';
+      const ph=document.createElement('div');ph.className='exp-row-img-ph';ph.textContent=m.opp.id;
+      iw.append(im,ph);applyCardImg(im,ph,m.opp.id);
+      const nc=document.createElement('div');nc.style.cssText='overflow:hidden';
+      const nm=document.createElement('div');nm.className='exp-row-name';nm.textContent=m.opp.name;
+      const cd=document.createElement('div');cd.className='exp-row-code';cd.textContent='['+m.opp.id+']';
+      nc.append(nm,cd);
+      const wr=document.createElement('div');wr.className='exp-row-wr';
+      wr.style.color=wrCol(m.wr);wr.textContent=m.wr.toFixed(1)+'%';
+      const gm=document.createElement('div');gm.className='exp-row-games';
+      gm.textContent=m.games.toLocaleString()+' games';
+      row.append(rn,iw,nc,wr,gm);
+      panel.appendChild(row);
+    });
+    return panel;
+  }
+
+  const cols=document.createElement('div');cols.className='exp-columns';
+  cols.appendChild(mkPanel('Best Matchups','var(--g1)','▲',best));
+  cols.appendChild(mkPanel('Worst Matchups','var(--r)','▼',worst));
+  wrap.appendChild(cols);
+
+  const note=document.createElement('div');note.className='exp-min-games-note';
+  note.textContent=`Showing matchups with ${MIN_GAMES}+ recorded games · ${allMu.length} qualifying matchups found`;
+  wrap.appendChild(note);
 
   return wrap;
 }
@@ -1984,7 +2202,7 @@ function render(){
   left.appendChild(titleBlock);
   const right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap';
   // Dataset picker
-  const dsPick=document.createElement('select');dsPick.style.cssText='width:auto;min-width:170px;font-size:12px;padding:5px 10px;border-color:var(--brd)';
+  const dsPick=document.createElement('select');dsPick.style.cssText='width:auto;min-width:170px;font-size:12px;padding:5px 10px;border:1px solid rgba(255,255,255,.1);border-radius:4px;background:#111;color:#c8d0e8';
   DATASETS.forEach(ds=>{const o=document.createElement('option');o.value=ds.id;o.textContent=ds.label;if(ds.id===DATASET_ID)o.selected=true;dsPick.appendChild(o);});
   dsPick.style.cssText='display:none';
   dsPick.onchange=()=>{DATASET_ID=dsPick.value;try{localStorage.setItem(LS_DATASET,DATASET_ID);}catch{}STATE='loading';DATA=null;HIDDEN=new Set();render();boot();};
@@ -2071,14 +2289,14 @@ function render(){
 
     // Dataset picker row (below stats strip)
     const dsPick2=document.createElement('select');
-    dsPick2.style.cssText='width:100%;padding:10px 14px;font-size:12px;font-family:var(--font-body);font-weight:600;letter-spacing:.06em;text-transform:uppercase;border:none;border-bottom:1px solid rgba(255,255,255,.1);border-radius:0;background:transparent;color:#888;margin-bottom:16px;cursor:pointer';
+    dsPick2.style.cssText='width:100%;padding:10px 14px;font-size:13px;font-family:var(--font-body);font-weight:600;border:1px solid rgba(255,255,255,.1);border-radius:4px;background:#111;color:#c8d0e8;margin-bottom:16px;cursor:pointer;outline:none';
     DATASETS.forEach(ds=>{const o=document.createElement('option');o.value=ds.id;o.textContent=ds.label;if(ds.id===DATASET_ID)o.selected=true;dsPick2.appendChild(o);});
     dsPick2.onchange=()=>{DATASET_ID=dsPick2.value;try{localStorage.setItem(LS_DATASET,DATASET_ID);}catch{}STATE='loading';DATA=null;HIDDEN=new Set();render();boot();};
     app.appendChild(dsPick2);
 
     // Tabs
     const tabs=document.createElement('div');tabs.className='tabs';
-    [['rank','Rankings'],['top25','Top 25 Decks'],['trends','Meta Trends'],['deckbuster','Deckbuster'],['advisor','Matchup Mastery'],['debug','Debug']].forEach(([id,l])=>{
+    [['rank','Rankings'],['top25','Top 25 Decks'],['trends','Meta Trends'],['deckbuster','Deckbuster'],['advisor','Matchup Mastery'],['experimental','Experimental'],['debug','Debug']].forEach(([id,l])=>{
       const b=document.createElement('button');b.className='tab-btn'+(TAB===id?' active':'');b.textContent=l;
       b.onclick=()=>{TAB=id;render();};tabs.appendChild(b);
     });
@@ -2087,6 +2305,7 @@ function render(){
     if(TAB==='rank'){const sf=FILTER;FILTER='all';app.appendChild(viewRank());FILTER=sf;}
     else if(TAB==='top25'){const sf=FILTER;FILTER='top25';app.appendChild(viewRank());FILTER=sf;}
     else if(TAB==='trends')app.appendChild(viewTrends());
+    else if(TAB==='experimental')app.appendChild(viewExperimental());
     else if(TAB==='deckbuster')app.appendChild(viewDeckbuster());
     else if(TAB==='advisor')app.appendChild(viewAdvisor());
     else app.appendChild(viewDebug());
