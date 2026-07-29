@@ -138,8 +138,8 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .exp-columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:700px){.exp-columns{grid-template-columns:1fr}}
 .exp-panel{border:1px solid rgba(255,255,255,.06);border-radius:4px;
-  background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,0));
-  overflow:hidden}
+  background:linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,0))}
+.exp-panel-hdr{border-radius:4px 4px 0 0}
 .exp-panel-hdr{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06);
   display:flex;align-items:center;gap:8px}
 .exp-panel-title{font-family:var(--font-head);font-size:13px;font-weight:800;
@@ -598,13 +598,20 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 
 
 
-/* Key cards hover zoom */
-.key-card-item{position:relative;transition:z-index 0s .25s;display:flex;flex-direction:column;align-items:center;gap:4px}
-.key-card-item:hover{z-index:50;transition:z-index 0s}
-.key-card-item .oh-img-wrap{transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease;transform-origin:bottom center}
+/* Key cards hover zoom — fixed-position centre overlay so it's never clipped or cut off at edges */
+.key-card-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px}
+.key-card-item .oh-img-wrap{transition:transform .2s ease}
 .key-card-item:hover .oh-img-wrap{
-  transform:scale(2.9);
-  box-shadow:0 12px 40px rgba(0,0,0,.85),0 0 20px rgba(224,27,27,.25)}
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(3.4);
+  z-index:999;
+  box-shadow:0 20px 60px rgba(0,0,0,.9),0 0 30px rgba(224,27,27,.3);
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+/* Dim the page behind the zoomed card for focus */
+.key-card-item:hover::before{
+  content:'';position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:998;
+  animation:kc-fade-in .15s ease forwards}
+@keyframes kc-fade-in{from{opacity:0}to{opacity:1}}
 
 /* Manga-style impact burst */
 @keyframes impact-burst{
