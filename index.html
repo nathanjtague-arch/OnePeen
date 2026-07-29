@@ -163,6 +163,21 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .exp-row-games{font-family:var(--font-mono);font-size:10px;color:#666;text-align:right}
 
 .exp-empty{text-align:center;padding:40px 20px;color:#555;font-size:13px;line-height:1.8}
+
+.exp-row{cursor:pointer}
+.exp-row-expanded{grid-column:1/-1;padding:14px 16px 16px;
+  border-top:1px solid rgba(255,255,255,.05);
+  background:rgba(255,255,255,.015)}
+.exp-detail-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.exp-detail-stat{padding:8px 12px;border-left:2px solid rgba(255,255,255,.1);border-radius:0}
+.exp-detail-stat-lbl{font-size:9px;color:#666;font-family:var(--font-body);
+  font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+.exp-detail-stat-val{font-family:var(--font-mono);font-size:16px;font-weight:800}
+.exp-detail-kc-title{font-size:10px;font-family:var(--font-head);font-weight:800;
+  letter-spacing:.08em;text-transform:uppercase;color:#a0aac8;margin-bottom:8px}
+.exp-detail-kc-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start}
+.exp-detail-loading{font-size:11px;color:#555;font-style:italic}
+
 .exp-min-games-note{font-size:11px;color:#666;font-family:var(--font-mono);margin-top:12px;text-align:right}
 
 /* ═══════════════════════════════════════════════════════
@@ -1478,7 +1493,9 @@ function viewExperimental(){
     hdr.appendChild(pt);panel.appendChild(hdr);
 
     items.forEach((m,i)=>{
+      const rowWrap=document.createElement('div');
       const row=document.createElement('div');row.className='exp-row';
+      row.style.display='grid';row.style.gridTemplateColumns='28px 40px 1fr 64px 64px';
       const rn=document.createElement('div');rn.className='exp-row-rank';rn.textContent='#'+(i+1);
       const iw=document.createElement('div');iw.className='exp-row-img';
       const im=document.createElement('img');im.alt='';
@@ -1493,7 +1510,68 @@ function viewExperimental(){
       const gm=document.createElement('div');gm.className='exp-row-games';
       gm.textContent=m.games.toLocaleString()+' games';
       row.append(rn,iw,nc,wr,gm);
-      panel.appendChild(row);
+      rowWrap.appendChild(row);
+
+      let expanded=false,detailEl=null;
+      row.onclick=()=>{
+        expanded=!expanded;
+        if(!expanded){if(detailEl){detailEl.remove();detailEl=null;}return;}
+        detailEl=document.createElement('div');detailEl.className='exp-row-expanded';
+        const loading=document.createElement('div');loading.className='exp-detail-loading';
+        loading.textContent='Loading detail…';detailEl.appendChild(loading);
+        rowWrap.appendChild(detailEl);
+
+        // 1st/2nd win rate — pulled straight from the same mu object
+        const mu=deck.mu?.[m.opp.id];
+        loading.remove();
+        const statsGrid=document.createElement('div');statsGrid.className='exp-detail-stats';
+        const s1=document.createElement('div');s1.className='exp-detail-stat';
+        s1.innerHTML='<div class="exp-detail-stat-lbl">Going 1st</div>';
+        const v1=document.createElement('div');v1.className='exp-detail-stat-val';
+        v1.style.color=mu?.f!=null?wrCol(mu.f):'#555';v1.textContent=mu?.f!=null?mu.f.toFixed(1)+'%':'—';
+        s1.appendChild(v1);
+        const s2=document.createElement('div');s2.className='exp-detail-stat';
+        s2.innerHTML='<div class="exp-detail-stat-lbl">Going 2nd</div>';
+        const v2=document.createElement('div');v2.className='exp-detail-stat-val';
+        v2.style.color=mu?.s!=null?wrCol(mu.s):'#555';v2.textContent=mu?.s!=null?mu.s.toFixed(1)+'%':'—';
+        s2.appendChild(v2);
+        statsGrid.append(s1,s2);
+        detailEl.appendChild(statsGrid);
+
+        // Key Cards — reuse the same algorithm from Matchup Mastery
+        const kcTitle=document.createElement('div');kcTitle.className='exp-detail-kc-title';
+        kcTitle.textContent='✦ Key Cards vs '+m.opp.name;
+        detailEl.appendChild(kcTitle);
+        const kcLoading=document.createElement('div');kcLoading.className='exp-detail-loading';
+        kcLoading.textContent='Analysing decklists…';detailEl.appendChild(kcLoading);
+
+        computeKeyCards(deck.id,m.opp.id,DATASET_ID).then(res=>{
+          kcLoading.remove();
+          if(res.error){
+            const em=document.createElement('div');em.className='exp-empty';em.style.padding='8px 0';
+            em.textContent=res.error;detailEl.appendChild(em);return;
+          }
+          const grid=document.createElement('div');grid.className='exp-detail-kc-grid';
+          res.keyCards.forEach(([id,data])=>{
+            const item=document.createElement('div');item.className='key-card-item';
+            const iw2=document.createElement('div');iw2.className='oh-img-wrap';
+            const im2=document.createElement('img');im2.alt='';
+            const ph2=document.createElement('div');ph2.className='oh-img-ph';
+            iw2.append(im2,ph2);applyCardImg(im2,ph2,id);
+            const copies=document.createElement('div');
+            copies.style.cssText='font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--acc);text-align:center';
+            copies.textContent=`${data.maxCopies}x`;
+            const code2=document.createElement('div');code2.className='oh-code';code2.textContent=id;
+            item.append(iw2,copies,code2);grid.appendChild(item);
+          });
+          detailEl.appendChild(grid);
+          const note=document.createElement('div');note.className='exp-min-games-note';note.style.marginTop='8px';
+          note.textContent=`Based on ${res.basedOn} decklist${res.basedOn===1?'':'s'} with recorded games vs ${m.opp.name}`;
+          detailEl.appendChild(note);
+        }).catch(()=>{kcLoading.textContent='Failed to load key cards.';});
+      };
+
+      panel.appendChild(rowWrap);
     });
     return panel;
   }
@@ -1510,6 +1588,36 @@ function viewExperimental(){
   return wrap;
 }
 
+
+
+// ── Reusable key-cards computation (used by Matchup Mastery & Experimental) ──
+async function computeKeyCards(myDeckId,oppDeckId,datasetId){
+  const dlData=await loadDecklist(datasetId);
+  if(!dlData)return{error:'No decklist data available.'};
+  const leaderEntry=dlData.find(e=>e.leader===myDeckId);
+  const withMatchup=(leaderEntry?.best_decklists||[])
+    .map(dl=>{const ms=dl.matchup_stats?.find(m=>m.oppLeader===oppDeckId);return ms?{...dl,vsWR:ms.win_rate,vsGames:ms.games_played}:null;})
+    .filter(dl=>dl&&dl.vsGames>=10)
+    .sort((a,b)=>(b.vsWR-a.vsWR)||(b.vsGames-a.vsGames));
+  if(!withMatchup.length)return{error:'Insufficient matchup data to identify key cards.'};
+  const scores={};
+  withMatchup.slice(0,5).forEach(dl=>{
+    const cards=parseDecklist(dl.decklist);
+    Object.entries(cards).forEach(([id,cnt])=>{
+      if(!scores[id])scores[id]={score:0,appearances:0,maxCopies:0};
+      scores[id].score+=dl.vsWR*(dl.vsGames||1);
+      scores[id].appearances++;
+      scores[id].maxCopies=Math.max(scores[id].maxCopies,cnt);
+    });
+  });
+  const topTotal=withMatchup.slice(0,5).length;
+  const keyCards=Object.entries(scores)
+    .filter(([_,v])=>v.appearances>=Math.min(2,topTotal))
+    .sort((a,b)=>b[1].score-a[1].score)
+    .slice(0,8);
+  if(!keyCards.length)return{error:'Only one decklist found — need more data for key card analysis.'};
+  return{keyCards,basedOn:withMatchup.length};
+}
 
 // ── Deckbuster algorithm ─────────────────────────────────────────
 function computeDeckbuster(oppIds){
