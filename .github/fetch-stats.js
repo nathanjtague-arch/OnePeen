@@ -10,14 +10,18 @@ const WORKSPACE  = process.env.GITHUB_WORKSPACE;
 const COOKIE_STR = process.env.CARDKAIZOKU_COOKIES || '';
 
 const DATASETS = [
-  { id: 'op16',    period: 'op16'    },
-  { id: 'op16_lw', period: 'op16_lw' }, // OP16 last week — needed for Meta Trends
-  { id: 'west_p',  period: 'west_p'  },
-  { id: 'west',    period: 'west'    },
-  { id: 'lw_p',    period: 'lw_p'    },
-  { id: 'lw',      period: 'lw'      },
-  { id: 'exreg_p', period: 'exreg_p' },
-  { id: 'exreg',   period: 'exreg'   },
+  // Active game modes
+  { id: 'west_p',  period: 'west_p'  }, // Standard (Full)
+  { id: 'west',    period: 'west'    }, // Standard
+  { id: 'lw_p',    period: 'lw_p'    }, // Standard Last Week (Full)
+  { id: 'lw',      period: 'lw'      }, // Standard Last Week
+  { id: 'exreg_p', period: 'exreg_p' }, // Extra Reg (Full)
+  { id: 'exreg',   period: 'exreg'   }, // Extra Reg
+  // Pending / Legacy (will 404 until available — harmless)
+  { id: 'op17',    period: 'op17'    }, // OP17 — pending release on CDN
+  { id: 'op17_lw', period: 'op17_lw' }, // OP17 Last Week
+  { id: 'op16',    period: 'op16'    }, // OP16 Legacy
+  { id: 'op16_lw', period: 'op16_lw' }, // OP16 Last Week
 ];
 
 function parseCookies(str) {
