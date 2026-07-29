@@ -497,6 +497,35 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 /* Rank image */
 .rank-img-wrap{position:relative;z-index:1}
 
+
+/* Searchable combobox dropdown */
+.combo-wrap{position:relative;width:100%}
+.combo-input{width:100%;padding:10px 14px;font-size:14px;font-family:var(--font-body);
+  font-weight:500;border:1px solid #3a4060;border-radius:8px;
+  background:var(--surf);color:var(--text);outline:none;
+  transition:border-color .15s;cursor:text}
+.combo-input:focus{border-color:rgba(224,27,27,.5)}
+.combo-input.has-value{border-color:rgba(224,27,27,.35)}
+.combo-list{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:200;
+  background:var(--card);border:1px solid #3a4060;border-radius:10px;
+  max-height:260px;overflow-y:auto;
+  box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 0 1px rgba(224,27,27,.1);
+  display:none}
+.combo-list.open{display:block}
+.combo-group-label{padding:6px 14px 3px;font-size:10px;font-family:var(--font-head);
+  font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:#666;border-top:1px solid #2a2a2a}
+.combo-group-label:first-child{border-top:none}
+.combo-item{padding:9px 14px;cursor:pointer;font-size:13px;
+  font-family:var(--font-body);color:#c8d0e8;
+  transition:background .1s;display:flex;align-items:center;gap:8px;border-radius:0}
+.combo-item:hover,.combo-item.focused{background:rgba(224,27,27,.12);color:var(--text)}
+.combo-item.selected{color:var(--acc);font-weight:700}
+.combo-item-code{font-family:var(--font-mono);font-size:10px;color:#e87070;flex-shrink:0}
+.combo-item-play{font-family:var(--font-mono);font-size:10px;color:#555;margin-left:auto;flex-shrink:0}
+.combo-fav-star{font-size:12px;color:#f5c518;flex-shrink:0}
+.combo-no-results{padding:14px;text-align:center;color:#555;font-size:13px;font-style:italic}
+
 /* Toggle button on rank row */
 .rank-toggle-btn{width:22px;height:22px;border-radius:4px;border:1.5px solid;
   font-size:13px;line-height:1;cursor:pointer;flex-shrink:0;
@@ -750,7 +779,15 @@ function parseData(json){
       mu:  Object.keys(mu).length?mu:null,
     };
   }).filter(d=>d.wtdWR!=null);
-  return{decks:decks.length?decks:null,topKeys,sampleKeys,sampleVals,firstMuEntry};
+  // Deduplicate by card code — same leader with different cosmetic names
+  // (e.g. "Sabo" vs "Sabo (Strawhat)") — keep entry with most games
+  const dedupedDecks=Object.values(
+    decks.reduce((acc,d)=>{
+      if(!acc[d.id]||(d.games??0)>(acc[d.id].games??0))acc[d.id]=d;
+      return acc;
+    },{})
+  );
+  return{decks:dedupedDecks.length?dedupedDecks:null,topKeys,sampleKeys,sampleVals,firstMuEntry};
 }
 
 // ── Recalculation ────────────────────────────────────────────────
@@ -1481,60 +1518,85 @@ function viewAdvisor(){
   function mkDropdown(lbl,current,onchange,withFavs=false){
     const dw=document.createElement('div');
     const dl=document.createElement('div');dl.className='drop-label';dl.textContent=lbl;
+    dw.appendChild(dl);
 
-    // Search input
-    const searchInput=document.createElement('input');
-    searchInput.type='text';searchInput.placeholder='Search leaders...';
-    searchInput.style.cssText='width:100%;padding:7px 12px;font-size:13px;font-family:var(--font-body);font-weight:500;border:1px solid #3a4060;border-radius:8px;background:var(--surf);color:var(--text);margin-bottom:6px;outline:none;transition:border-color .15s';
-    searchInput.onfocus=()=>searchInput.style.borderColor='rgba(224,27,27,.5)';
-    searchInput.onblur=()=>searchInput.style.borderColor='#3a4060';
+    // Custom combobox — searchable with visible results
+    const wrap=document.createElement('div');wrap.className='combo-wrap';
 
-    const selRow=document.createElement('div');selRow.className='deck-sel-wrap';
-    const sel=document.createElement('select');sel.style.flex='1';
-    sel.onchange=e=>onchange(e.target.value||null);
+    const input=document.createElement('input');
+    input.type='text';input.className='combo-input';
+    input.placeholder='Search leaders...';
+    input.autocomplete='off';
 
-    // Store all deck options for filtering
-    const allOptions=[];
-    const blank=document.createElement('option');blank.value='';blank.textContent='— Select deck —';
-    allOptions.push(blank);
+    const list=document.createElement('div');list.className='combo-list';
 
-    function buildOptions(filter=''){
+    // Track current selection
+    let selectedId=current||null;
+
+    // Set initial display value
+    function setDisplay(id){
+      selectedId=id;
+      const d=byPlay.find(x=>x.id===id);
+      input.value=d?`[${d.id}] ${d.name}`:'';
+      input.className='combo-input'+(id?' has-value':'');
+      list.classList.remove('open');
+    }
+    setDisplay(current||null);
+
+    function buildList(filter=''){
+      list.innerHTML='';
       const f=filter.toLowerCase();
-      sel.innerHTML='';
-      // Always add blank
-      const b=document.createElement('option');b.value='';b.textContent='— Select deck —';
-      if(!current)b.selected=true;
-      sel.appendChild(b);
+      const matches=byPlay.filter(d=>!f||d.name.toLowerCase().includes(f)||d.id.toLowerCase().includes(f));
+      if(!matches.length){
+        const nm=document.createElement('div');nm.className='combo-no-results';
+        nm.textContent='No leaders found';list.appendChild(nm);return;
+      }
       if(withFavs){
-        const favDecks=byPlay.filter(d=>FAVS.has(d.id)&&(!f||d.name.toLowerCase().includes(f)||d.id.toLowerCase().includes(f)));
-        const restDecks=byPlay.filter(d=>!FAVS.has(d.id)&&(!f||d.name.toLowerCase().includes(f)||d.id.toLowerCase().includes(f)));
-        if(favDecks.length>0){
-          const grp=document.createElement('optgroup');grp.label='★ Favourites';
-          favDecks.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=`★ [${d.id}] ${d.name}  (${fmt(d.play,1)} play rate)`;if(d.id===current)o.selected=true;grp.appendChild(o);});
-          sel.appendChild(grp);
+        const favs=matches.filter(d=>FAVS.has(d.id));
+        const rest=matches.filter(d=>!FAVS.has(d.id));
+        if(favs.length){
+          const gl=document.createElement('div');gl.className='combo-group-label';gl.textContent='★ Favourites';
+          list.appendChild(gl);
+          favs.forEach(d=>list.appendChild(mkItem(d,true)));
         }
-        const grp2=document.createElement('optgroup');grp2.label=f?'Matching Decks':'All Decks';
-        restDecks.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=`[${d.id}] ${d.name}  (${fmt(d.play,1)} play rate)`;if(d.id===current)o.selected=true;grp2.appendChild(o);});
-        sel.appendChild(grp2);
+        if(rest.length){
+          const gl=document.createElement('div');gl.className='combo-group-label';
+          gl.textContent=f?'Matching decks':'All decks';
+          list.appendChild(gl);
+          rest.forEach(d=>list.appendChild(mkItem(d,false)));
+        }
       } else {
-        byPlay.filter(d=>!f||d.name.toLowerCase().includes(f)||d.id.toLowerCase().includes(f))
-          .forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=`[${d.id}] ${d.name}  (${fmt(d.play,1)} play rate)`;if(d.id===current)o.selected=true;sel.appendChild(o);});
+        matches.forEach(d=>list.appendChild(mkItem(d,false)));
       }
     }
 
-    buildOptions();
-    searchInput.oninput=()=>buildOptions(searchInput.value);
-
-    if(withFavs){
-      const starBtn=document.createElement('button');starBtn.className='fav-btn'+(FAVS.has(current||'')?' starred':'');
-      starBtn.title=FAVS.has(current||'')?'Remove from favourites':'Add to favourites';
-      starBtn.textContent='★';
-      starBtn.onclick=()=>{const v=sel.value;if(!v)return;if(FAVS.has(v))FAVS.delete(v);else FAVS.add(v);saveFavs();render();};
-      selRow.appendChild(sel);selRow.appendChild(starBtn);
-    } else {
-      selRow.appendChild(sel);
+    function mkItem(d,isFav){
+      const item=document.createElement('div');
+      item.className='combo-item'+(d.id===selectedId?' selected':'');
+      if(isFav){const star=document.createElement('span');star.className='combo-fav-star';star.textContent='★';item.appendChild(star);}
+      const code=document.createElement('span');code.className='combo-item-code';code.textContent='['+d.id+']';
+      const name=document.createElement('span');name.textContent=d.name;name.style.flex='1';
+      const play=document.createElement('span');play.className='combo-item-play';play.textContent=fmt(d.play,1);
+      item.append(code,name,play);
+      item.onmousedown=e=>{e.preventDefault();setDisplay(d.id);onchange(d.id);};
+      return item;
     }
-    dw.append(dl,searchInput,selRow);return dw;
+
+    input.onfocus=()=>{buildList(input.value);list.classList.add('open');};
+    input.oninput=()=>{buildList(input.value);list.classList.add('open');};
+    input.onblur=()=>setTimeout(()=>list.classList.remove('open'),150);
+
+    // Star button for favourites
+    if(withFavs){
+      const starRow=document.createElement('div');starRow.style.cssText='display:flex;gap:6px;align-items:center';
+      const starBtn=document.createElement('button');starBtn.className='fav-btn'+(FAVS.has(selectedId||'')?' starred':'');
+      starBtn.textContent='★';starBtn.title='Toggle favourite';
+      starBtn.onclick=()=>{const v=selectedId;if(!v)return;if(FAVS.has(v))FAVS.delete(v);else FAVS.add(v);saveFavs();render();};
+      wrap.append(input,list);starRow.append(wrap,starBtn);dw.appendChild(starRow);
+    } else {
+      wrap.append(input,list);dw.appendChild(wrap);
+    }
+    return dw;
   }
 
   const myWrap=document.createElement('div');
