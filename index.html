@@ -896,13 +896,13 @@ function loadCache(){
 // ── App state ────────────────────────────────────────────────────
 // Dataset configuration — add new entries here when cardkaizoku adds new periods
 const DATASETS=[
+  {id:'op17',    label:'OP17',            prefix:'stats_op17_'   },
   {id:'west_p',  label:'Standard (Full)', prefix:'stats_west_p_' },
   {id:'west',    label:'Standard',        prefix:'stats_west_'   },
   {id:'lw_p',    label:'Standard Last Week (Full)', prefix:'stats_lw_p_' },
   {id:'lw',      label:'Standard Last Week',        prefix:'stats_lw_'   },
   {id:'exreg_p', label:'Extra Reg (Full)',prefix:'stats_exreg_p_'},
   {id:'exreg',   label:'Extra Reg',       prefix:'stats_exreg_'  },
-  {id:'op17',    label:'OP17 (Pending)',  prefix:'stats_op17_'   },
   {id:'op16',    label:'OP16 (Legacy)',   prefix:'stats_op16_'   },
 ];
 const LS_DATASET='optcg_dataset';
@@ -1173,6 +1173,7 @@ function viewRank(){
 const TREND_PAIRS=[
   {label:'Standard (Full)',   curr:'west_p',prev:'lw_p'},
   {label:'Standard',          curr:'west',  prev:'lw'},
+  {label:'OP17',              curr:'op17',  prev:'op17_lw'},
   {label:'Extra Reg (Full)',  curr:'exreg_p',prev:'exreg_p'},
   {label:'OP16 (Legacy)',     curr:'op16',  prev:'op16_lw'},
 ];
