@@ -10,18 +10,20 @@ const WORKSPACE  = process.env.GITHUB_WORKSPACE;
 const COOKIE_STR = process.env.CARDKAIZOKU_COOKIES || '';
 
 const DATASETS = [
-  // Active game modes
-  { id: 'west_p',  period: 'west_p'  }, // Standard (Full)
-  { id: 'west',    period: 'west'    }, // Standard
-  { id: 'lw_p',    period: 'lw_p'    }, // Standard Last Week (Full)
-  { id: 'lw',      period: 'lw'      }, // Standard Last Week
-  { id: 'exreg_p', period: 'exreg_p' }, // Extra Reg (Full)
-  { id: 'exreg',   period: 'exreg'   }, // Extra Reg
-  // Pending / Legacy (will 404 until available — harmless)
-  { id: 'op17',    period: 'op17'    }, // OP17 — pending release on CDN
-  { id: 'op17_lw', period: 'op17_lw' }, // OP17 Last Week
-  { id: 'op16',    period: 'op16'    }, // OP16 Legacy
-  { id: 'op16_lw', period: 'op16_lw' }, // OP16 Last Week
+  // Standard (current set folds in automatically — no separate "OP17" filter exists
+  // on cardkaizoku's own site anymore, confirmed via their dropdown)
+  { id: 'west_p',    period: 'west_p'    }, // Standard (Private Lobbies)
+  { id: 'lw_p',      period: 'lw_p'      }, // Standard Last Week (Private Lobbies)
+  { id: 'west',      period: 'west'      }, // Standard (All Lobbies)
+  { id: 'lw',        period: 'lw'        }, // Standard Last Week (All Lobbies)
+  // OP17 — only "Last Week" snapshots exist once a set folds into Standard
+  { id: 'op17_lw_p', period: 'op17_lw_p' }, // OP17 Last Week (Private Lobbies)
+  { id: 'op17_lw',   period: 'op17_lw'   }, // OP17 Last Week (All Lobbies)
+  // Extra Reg — cardkaizoku only exposes Last Week variants here too
+  { id: 'exreg_p',   period: 'exreg_p'   }, // Extra Reg Last Week (Private Lobbies)
+  { id: 'exreg',     period: 'exreg'     }, // Extra Reg Last Week (All Lobbies)
+  // Legacy
+  { id: 'op16_lw',   period: 'op16_lw'   }, // OP16 Final Week
 ];
 
 function parseCookies(str) {
