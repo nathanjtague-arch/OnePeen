@@ -167,13 +167,16 @@ async function nodeFetch(url) {
       ];
       let saved = false;
       for (const imgUrl of cdnUrls) {
-        try {
-          const res = await page.goto(imgUrl, { waitUntil: 'load', timeout: 10000 });
-          if (res && res.ok()) {
-            const buf = await res.body();
-            if (buf && buf.length > 500) { fs.writeFileSync(outPath, buf); downloaded++; saved = true; break; }
-          }
-        } catch {}
+        for (let attempt = 0; attempt < 2 && !saved; attempt++) {
+          try {
+            const res = await page.goto(imgUrl, { waitUntil: 'load', timeout: 12000 });
+            if (res && res.ok()) {
+              const buf = await res.body();
+              if (buf && buf.length > 500) { fs.writeFileSync(outPath, buf); downloaded++; saved = true; break; }
+            }
+          } catch {}
+        }
+        if (saved) break;
       }
       // CDN failed — try Bandai and Limitless via plain fetch (no Cloudflare)
       if (!saved) {
@@ -192,7 +195,7 @@ async function nodeFetch(url) {
   // ── Character card images (Bandai/Limitless — no Cloudflare, plain Node fetch works) ──
   // Collect all character/event card IDs from hands data
   const charIds = new Set();
-  for (const dsId of ['west_p', 'op16', 'lw_p']) {
+  for (const dsId of ['west_p', 'lw_p', 'op17_lw_p']) {
     const handsPath = path.join(statsDir, `hands_${dsId}.json`);
     if (fs.existsSync(handsPath)) {
       try {
