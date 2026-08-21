@@ -117,15 +117,16 @@ async function nodeFetch(url) {
   // ── Hands, Decklist, Matchuptech data ────────────────────────────
   // Fetch these extra file types for each primary dataset
   const EXTRA_TYPES = [
-    { type: 'hands',      datasets: ['west_p', 'op16', 'lw_p'] },
-    { type: 'decklist',   datasets: ['west_p', 'op16', 'lw_p'] },
-    { type: 'matchuptech',datasets: ['west_p', 'op16', 'lw_p'] },
+    { type: 'hands',      datasets: ['west_p', 'lw_p', 'op17_lw_p'] },
+    { type: 'decklist',   datasets: ['west_p', 'lw_p', 'op17_lw_p'] },
+    { type: 'matchuptech',datasets: ['west_p', 'lw_p', 'op17_lw_p'] },
   ];
 
   for (const { type, datasets } of EXTRA_TYPES) {
     console.log(`\n${type} data:`);
     for (const id of datasets) {
       const ds = DATASETS.find(d => d.id === id);
+      if (!ds) { console.log(`  ${id}... ✗ (unknown dataset id — skipped)`); continue; }
       process.stdout.write(`  ${id}... `);
       const url1 = `https://cdn.cardkaizoku.com/stats/${type}_${ds.period}_${today}.json?v=8`;
       const url2 = `https://cdn.cardkaizoku.com/stats/${type}_${ds.period}_${yesterday}.json?v=8`;
