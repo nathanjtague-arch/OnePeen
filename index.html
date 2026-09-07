@@ -185,7 +185,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
    ═══════════════════════════════════════════════════════ */
 .db-hero{text-align:center;padding:24px 0 16px}
 .db-hero-title{font-family:var(--font-head);font-size:32px;font-weight:800;
-  color:var(--acc);letter-spacing:.04em}
+  color:var(--text);letter-spacing:.04em}
 .db-hero-sub{font-size:14px;color:#9aa8cc;margin-top:6px;font-weight:600}
 
 .db-selector{display:flex;gap:8px;margin:16px 0;align-items:center;flex-wrap:wrap}
@@ -1730,13 +1730,12 @@ function viewDeckbuster(){
 
       BUST_RESULTS.forEach((r,idx)=>{
         const card=document.createElement('div');card.className='db-result-card';
-        const tierCol=r.weightedWR>=60?'var(--g1)':r.weightedWR>=50?'var(--g2)':r.weightedWR>=45?'var(--y)':'var(--r)';
-        card.style.borderLeftColor=tierCol;
+        // WR tier color lives on the score text only — the card and image borders
+        // stay neutral so the color isn't repeated three times on one card.
 
         // Header
         const hdr=document.createElement('div');hdr.className='db-result-header';
         const iw=document.createElement('div');iw.className='db-result-img-wrap';
-        iw.style.borderColor=tierCol;
         const im=document.createElement('img');im.alt='';
         const ph=document.createElement('div');ph.className='db-result-img-ph';
         iw.append(im,ph);applyCardImg(im,ph,r.deck.id);
@@ -1749,6 +1748,7 @@ function viewDeckbuster(){
 
         const scoreWrap=document.createElement('div');
         const score=document.createElement('div');score.className='db-result-score';
+        const tierCol=r.weightedWR>=60?'var(--g1)':r.weightedWR>=50?'var(--g2)':r.weightedWR>=45?'var(--y)':'var(--r)';
         score.style.color=tierCol;score.textContent=r.weightedWR.toFixed(1)+'%';
         const scoreLbl=document.createElement('div');scoreLbl.className='db-result-score-lbl';
         scoreLbl.textContent='combined WR vs selected opponents';
