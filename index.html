@@ -728,6 +728,54 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .ctx-label{font-family:var(--font-head);font-size:14px;font-weight:700;letter-spacing:.05em}
 .ctx-wr{font-family:var(--font-mono);font-size:12px;opacity:.8}
 .empty-state{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:24px;text-align:center;color:var(--dim);font-size:13px;line-height:1.8}
+/* ═══════════════════════════════════════════════════════
+   LANDING-PAGE ALIGNMENT PASS — header/hero area
+   Bringing the app's most-viewed screen in line with the landing page's
+   design language: ambient depth instead of flat black, a live-data pulse
+   instead of a plain static badge, and the flagship-vs-supporting card
+   distinction instead of three identically-treated stat boxes.
+   Placed last on purpose so it wins the cascade cleanly over the earlier,
+   superseded rules above rather than requiring a hunt-and-delete pass.
+   ═══════════════════════════════════════════════════════ */
+
+/* Ambient glow — same magenta/cyan pairing as the landing page's hero,
+   but static rather than an animated WebGL shader. This renders behind
+   every screen in a session that can run for a while, so a continuously
+   animated GPU-driven background would cost more than it's worth here;
+   a landing page is seen once, briefly — this tool is used repeatedly. */
+body{
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15% 0%, rgba(244,0,161,.07), transparent 60%),
+    radial-gradient(ellipse 50% 35% at 100% 10%, rgba(0,229,255,.05), transparent 60%);
+  background-repeat:no-repeat;
+}
+
+/* Live-data pulse on the "Updated" badge — same device as the landing
+   page's demo card, reused here because it's telling the truth in both
+   places: this really is live, auto-refreshing data. */
+.hdr-badge{
+  background:rgba(244,0,161,.06);border:1px solid rgba(244,0,161,.25);
+  border-radius:20px;padding:5px 14px 5px 12px;font-size:12px;color:#c8d0e8;
+  font-family:var(--font-mono);font-weight:600;
+  display:inline-flex;align-items:center;gap:7px;
+}
+.hdr-badge::before{
+  content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0;
+  background:var(--g1);animation:hdr-pulse 2s ease-in-out infinite;
+}
+@keyframes hdr-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.hdr-badge::before{animation:none}}
+
+/* Flagship stat card — "Best deck" gets real visual priority since it's
+   the single most important number on the page; the other two stay quiet
+   supporting stats, instead of all three getting the identical treatment. */
+.stats-strip{align-items:stretch}
+.stat-card:first-child{
+  background:linear-gradient(135deg,rgba(244,0,161,.07),rgba(244,0,161,.01));
+  border:1px solid rgba(244,0,161,.28);border-radius:10px;padding:14px 16px;
+}
+.stat-card:first-child .stat-label{color:rgba(244,0,161,.75)}
+.stat-card:first-child .stat-val{font-size:20px}
 </style>
 </head>
 <body>
