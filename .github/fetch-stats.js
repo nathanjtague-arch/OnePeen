@@ -95,6 +95,17 @@ async function nodeFetch(url) {
   fs.mkdirSync(statsDir, { recursive: true });
   fs.mkdirSync(cardsDir, { recursive: true });
 
+  // ── Dataset freshness tracking ───────────────────────────────────
+  // Loaded once here, updated per-dataset below, written out at the end.
+  // This is what lets the app show real "updated Xh ago" text per dataset
+  // instead of a static hand-written label — and what lets this workflow
+  // loudly flag a dataset that's quietly stopped updating, instead of that
+  // only being noticed by chance months later.
+  const STATUS_PATH = path.join(WORKSPACE, 'data', 'dataset-status.json');
+  const STALE_HOURS = 48; // ~8 missed runs at the current 6-hour cadence
+  let datasetStatus = {};
+  try { datasetStatus = JSON.parse(fs.readFileSync(STATUS_PATH, 'utf8')); } catch {}
+
   const page = await ctx.newPage();
   let primaryData = null;
 
@@ -104,15 +115,30 @@ async function nodeFetch(url) {
     const url1 = `https://cdn.cardkaizoku.com/stats/stats_${ds.period}_${today}.json?v=8`;
     const url2 = `https://cdn.cardkaizoku.com/stats/stats_${ds.period}_${yesterday}.json?v=8`;
     const result = await browserFetch(page, url1) || await browserFetch(page, url2);
+    const now = new Date().toISOString();
+    const prev = datasetStatus[ds.id] || {};
     if (result) {
       fs.writeFileSync(path.join(statsDir, `${ds.id}.json`), result.text);
       console.log(`✓  (${result.data.length} leaders)`);
       if (!primaryData) primaryData = result.data;
       if (ds.id === 'west_p') fs.writeFileSync(path.join(WORKSPACE, 'data', 'stats.json'), result.text);
+      datasetStatus[ds.id] = { lastSuccessAt: now, lastAttemptAt: now, lastAttemptFailed: false };
     } else {
       console.log('✗');
+      datasetStatus[ds.id] = { lastSuccessAt: prev.lastSuccessAt || null, lastAttemptAt: now, lastAttemptFailed: true };
+      // Loud, not silent: a dataset with no successful fetch in STALE_HOURS
+      // (or one that's never succeeded at all) gets a GitHub Actions warning
+      // annotation, which shows up directly in the workflow run summary.
+      const last = prev.lastSuccessAt ? new Date(prev.lastSuccessAt) : null;
+      const hoursSince = last ? (Date.now() - last.getTime()) / 3.6e6 : Infinity;
+      if (hoursSince > STALE_HOURS) {
+        console.log(`::warning::Dataset "${ds.id}" has not updated successfully in ${last ? hoursSince.toFixed(0)+'h' : 'ever'} — check whether cardkaizoku renamed or removed this period.`);
+      }
     }
   }
+
+  try { fs.writeFileSync(STATUS_PATH, JSON.stringify(datasetStatus, null, 2)); } catch(e) { console.log(`Could not write dataset-status.json: ${e.message}`); }
+
 
   // ── Hands, Decklist, Matchuptech data ────────────────────────────
   // Fetch these extra file types for each primary dataset
