@@ -998,7 +998,16 @@ function relTime(iso){
   return Math.round(hrs/24)+'d ago';
 }
 function sortedDatasets(){
-  return [...DATASETS].sort((a,b)=>{
+  // Only offer datasets that have actually succeeded at least once. If the
+  // status file hasn't loaded/doesn't exist yet, we don't know enough to
+  // filter safely, so show everything (matches the original behavior).
+  // The currently-selected dataset is always kept even if it's since gone
+  // unavailable, so a saved selection never just vanishes from the list.
+  const hasStatus=Object.keys(DATASET_STATUS).length>0;
+  const pool=hasStatus
+    ? DATASETS.filter(d=>DATASET_STATUS[d.id]?.lastSuccessAt||d.id===DATASET_ID)
+    : DATASETS;
+  return [...pool].sort((a,b)=>{
     const ta=DATASET_STATUS[a.id]?.lastSuccessAt, tb=DATASET_STATUS[b.id]?.lastSuccessAt;
     if(!ta&&!tb)return 0; if(!ta)return 1; if(!tb)return -1;
     return new Date(tb)-new Date(ta);
