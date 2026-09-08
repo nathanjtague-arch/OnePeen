@@ -80,7 +80,37 @@ img,svg{display:block;max-width:100%}
 .demo-result-img img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
 .demo-result-name{font-weight:700;font-size:17px;color:var(--paper)}
 .demo-result-code{font-family:var(--font-mono);font-size:11px;color:#7fe8ff;margin-bottom:4px}
-.demo-result-wr{font-family:var(--font-mono);font-weight:700;font-size:28px;color:var(--green)}
+.demo-result-info{flex:1;min-width:0}
+
+/* Win-rate gauge — sweeps to the real number when the card scrolls into view */
+.demo-gauge{position:relative;width:72px;height:72px;flex-shrink:0}
+.demo-gauge svg{width:100%;height:100%;display:block}
+.demo-gauge-track{stroke:rgba(255,255,255,.08)}
+.demo-gauge-fill{stroke:var(--green);stroke-dasharray:263.9;stroke-dashoffset:263.9;
+  transition:stroke-dashoffset 1.1s cubic-bezier(.16,1,.3,1)}
+.demo-gauge-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-weight:700;font-size:14.5px;color:var(--paper)}
+
+/* Reused directly from the app's own "favourable matchup" animation —
+   same starburst shape, same colors — so the two products share one
+   visual signature instead of two unrelated animation languages. */
+@keyframes demo-impact-burst{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(0) rotate(0deg)}
+  30%{opacity:1;transform:translate(-50%,-50%) scale(1.3) rotate(20deg);
+      filter:drop-shadow(0 0 14px rgba(255,220,0,1))}
+  50%{opacity:0.9;transform:translate(-50%,-50%) scale(1.5) rotate(-10deg)}
+  70%{opacity:0.4;transform:translate(-50%,-50%) scale(1.7) rotate(5deg)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.9) rotate(0deg)}
+}
+.demo-impact-fx{position:absolute;top:50%;left:50%;width:84px;height:84px;pointer-events:none;opacity:0;z-index:5;
+  clip-path:polygon(50% 0%,61% 35%,98% 24%,71% 50%,98% 76%,61% 65%,50% 100%,39% 65%,2% 76%,29% 50%,2% 24%,39% 35%);
+  background:linear-gradient(135deg,#ffe600,#ff8c00,#ff3300);
+  filter:drop-shadow(0 0 12px rgba(255,200,0,.8));
+  transform:translate(-50%,-50%) scale(0)}
+.demo-impact-fx.fire{animation:demo-impact-burst 1s ease-out forwards}
+
+@keyframes demo-chip-recoil{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(.9);filter:brightness(1.4) saturate(1.5)}}
+.demo-chip-img.recoil{animation:demo-chip-recoil .4s ease-out}
 .demo-breakdown{display:flex;gap:8px;margin-top:16px}
 .demo-mini{flex:1;background:var(--panel-2);border-radius:8px;padding:8px 10px}
 .demo-mini-name{font-size:10.5px;color:var(--mute);font-family:var(--font-mono)}
@@ -213,10 +243,17 @@ footer .wrap{display:flex;justify-content:space-between;align-items:flex-start;g
         <div class="demo-result-label">Top counter</div>
         <div class="demo-result-row">
           <div class="demo-result-img" aria-hidden="true"><img id="demo-img-ace" alt=""></div>
-          <div>
+          <div class="demo-result-info">
             <div class="demo-result-code">[OP16-001]</div>
             <div class="demo-result-name">Portgas.D.Ace</div>
-            <div class="demo-result-wr">57.2%</div>
+          </div>
+          <div class="demo-gauge" aria-hidden="true">
+            <svg viewBox="0 0 100 100">
+              <circle class="demo-gauge-track" cx="50" cy="50" r="42" fill="none" stroke-width="8"/>
+              <circle class="demo-gauge-fill" cx="50" cy="50" r="42" fill="none" stroke-width="8" stroke-linecap="round" transform="rotate(-90 50 50)"/>
+            </svg>
+            <div class="demo-gauge-num">0.0%</div>
+            <div class="demo-impact-fx"></div>
           </div>
         </div>
         <div class="demo-breakdown">
@@ -232,14 +269,14 @@ footer .wrap{display:flex;justify-content:space-between;align-items:flex-start;g
   <div class="ticker-track">
     <span class="tick"><b>129</b> decks tracked</span>
     <span class="tick"><b>500K+</b> games recorded</span>
-    <span class="tick">Kuzan <span class="up">▲ 14.0%</span> this week</span>
-    <span class="tick">Marshall.D.Teach <span class="down">▼ 10.7%</span> this week</span>
+    <span class="tick">Kuzan <span class="up">▲ 14.0% WR</span> this week</span>
+    <span class="tick">Marshall.D.Teach <span class="down">▼ 10.7% WR</span> this week</span>
     <span class="tick">refreshes every <b>6hr</b></span>
     <span class="tick"><b>Sabo</b> leads at 54.0% WR</span>
     <span class="tick"><b>129</b> decks tracked</span>
     <span class="tick"><b>500K+</b> games recorded</span>
-    <span class="tick">Kuzan <span class="up">▲ 14.0%</span> this week</span>
-    <span class="tick">Marshall.D.Teach <span class="down">▼ 10.7%</span> this week</span>
+    <span class="tick">Kuzan <span class="up">▲ 14.0% WR</span> this week</span>
+    <span class="tick">Marshall.D.Teach <span class="down">▼ 10.7% WR</span> this week</span>
     <span class="tick">refreshes every <b>6hr</b></span>
     <span class="tick"><b>Sabo</b> leads at 54.0% WR</span>
   </div>
@@ -310,7 +347,7 @@ footer .wrap{display:flex;justify-content:space-between;align-items:flex-start;g
   <div class="wrap">
     <div class="section-head">
       <h2>This week's meta, moving.</h2>
-      <p>A live slice of what Meta Trends is tracking right now.</p>
+      <p>A live slice of the win-rate swings Meta Trends is tracking right now.</p>
     </div>
     <div class="move-panel">
       <div class="move-row">
@@ -455,6 +492,51 @@ loadCardArt(document.getElementById('demo-img-ace'),'OP16-001');
     draw(0);
   }else{
     (function loop(t){draw(t);requestAnimationFrame(loop);})(0);
+  }
+})();
+
+// ── Win-rate gauge — sweeps to the real 57.2% when the demo card first
+// scrolls into view, number counting up in sync, ending with the same
+// impact-burst flash the app itself uses for a favourable matchup.
+// Fires once. Skips the sweep (shows the final state instantly) under
+// reduced motion, per the same rule the rest of this page follows.
+(function(){
+  const card=document.querySelector('.demo-card');
+  const fill=document.querySelector('.demo-gauge-fill');
+  const num=document.querySelector('.demo-gauge-num');
+  const chip=document.querySelector('.demo-chip-img');
+  const burst=document.querySelector('.demo-impact-fx');
+  if(!card||!fill||!num)return;
+  const TARGET=57.2, CIRC=263.9;
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function play(){
+    if(reduce){
+      fill.style.transition='none';
+      fill.style.strokeDashoffset=CIRC*(1-TARGET/100);
+      num.textContent=TARGET.toFixed(1)+'%';
+      return;
+    }
+    chip&&chip.classList.add('recoil');
+    requestAnimationFrame(()=>{fill.style.strokeDashoffset=CIRC*(1-TARGET/100);});
+    const start=performance.now(), dur=1100;
+    function tick(t){
+      const p=Math.min(1,(t-start)/dur);
+      const eased=1-Math.pow(1-p,3);
+      num.textContent=(eased*TARGET).toFixed(1)+'%';
+      if(p<1)requestAnimationFrame(tick);
+      else{num.textContent=TARGET.toFixed(1)+'%';burst&&burst.classList.add('fire');}
+    }
+    requestAnimationFrame(tick);
+  }
+
+  if('IntersectionObserver' in window){
+    const io=new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{if(e.isIntersecting){play();io.disconnect();}});
+    },{threshold:.4});
+    io.observe(card);
+  }else{
+    play(); // ancient browser fallback — just play it
   }
 })();
 
