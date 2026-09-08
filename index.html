@@ -101,7 +101,8 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .trend-mini-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
   font-size:6px;color:var(--dim)}
 .trend-mini-name{font-size:13px;font-weight:700;color:var(--text);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trend-mini-code{font-family:var(--font-mono);font-size:10px;color:#e87070;margin-top:2px}
 .trend-mini-delta{font-family:var(--font-mono);font-size:13px;font-weight:800}
 
 .trends-loading{text-align:center;padding:60px;color:#666;font-size:14px}
@@ -1354,13 +1355,13 @@ function viewTrends(){
   cl.textContent=`Comparing: ${pair.label} (current) vs Last Week`;
   hero.append(ht,hs,cl);wrap.appendChild(hero);
 
-  // Pair selector — only rendered if there's an actual choice to make.
-  // With private lobbies removed, "Standard" is currently the only pair,
-  // so a one-option dropdown would just be dead UI; the "Comparing:" line
-  // above already says what's being compared.
+  // Sort controls — built here but appended further down, right above the
+  // full table they actually affect (previously sat right under the hero,
+  // above four panels they don't control, with the table they DO control
+  // scrolled off-screen — looked like it wasn't working at all).
   const ctrlRow=document.createElement('div');ctrlRow.className='trends-sort-bar';
   const sl2=document.createElement('span');sl2.className='trends-sort-lbl';sl2.textContent='Sort:';
-  const sortBtns=[['wr','WR Change'],['play','Play Rate Δ'],['momentum','Momentum'],['absolute','Current WR']];
+  const sortBtns=[['wr','Rising WR'],['wrFalling','Falling WR'],['play','Play Rate Δ'],['momentum','Momentum'],['absolute','Current WR']];
   sortBtns.forEach(([v,l])=>{
     const b=document.createElement('button');b.className='sort-btn'+(TREND_SORT===v?' active':'');
     b.textContent=l;b.onclick=()=>{TREND_SORT=v;render();};ctrlRow.appendChild(b);
@@ -1375,7 +1376,7 @@ function viewTrends(){
   }else{
     ctrlRow.prepend(sl2);
   }
-  wrap.appendChild(ctrlRow);
+
 
   // Loading state
   const loadDiv=document.createElement('div');loadDiv.className='trends-loading';
@@ -1400,54 +1401,22 @@ function viewTrends(){
     // Sort
     const sorted=[...trends].sort((a,b)=>{
       if(TREND_SORT==='wr')return b.wrDelta-a.wrDelta;
+      if(TREND_SORT==='wrFalling')return a.wrDelta-b.wrDelta;
       if(TREND_SORT==='play')return b.playDelta-a.playDelta;
       if(TREND_SORT==='momentum')return b.momentum-a.momentum;
       return(b.deck.wtdWR??0)-(a.deck.wtdWR??0);
     });
 
-    // ── Highlights ───────────────────────────────────────────────
-    const hlRow=document.createElement('div');hlRow.className='trends-highlights';
-
-    function mkHighlightPanel(title,color,items,deltaKey){
-      const panel=document.createElement('div');panel.className='trends-panel';
-      panel.style.borderLeftColor=color;panel.style.borderLeftWidth='3px';
-      const pt=document.createElement('div');pt.className='trends-panel-title';
-      pt.style.color=color;pt.textContent=title;
-      panel.appendChild(pt);
-      items.slice(0,5).forEach(t=>{
-        const row=document.createElement('div');row.className='trend-mini';
-        const iw=document.createElement('div');iw.className='trend-mini-img';
-        const im=document.createElement('img');im.alt='';
-        const ph=document.createElement('div');ph.className='trend-mini-img-ph';ph.textContent=t.deck.id;
-        iw.append(im,ph);applyCardImg(im,ph,t.deck.id);
-        const nm=document.createElement('div');nm.className='trend-mini-name';nm.textContent=t.deck.name;
-        const dv=document.createElement('div');dv.className='trend-mini-delta';
-        dv.style.color=color;
-        const d=t[deltaKey];
-        dv.textContent=(d>0?'+':'')+d.toFixed(1)+'%';
-        row.append(iw,nm,dv);panel.appendChild(row);
-      });
-      return panel;
-    }
-
-    const risers=[...trends].sort((a,b)=>b.wrDelta-a.wrDelta).filter(t=>t.wrDelta>0);
-    const fallers=[...trends].sort((a,b)=>a.wrDelta-b.wrDelta).filter(t=>t.wrDelta<0);
-    const trending=[...trends].sort((a,b)=>b.playDelta-a.playDelta).filter(t=>t.playDelta>0);
-    const fading=[...trends].sort((a,b)=>a.playDelta-b.playDelta).filter(t=>t.playDelta<0);
-
-    hlRow.appendChild(mkHighlightPanel('Rising WR','var(--g1)',risers,'wrDelta'));
-    hlRow.appendChild(mkHighlightPanel('Falling WR','var(--r)',fallers,'wrDelta'));
-    wrap.appendChild(hlRow);
-
-    const hlRow2=document.createElement('div');hlRow2.className='trends-highlights';
-    hlRow2.style.marginTop='0';
-    hlRow2.appendChild(mkHighlightPanel('Gaining Popularity','var(--g2)',trending,'playDelta'));
-    hlRow2.appendChild(mkHighlightPanel('Losing Popularity','var(--o)',fading,'playDelta'));
-    wrap.appendChild(hlRow2);
+    // Sort controls + the full table land first, right after the hero —
+    // this is the primary interactive content. The four highlight panels
+    // move below it as a supplementary "at a glance" summary, rather than
+    // sitting above and burying the table (and the controls that affect
+    // it) below a full screen of content you'd have to scroll past first.
+    wrap.appendChild(ctrlRow);
 
     // ── Full table ────────────────────────────────────────────────
     const tblWrap=document.createElement('div');
-    tblWrap.style.cssText='margin-top:20px;background:var(--card);border:1px solid var(--brd);border-radius:12px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.025),rgba(255,255,255,0))';
+    tblWrap.style.cssText='margin-top:12px;background:var(--card);border:1px solid var(--brd);border-radius:12px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.025),rgba(255,255,255,0))';
 
     const hdrs=[['#',''],['',''],['[Code] Deck',''],['WR %','wr'],['WR Δ','wr'],['Play Δ','play']];
     const hdrRow=document.createElement('div');hdrRow.className='trend-header-row';
@@ -1482,6 +1451,54 @@ function viewTrends(){
       tblWrap.appendChild(row);
     });
     wrap.appendChild(tblWrap);
+
+    // ── Highlights (supplementary — sits below the interactive table) ──
+    const hlHeading=document.createElement('div');
+    hlHeading.style.cssText='font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:24px 0 12px';
+    hlHeading.textContent='At a glance';
+    wrap.appendChild(hlHeading);
+
+    const hlRow=document.createElement('div');hlRow.className='trends-highlights';
+
+    function mkHighlightPanel(title,color,items,deltaKey){
+      const panel=document.createElement('div');panel.className='trends-panel';
+      panel.style.borderLeftColor=color;panel.style.borderLeftWidth='3px';
+      const pt=document.createElement('div');pt.className='trends-panel-title';
+      pt.style.color=color;pt.textContent=title;
+      panel.appendChild(pt);
+      items.slice(0,5).forEach(t=>{
+        const row=document.createElement('div');row.className='trend-mini';
+        const iw=document.createElement('div');iw.className='trend-mini-img';
+        const im=document.createElement('img');im.alt='';
+        const ph=document.createElement('div');ph.className='trend-mini-img-ph';ph.textContent=t.deck.id;
+        iw.append(im,ph);applyCardImg(im,ph,t.deck.id);
+        const nm=document.createElement('div');nm.className='trend-mini-name';nm.textContent=t.deck.name;
+        const cd=document.createElement('div');cd.className='trend-mini-code';cd.textContent='['+t.deck.id+']';
+        const nameWrap=document.createElement('div');nameWrap.style.cssText='overflow:hidden;flex:1';
+        nameWrap.append(nm,cd);
+        const dv=document.createElement('div');dv.className='trend-mini-delta';
+        dv.style.color=color;
+        const d=t[deltaKey];
+        dv.textContent=(d>0?'+':'')+d.toFixed(1)+'%';
+        row.append(iw,nameWrap,dv);panel.appendChild(row);
+      });
+      return panel;
+    }
+
+    const risers=[...trends].sort((a,b)=>b.wrDelta-a.wrDelta).filter(t=>t.wrDelta>0);
+    const fallers=[...trends].sort((a,b)=>a.wrDelta-b.wrDelta).filter(t=>t.wrDelta<0);
+    const trending=[...trends].sort((a,b)=>b.playDelta-a.playDelta).filter(t=>t.playDelta>0);
+    const fading=[...trends].sort((a,b)=>a.playDelta-b.playDelta).filter(t=>t.playDelta<0);
+
+    hlRow.appendChild(mkHighlightPanel('Rising WR','var(--g1)',risers,'wrDelta'));
+    hlRow.appendChild(mkHighlightPanel('Falling WR','var(--r)',fallers,'wrDelta'));
+    wrap.appendChild(hlRow);
+
+    const hlRow2=document.createElement('div');hlRow2.className='trends-highlights';
+    hlRow2.style.marginTop='0';
+    hlRow2.appendChild(mkHighlightPanel('Gaining Popularity','var(--g2)',trending,'playDelta'));
+    hlRow2.appendChild(mkHighlightPanel('Losing Popularity','var(--o)',fading,'playDelta'));
+    wrap.appendChild(hlRow2);
 
     // Stats footer
     const footer=document.createElement('div');
