@@ -12,16 +12,22 @@ const COOKIE_STR = process.env.CARDKAIZOKU_COOKIES || '';
 const DATASETS = [
   // Standard (current set folds in automatically — no separate "OP17" filter exists
   // on cardkaizoku's own site anymore, confirmed via their dropdown)
-  { id: 'west_p',    period: 'west_p'    }, // Standard (Private Lobbies)
-  { id: 'lw_p',      period: 'lw_p'      }, // Standard Last Week (Private Lobbies)
-  { id: 'west',      period: 'west'      }, // Standard (All Lobbies)
-  { id: 'lw',        period: 'lw'        }, // Standard Last Week (All Lobbies)
+  //
+  // west_p / lw_p (Private Lobbies) are kept here on purpose even though they're
+  // no longer offered anywhere in the app's dropdowns — small, unrepresentative
+  // sample, not something anyone should pick as their main view. They're still
+  // fetched because Opening Hand Analysis has no All-Lobbies equivalent to fall
+  // back to; removing the fetch would silently break that feature, not just
+  // remove an unused option. op17_lw_p and exreg_p (Private) were dropped
+  // entirely — nothing in the app reads them.
+  { id: 'west_p',    period: 'west_p'    }, // internal only — feeds Opening Hand Analysis
+  { id: 'lw_p',      period: 'lw_p'      }, // internal only — feeds Opening Hand Analysis
+  { id: 'west',      period: 'west'      }, // Standard
+  { id: 'lw',        period: 'lw'        }, // Standard Last Week
   // OP17 — only "Last Week" snapshots exist once a set folds into Standard
-  { id: 'op17_lw_p', period: 'op17_lw_p' }, // OP17 Last Week (Private Lobbies)
-  { id: 'op17_lw',   period: 'op17_lw'   }, // OP17 Last Week (All Lobbies)
+  { id: 'op17_lw',   period: 'op17_lw'   }, // OP17 Last Week
   // Extra Reg — cardkaizoku only exposes Last Week variants here too
-  { id: 'exreg_p',   period: 'exreg_p'   }, // Extra Reg Last Week (Private Lobbies)
-  { id: 'exreg',     period: 'exreg'     }, // Extra Reg Last Week (All Lobbies)
+  { id: 'exreg',     period: 'exreg'     }, // Extra Reg Last Week
   // Legacy
   { id: 'op16_lw',   period: 'op16_lw'   }, // OP16 Final Week
 ];
@@ -120,8 +126,11 @@ async function nodeFetch(url) {
     if (result) {
       fs.writeFileSync(path.join(statsDir, `${ds.id}.json`), result.text);
       console.log(`✓  (${result.data.length} leaders)`);
-      if (!primaryData) primaryData = result.data;
-      if (ds.id === 'west_p') fs.writeFileSync(path.join(WORKSPACE, 'data', 'stats.json'), result.text);
+      // Prefer 'west' (All Lobbies) as the source for which leaders to
+      // download portraits for — west_p gets processed first in this loop,
+      // but we don't want the private-lobby roster driving that list.
+      if (!primaryData || ds.id === 'west') primaryData = result.data;
+      if (ds.id === 'west') fs.writeFileSync(path.join(WORKSPACE, 'data', 'stats.json'), result.text);
       datasetStatus[ds.id] = { lastSuccessAt: now, lastAttemptAt: now, lastAttemptFailed: false };
     } else {
       console.log('✗');
@@ -143,9 +152,9 @@ async function nodeFetch(url) {
   // ── Hands, Decklist, Matchuptech data ────────────────────────────
   // Fetch these extra file types for each primary dataset
   const EXTRA_TYPES = [
-    { type: 'hands',      datasets: ['west_p', 'lw_p', 'op17_lw_p'] },
-    { type: 'decklist',   datasets: ['west_p', 'lw_p', 'op17_lw_p'] },
-    { type: 'matchuptech',datasets: ['west_p', 'lw_p', 'op17_lw_p'] },
+    { type: 'hands',      datasets: ['west_p', 'lw_p'] },
+    { type: 'decklist',   datasets: ['west_p', 'lw_p'] },
+    { type: 'matchuptech',datasets: ['west_p', 'lw_p'] },
   ];
 
   for (const { type, datasets } of EXTRA_TYPES) {
@@ -222,7 +231,7 @@ async function nodeFetch(url) {
   // ── Character card images (Bandai/Limitless — no Cloudflare, plain Node fetch works) ──
   // Collect all character/event card IDs from hands data
   const charIds = new Set();
-  for (const dsId of ['west_p', 'lw_p', 'op17_lw_p']) {
+  for (const dsId of ['west_p', 'lw_p']) {
     const handsPath = path.join(statsDir, `hands_${dsId}.json`);
     if (fs.existsSync(handsPath)) {
       try {
