@@ -230,10 +230,13 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .db-clear-btn:hover{border-color:#666;color:#ccc}
 
 .db-results{margin-top:20px}
+@keyframes db-card-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .db-result-card{background:var(--card);border:1px solid var(--brd);border-radius:12px;
   padding:16px 20px;margin-bottom:12px;
   border-left:4px solid;transition:all .2s;
-  background:linear-gradient(135deg,rgba(255,255,255,.025),rgba(255,255,255,0))}
+  background:linear-gradient(135deg,rgba(255,255,255,.025),rgba(255,255,255,0));
+  opacity:0;animation:db-card-in .5s cubic-bezier(.16,1,.3,1) forwards}
+@media(prefers-reduced-motion:reduce){.db-result-card{animation:none;opacity:1}}
 .db-result-card:hover{box-shadow:0 8px 32px rgba(0,0,0,.4);transform:translateY(-1px)}
 .db-result-header{display:flex;gap:16px;align-items:flex-start;margin-bottom:14px}
 .db-result-img-wrap{width:70px;height:98px;border-radius:8px;overflow:hidden;
@@ -403,6 +406,15 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .cb-row{display:flex;align-items:center;gap:7px;margin-top:6px;font-size:11px;color:var(--dim);cursor:pointer;user-select:none}
 .cb-row:hover{color:var(--text)}
 .advice-card{border-radius:12px;padding:24px 20px;text-align:center;margin:14px 0;border:1px solid var(--brd);background:var(--card);position:relative;overflow:hidden}
+.advice-card.has-gauge{display:flex;align-items:center;justify-content:space-between;gap:24px;text-align:left;flex-wrap:wrap}
+.advice-info{flex:1;min-width:200px}
+.advice-gauge{position:relative;width:88px;height:88px;flex-shrink:0}
+.advice-gauge svg{width:100%;height:100%;display:block}
+.advice-gauge-track{stroke:rgba(255,255,255,.08)}
+.advice-gauge-fill{stroke-linecap:round;stroke-dasharray:263.9;stroke-dashoffset:263.9;
+  transition:stroke-dashoffset 1s cubic-bezier(.16,1,.3,1)}
+.advice-gauge-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-weight:700;font-size:16px}
 .advice-card::before{content:'';position:absolute;inset:0;opacity:.04;background:var(--accent-col,var(--acc));pointer-events:none}
 .advice-pill{font-size:10px;font-family:var(--font-head);font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#888888;margin-bottom:10px}
 .advice-text{font-family:var(--font-head);font-size:24px;font-weight:800;letter-spacing:.03em;margin-bottom:8px}
@@ -847,12 +859,12 @@ function getAdvice(myDeck,oppDeck){
   const mu=myDeck.mu?.[oppDeck.id];
   if(mu?.f!=null&&mu?.s!=null){f=mu.f;s=mu.s;src='matchup-specific';}
   else if(myDeck.f!=null&&myDeck.s!=null){f=myDeck.f;s=myDeck.s;}
-  if(f==null||s==null)return{text:'Insufficient data',sub:'1st/2nd WR not available',col:'var(--dim)',src:'n/a'};
+  if(f==null||s==null)return{text:'Insufficient data',sub:'1st/2nd WR not available',col:'var(--dim)',src:'n/a',winPct:null};
   const diff=Math.abs(f-s);
   if(diff<=2)
-    return{text:'Situational',sub:`Within 2% either way · ${fmt(f)} 1st · ${fmt(s)} 2nd · ${diff.toFixed(1)}% gap`,col:'var(--y)',src};
-  if(f>s)return{text:'Take 1st',sub:`${fmt(f)} going first vs ${fmt(s)} going second`,col:'var(--info)',src};
-  return{text:'Take 2nd',sub:`${fmt(s)} going second vs ${fmt(f)} going first`,col:'var(--info)',src};
+    return{text:'Situational',sub:`Within 2% either way · ${fmt(f)} 1st · ${fmt(s)} 2nd · ${diff.toFixed(1)}% gap`,col:'var(--y)',src,winPct:Math.max(f,s)};
+  if(f>s)return{text:'Take 1st',sub:`${fmt(f)} going first vs ${fmt(s)} going second`,col:'var(--info)',src,winPct:f};
+  return{text:'Take 2nd',sub:`${fmt(s)} going second vs ${fmt(f)} going first`,col:'var(--info)',src,winPct:s};
 }
 
 function getMatchupCtx(wr){
@@ -941,6 +953,24 @@ function populateDatasetSelect(sel){
 
 
 let STATE='loading',DATA=null,META_UPDATED=null,HIDDEN=new Set();
+const REDUCE_MOTION=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function easeOutCubic(p){return 1-Math.pow(1-p,3);}
+// Shared count-up used for stat readouts that change on a deliberate user
+// action (picking a matchup, running Deckbuster) — never on routine
+// re-renders like sorting/filtering, where it would just be noise.
+function countUpEl(el,target,duration=900,decimals=1){
+  if(target==null||isNaN(target)){el.textContent='—';return;}
+  if(REDUCE_MOTION){el.textContent=fmt(target,decimals);return;}
+  const start=performance.now();
+  function tick(t){
+    const p=Math.min(1,(t-start)/duration);
+    el.textContent=(easeOutCubic(p)*target).toFixed(decimals)+'%';
+    if(p<1)requestAnimationFrame(tick);
+    else el.textContent=fmt(target,decimals);
+  }
+  requestAnimationFrame(tick);
+}
+
 let TAB='rank',FILTER='all',SORT='wtdWR',PASTE_ERR='';
 let MY_DECK=null,OPP_DECK=null,EXCL_LOW=false;
 let EXP_DECK=null;
@@ -1770,6 +1800,7 @@ function viewDeckbuster(){
 
       BUST_RESULTS.forEach((r,idx)=>{
         const card=document.createElement('div');card.className='db-result-card';
+        card.style.animationDelay=(idx*90)+'ms';
         // WR tier color lives on the score text only — the card and image borders
         // stay neutral so the color isn't repeated three times on one card.
 
@@ -1789,7 +1820,7 @@ function viewDeckbuster(){
         const scoreWrap=document.createElement('div');
         const score=document.createElement('div');score.className='db-result-score';
         const tierCol=r.weightedWR>=60?'var(--g1)':r.weightedWR>=50?'var(--g2)':r.weightedWR>=45?'var(--y)':'var(--r)';
-        score.style.color=tierCol;score.textContent=r.weightedWR.toFixed(1)+'%';
+        score.style.color=tierCol;score.textContent='0.0%';
         const scoreLbl=document.createElement('div');scoreLbl.className='db-result-score-lbl';
         scoreLbl.textContent='combined WR vs selected opponents';
         scoreWrap.append(score,scoreLbl);
@@ -1824,6 +1855,8 @@ function viewDeckbuster(){
         cov.textContent=`Coverage: ${r.matchupData.filter(m=>m.hasData).length}/${BUSTED_DECKS.length} matchups · Overall WR: ${fmt(r.overallWR)} · ${r.totalGames.toLocaleString()} games analysed`;
         card.appendChild(cov);
         resSection.appendChild(card);
+        // Count-up timed to land just as this card's stagger-in settles
+        setTimeout(()=>countUpEl(score,r.weightedWR,900),REDUCE_MOTION?0:idx*90+150);
       });
     }
     wrap.appendChild(resSection);
@@ -1962,11 +1995,37 @@ function viewAdvisor(){
   ac.style.setProperty('--accent-col',advice.col);
   ac.style.borderColor=advice.col.replace('var(--','').replace(')','');
   const acBorderStyle=`1px solid ${advice.col}`;ac.style.border=acBorderStyle;
+  const info=document.createElement('div');info.className='advice-info';
   const pill=document.createElement('div');pill.className='advice-pill';pill.textContent='Recommendation';
   const txt=document.createElement('div');txt.className='advice-text';txt.style.color=advice.col;txt.textContent=advice.text;
   const sub=document.createElement('div');sub.className='advice-sub';sub.textContent=advice.sub;
   const src=document.createElement('div');src.className='advice-src';src.textContent=`Source: ${advice.src}`;
-  ac.append(pill,txt,sub,src);wrap.appendChild(ac);
+  info.append(pill,txt,sub,src);ac.appendChild(info);
+  if(advice.winPct!=null){
+    ac.classList.add('has-gauge');
+    const gauge=document.createElement('div');gauge.className='advice-gauge';
+    gauge.innerHTML=`<svg viewBox="0 0 100 100">
+      <circle class="advice-gauge-track" cx="50" cy="50" r="42" fill="none" stroke-width="8"/>
+      <circle class="advice-gauge-fill" cx="50" cy="50" r="42" fill="none" stroke-width="8" transform="rotate(-90 50 50)"/>
+    </svg><div class="advice-gauge-num">0.0%</div>`;
+    ac.appendChild(gauge);
+    wrap.appendChild(ac);
+    // Sweep + count up to the recommended win %, mirroring the landing
+    // page's gauge — same easing, same device, now inside the actual tool.
+    const fill=gauge.querySelector('.advice-gauge-fill');
+    const num=gauge.querySelector('.advice-gauge-num');
+    fill.style.stroke=advice.col;num.style.color=advice.col;
+    const CIRC=263.9,target=advice.winPct;
+    if(REDUCE_MOTION){
+      fill.style.transition='none';
+      fill.style.strokeDashoffset=CIRC*(1-target/100);
+    }else{
+      requestAnimationFrame(()=>{fill.style.strokeDashoffset=CIRC*(1-target/100);});
+    }
+    countUpEl(num,target,1000);
+  }else{
+    wrap.appendChild(ac);
+  }
 
   // Matchup stats
   const muData=myDeck.mu?.[oppDeck.id];
@@ -1991,15 +2050,16 @@ function viewAdvisor(){
   }
 
   const sg=document.createElement('div');sg.className='mu-grid';
-  [{l:'Matchup WR',v:fmt(muData?.wr),c:wrCol(muData?.wr),n:muData?.wr!=null?'matchup-specific':'not available'},
-   {l:'Win % going 1st',v:fmt(muData?.f??myDeck.f),c:wrCol(muData?.f??myDeck.f),n:muData?.f!=null?'matchup-specific':'deck average'},
-   {l:'Win % going 2nd',v:fmt(muData?.s??myDeck.s),c:wrCol(muData?.s??myDeck.s),n:muData?.s!=null?'matchup-specific':'deck average'}
+  [{l:'Matchup WR',v:muData?.wr,c:wrCol(muData?.wr),n:muData?.wr!=null?'matchup-specific':'not available'},
+   {l:'Win % going 1st',v:muData?.f??myDeck.f,c:wrCol(muData?.f??myDeck.f),n:muData?.f!=null?'matchup-specific':'deck average'},
+   {l:'Win % going 2nd',v:muData?.s??myDeck.s,c:wrCol(muData?.s??myDeck.s),n:muData?.s!=null?'matchup-specific':'deck average'}
   ].forEach(({l,v,c,n})=>{
     const tile=document.createElement('div');tile.className='mu-tile';
     const lbl=document.createElement('div');lbl.className='mu-label';lbl.textContent=l;
-    const val=document.createElement('div');val.className='mu-val';val.style.color=c;val.textContent=v;
+    const val=document.createElement('div');val.className='mu-val';val.style.color=c;val.textContent='0.0%';
     const nt=document.createElement('div');nt.className='mu-note';nt.textContent=n;
     tile.append(lbl,val,nt);sg.appendChild(tile);
+    countUpEl(val,v,900);
   });
   wrap.appendChild(sg);
 
