@@ -81,13 +81,12 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .trend-name{font-size:16px;font-weight:800;color:var(--text);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .trend-code{font-family:var(--font-mono);font-size:11px;color:#e87070;margin-top:3px;font-weight:600}
-.trend-wr{font-family:var(--font-mono);font-size:18px;font-weight:800;text-align:right}
+.trend-wr{font-family:var(--font-mono);font-size:16px;font-weight:700;text-align:right}
 .trend-delta{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-.trend-pill{font-family:var(--font-mono);font-size:14px;font-weight:800;
-  padding:4px 12px;border-radius:20px;white-space:nowrap;display:inline-block}
-.trend-pill.up{background:rgba(0,232,122,.15);color:var(--g1);border:1px solid rgba(0,232,122,.3)}
-.trend-pill.down{background:rgba(239,68,68,.15);color:var(--r);border:1px solid rgba(239,68,68,.3)}
-.trend-pill.flat{background:rgba(255,255,255,.05);color:#666;border:1px solid #333}
+.trend-pill{font-family:var(--font-mono);font-size:14px;font-weight:700;white-space:nowrap}
+.trend-pill.up{color:var(--g1)}
+.trend-pill.down{color:var(--r)}
+.trend-pill.flat{color:#666}
 .trend-play-delta{font-family:var(--font-mono);font-size:10px;color:#888}
 .trend-score{font-family:var(--font-mono);font-size:13px;font-weight:700;text-align:right}
 
@@ -1407,54 +1406,12 @@ function viewTrends(){
       return(b.deck.wtdWR??0)-(a.deck.wtdWR??0);
     });
 
-    // Sort controls + the full table land first, right after the hero —
-    // this is the primary interactive content. The four highlight panels
-    // move below it as a supplementary "at a glance" summary, rather than
-    // sitting above and burying the table (and the controls that affect
-    // it) below a full screen of content you'd have to scroll past first.
-    wrap.appendChild(ctrlRow);
-
-    // ── Full table ────────────────────────────────────────────────
-    const tblWrap=document.createElement('div');
-    tblWrap.style.cssText='margin-top:12px;background:var(--card);border:1px solid var(--brd);border-radius:12px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.025),rgba(255,255,255,0))';
-
-    const hdrs=[['#',''],['',''],['[Code] Deck',''],['WR %','wr'],['WR Δ','wr'],['Play Δ','play']];
-    const hdrRow=document.createElement('div');hdrRow.className='trend-header-row';
-    hdrs.forEach(([t,s])=>{
-      const sp=document.createElement('span');sp.textContent=t;
-      if(s){sp.className=TREND_SORT===s?'active':'';sp.onclick=()=>{TREND_SORT=s;render();};}
-      hdrRow.appendChild(sp);
-    });
-    tblWrap.appendChild(hdrRow);
-
-    sorted.forEach((t,i)=>{
-      const row=document.createElement('div');row.className='trend-row';
-      const rn=document.createElement('div');rn.className='trend-rank';rn.textContent='#'+(i+1);
-      const iw=document.createElement('div');iw.className='trend-img-wrap';
-      const im=document.createElement('img');im.alt='';
-      const ph=document.createElement('div');ph.className='trend-img-ph';ph.textContent=t.deck.id;
-      iw.append(im,ph);applyCardImg(im,ph,t.deck.id);
-      const nc=document.createElement('div');nc.style.cssText='overflow:hidden';
-      const nm=document.createElement('div');nm.className='trend-name';nm.textContent=t.deck.name;
-      const cd=document.createElement('div');cd.className='trend-code';cd.textContent='['+t.deck.id+']';
-      nc.append(nm,cd);
-      const wr=document.createElement('div');wr.className='trend-wr';
-      wr.style.color=wrCol(t.deck.wtdWR);wr.textContent=fmt(t.deck.wtdWR);
-      const wrd=document.createElement('div');wrd.className='trend-delta';
-      wrd.appendChild(mkTrendPill(t.wrDelta));
-      const prevWrEl=document.createElement('div');prevWrEl.style.cssText='font-family:var(--font-mono);font-size:11px;color:#666;margin-top:3px';
-      prevWrEl.textContent='was '+fmt(t.prevWR);
-      wrd.appendChild(prevWrEl);
-      const pld=document.createElement('div');pld.className='trend-delta';
-      pld.appendChild(mkTrendPill(t.playDelta));
-      row.append(rn,iw,nc,wr,wrd,pld);
-      tblWrap.appendChild(row);
-    });
-    wrap.appendChild(tblWrap);
-
-    // ── Highlights (supplementary — sits below the interactive table) ──
+    // "At a glance" sits right below the hero — genuinely a glance, not
+    // something you scroll a full table to reach. Sort controls + the
+    // table follow directly after, so clicking a sort still shows its
+    // effect immediately without the table being buried further down.
     const hlHeading=document.createElement('div');
-    hlHeading.style.cssText='font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:24px 0 12px';
+    hlHeading.style.cssText='font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:12px';
     hlHeading.textContent='At a glance';
     wrap.appendChild(hlHeading);
 
@@ -1499,6 +1456,47 @@ function viewTrends(){
     hlRow2.appendChild(mkHighlightPanel('Gaining Popularity','var(--g2)',trending,'playDelta'));
     hlRow2.appendChild(mkHighlightPanel('Losing Popularity','var(--o)',fading,'playDelta'));
     wrap.appendChild(hlRow2);
+
+    // Sort controls, directly above the table they control.
+    wrap.appendChild(ctrlRow);
+
+    // ── Full table ────────────────────────────────────────────────
+    const tblWrap=document.createElement('div');
+    tblWrap.style.cssText='margin-top:12px;background:var(--card);border:1px solid var(--brd);border-radius:12px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.025),rgba(255,255,255,0))';
+
+    const hdrs=[['#',''],['',''],['[Code] Deck',''],['WR %','wr'],['WR Δ','wr'],['Play Δ','play']];
+    const hdrRow=document.createElement('div');hdrRow.className='trend-header-row';
+    hdrs.forEach(([t,s])=>{
+      const sp=document.createElement('span');sp.textContent=t;
+      if(s){sp.className=TREND_SORT===s?'active':'';sp.onclick=()=>{TREND_SORT=s;render();};}
+      hdrRow.appendChild(sp);
+    });
+    tblWrap.appendChild(hdrRow);
+
+    sorted.forEach((t,i)=>{
+      const row=document.createElement('div');row.className='trend-row';
+      const rn=document.createElement('div');rn.className='trend-rank';rn.textContent='#'+(i+1);
+      const iw=document.createElement('div');iw.className='trend-img-wrap';
+      const im=document.createElement('img');im.alt='';
+      const ph=document.createElement('div');ph.className='trend-img-ph';ph.textContent=t.deck.id;
+      iw.append(im,ph);applyCardImg(im,ph,t.deck.id);
+      const nc=document.createElement('div');nc.style.cssText='overflow:hidden';
+      const nm=document.createElement('div');nm.className='trend-name';nm.textContent=t.deck.name;
+      const cd=document.createElement('div');cd.className='trend-code';cd.textContent='['+t.deck.id+']';
+      nc.append(nm,cd);
+      const wr=document.createElement('div');wr.className='trend-wr';
+      wr.style.color=wrCol(t.deck.wtdWR);wr.textContent=fmt(t.deck.wtdWR);
+      const wrd=document.createElement('div');wrd.className='trend-delta';
+      wrd.appendChild(mkTrendPill(t.wrDelta));
+      const prevWrEl=document.createElement('div');prevWrEl.style.cssText='font-family:var(--font-mono);font-size:11px;color:#666;margin-top:3px';
+      prevWrEl.textContent='was '+fmt(t.prevWR);
+      wrd.appendChild(prevWrEl);
+      const pld=document.createElement('div');pld.className='trend-delta';
+      pld.appendChild(mkTrendPill(t.playDelta));
+      row.append(rn,iw,nc,wr,wrd,pld);
+      tblWrap.appendChild(row);
+    });
+    wrap.appendChild(tblWrap);
 
     // Stats footer
     const footer=document.createElement('div');
