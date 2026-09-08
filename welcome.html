@@ -163,6 +163,8 @@ img,svg{display:block;max-width:100%}
 .move-val{font-family:var(--font-mono);font-weight:700;font-size:13.5px;text-align:right}
 .move-val.up{color:var(--green)}
 .move-val.down{color:var(--coral)}
+.move-loading{font-family:var(--font-mono);font-size:13px;color:var(--mute-dim);padding:20px 4px}
+.move-error{font-family:var(--font-mono);font-size:13px;color:var(--mute-dim);padding:20px 4px}
 .move-mid{position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:var(--border-strong)}
 
 /* Closing — a real number as the backdrop instead of another gradient card */
@@ -331,27 +333,8 @@ footer .wrap{display:flex;justify-content:space-between;align-items:flex-start;g
       <h2>This week's meta, moving.</h2>
       <p>A live slice of the win-rate swings Meta Trends is tracking right now.</p>
     </div>
-    <div class="move-panel">
-      <div class="move-row">
-        <div class="move-name">Kuzan</div>
-        <div class="move-track"><div class="move-mid"></div><div class="move-bar up" data-width="28"></div></div>
-        <div class="move-val up" data-value="14.0">+0.0%</div>
-      </div>
-      <div class="move-row">
-        <div class="move-name">Portgas.D.Ace</div>
-        <div class="move-track"><div class="move-mid"></div><div class="move-bar up" data-width="20"></div></div>
-        <div class="move-val up" data-value="10.1">+0.0%</div>
-      </div>
-      <div class="move-row">
-        <div class="move-name">Dracule Mihawk</div>
-        <div class="move-track"><div class="move-mid"></div><div class="move-bar down" data-width="22"></div></div>
-        <div class="move-val down" data-value="10.8">−0.0%</div>
-      </div>
-      <div class="move-row">
-        <div class="move-name">Marshall.D.Teach</div>
-        <div class="move-track"><div class="move-mid"></div><div class="move-bar down" data-width="21"></div></div>
-        <div class="move-val down" data-value="10.7">−0.0%</div>
-      </div>
+    <div class="move-panel" id="move-panel">
+      <div class="move-loading">Loading live meta movement…</div>
     </div>
   </div>
 </section>
@@ -527,16 +510,71 @@ function countUp(el,target,duration,format){
   }
 })();
 
-// ── Movement bars — same reveal language as the gauge: bars grow out from
-// the center line while their numbers count up, instead of appearing static.
+// ── Movement bars — pulls REAL live data instead of the hardcoded numbers
+// this section used to ship with (a screenshot's worth of figures baked
+// directly into the page, which is exactly how it went stale). Fetches the
+// same current-vs-last-week files the app itself reads, parses them with
+// the same defensive field-matching the app uses (cardkaizoku's raw field
+// names have drifted before), computes real deltas, and reveals the two
+// biggest risers and two biggest fallers with the same grow-and-count-up
+// language as before.
 (function(){
-  const panel=document.querySelector('.move-panel');
+  const panel=document.getElementById('move-panel');
   if(!panel)return;
-  const rows=[...panel.querySelectorAll('.move-row')];
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  function fld(o,...ks){for(const k of ks)if(o!=null&&o[k]!=null)return o[k];return null;}
+  function asPct(v){
+    if(v==null)return null;const n=parseFloat(v);if(isNaN(n))return null;
+    if(n>1&&n<=100)return parseFloat(n.toFixed(3));
+    if(n===0)return 0;
+    return parseFloat((n*100).toFixed(3));
+  }
+  function normalize(arr){
+    if(!Array.isArray(arr))return[];
+    return arr.map(d=>({
+      id:  fld(d,'leader','id','leaderId','cardId'),
+      name:fld(d,'leaderName','leader_name','name','displayName')||fld(d,'leader'),
+      wtdWR:asPct(fld(d,'weighted_win_rate','wtdWinRate','wtd_win_rate','wwr')),
+    })).filter(d=>d.id&&d.wtdWR!=null);
+  }
+
+  async function loadMovement(){
+    const [currRes,prevRes]=await Promise.all([
+      fetch('./data/stats/west.json',{cache:'no-store'}),
+      fetch('./data/stats/lw.json',{cache:'no-store'}),
+    ]);
+    if(!currRes.ok||!prevRes.ok)throw new Error('stats files unavailable');
+    const curr=normalize(await currRes.json());
+    const prev=normalize(await prevRes.json());
+    const prevById=new Map(prev.map(d=>[d.id,d]));
+    const deltas=curr
+      .filter(d=>prevById.has(d.id))
+      .map(d=>({name:d.name,delta:d.wtdWR-prevById.get(d.id).wtdWR}))
+      .filter(d=>!isNaN(d.delta));
+    const risers=[...deltas].sort((a,b)=>b.delta-a.delta).filter(d=>d.delta>0).slice(0,2);
+    const fallers=[...deltas].sort((a,b)=>a.delta-b.delta).filter(d=>d.delta<0).slice(0,2);
+    if(!risers.length&&!fallers.length)throw new Error('no movement in this data');
+    return[...risers,...fallers];
+  }
+
+  function buildRows(items){
+    panel.innerHTML='';
+    const maxAbs=Math.max(...items.map(d=>Math.abs(d.delta)),1);
+    items.forEach(d=>{
+      const isUp=d.delta>0;
+      const width=Math.min(48,(Math.abs(d.delta)/maxAbs)*44+4);
+      const row=document.createElement('div');row.className='move-row';
+      row.innerHTML=`<div class="move-name"></div>
+        <div class="move-track"><div class="move-mid"></div><div class="move-bar ${isUp?'up':'down'}" data-width="${width}"></div></div>
+        <div class="move-val ${isUp?'up':'down'}" data-value="${Math.abs(d.delta).toFixed(1)}">${isUp?'+':'−'}0.0%</div>`;
+      row.querySelector('.move-name').textContent=d.name;
+      panel.appendChild(row);
+    });
+  }
+
   function play(){
-    rows.forEach(row=>{
+    [...panel.querySelectorAll('.move-row')].forEach(row=>{
       const bar=row.querySelector('.move-bar');
       const val=row.querySelector('.move-val');
       if(!bar||!val)return;
@@ -554,14 +592,22 @@ function countUp(el,target,duration,format){
     });
   }
 
-  if('IntersectionObserver' in window){
-    const io=new IntersectionObserver((entries)=>{
-      entries.forEach(e=>{if(e.isIntersecting){play();io.disconnect();}});
-    },{threshold:.3});
-    io.observe(panel);
-  }else{
-    play();
-  }
+  loadMovement().then(items=>{
+    buildRows(items);
+    if('IntersectionObserver' in window){
+      const io=new IntersectionObserver((entries)=>{
+        entries.forEach(e=>{if(e.isIntersecting){play();io.disconnect();}});
+      },{threshold:.3});
+      io.observe(panel);
+    }else{
+      play();
+    }
+  }).catch(()=>{
+    // Live data genuinely isn't reachable from wherever this page is
+    // hosted (or the app's stats files aren't there) — say so plainly
+    // rather than show numbers that might be wrong or old.
+    panel.innerHTML='<div class="move-error">Live meta movement isn\'t available from this page right now — <a href="https://nathanjtague-arch.github.io/OnePeen/" style="color:inherit;text-decoration:underline">see it in the app</a>.</div>';
+  });
 })();
 
 
