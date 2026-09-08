@@ -251,18 +251,18 @@ footer .wrap{display:flex;justify-content:space-between;align-items:flex-start;g
 
 <div class="ticker" aria-label="Live meta statistics">
   <div class="ticker-track">
-    <span class="tick"><b>129</b> decks tracked</span>
-    <span class="tick"><b>500K+</b> games recorded</span>
-    <span class="tick">Kuzan <span class="up">▲ 14.0% WR</span> this week</span>
-    <span class="tick">Marshall.D.Teach <span class="down">▼ 10.7% WR</span> this week</span>
+    <span class="tick"><b class="tick-deckcount">—</b> decks tracked</span>
+    <span class="tick"><b class="tick-gamecount">—</b> games recorded</span>
+    <span class="tick tick-riser">Loading meta movement…</span>
+    <span class="tick tick-faller">Loading meta movement…</span>
     <span class="tick">refreshes every <b>6hr</b></span>
-    <span class="tick"><b>Sabo</b> leads at 54.0% WR</span>
-    <span class="tick"><b>129</b> decks tracked</span>
-    <span class="tick"><b>500K+</b> games recorded</span>
-    <span class="tick">Kuzan <span class="up">▲ 14.0% WR</span> this week</span>
-    <span class="tick">Marshall.D.Teach <span class="down">▼ 10.7% WR</span> this week</span>
+    <span class="tick tick-leader">Loading leaderboard…</span>
+    <span class="tick"><b class="tick-deckcount">—</b> decks tracked</span>
+    <span class="tick"><b class="tick-gamecount">—</b> games recorded</span>
+    <span class="tick tick-riser">Loading meta movement…</span>
+    <span class="tick tick-faller">Loading meta movement…</span>
     <span class="tick">refreshes every <b>6hr</b></span>
-    <span class="tick"><b>Sabo</b> leads at 54.0% WR</span>
+    <span class="tick tick-leader">Loading leaderboard…</span>
   </div>
 </div>
 
@@ -510,53 +510,89 @@ function countUp(el,target,duration,format){
   }
 })();
 
-// ── Movement bars — pulls REAL live data instead of the hardcoded numbers
-// this section used to ship with (a screenshot's worth of figures baked
-// directly into the page, which is exactly how it went stale). Fetches the
-// same current-vs-last-week files the app itself reads, parses them with
-// the same defensive field-matching the app uses (cardkaizoku's raw field
-// names have drifted before), computes real deltas, and reveals the two
-// biggest risers and two biggest fallers with the same grow-and-count-up
-// language as before.
+// ── Shared live-data fetch — both the ticker and the movement bars need
+// the same underlying stats, so this fetches once and both consumers
+// await the same promise. This is also what went wrong before: the bars
+// got fixed to pull live data, the ticker didn't, and the two just
+// silently disagreed with each other. One shared source fixes that by
+// construction — they literally cannot drift apart again.
+function fld(o,...ks){for(const k of ks)if(o!=null&&o[k]!=null)return o[k];return null;}
+function asPct(v){
+  if(v==null)return null;const n=parseFloat(v);if(isNaN(n))return null;
+  if(n>1&&n<=100)return parseFloat(n.toFixed(3));
+  if(n===0)return 0;
+  return parseFloat((n*100).toFixed(3));
+}
+function normalizeDeck(d){
+  return{
+    id:  fld(d,'leader','id','leaderId','cardId'),
+    name:fld(d,'leaderName','leader_name','name','displayName')||fld(d,'leader'),
+    wtdWR:asPct(fld(d,'weighted_win_rate','wtdWinRate','wtd_win_rate','wwr')),
+    games:parseFloat(fld(d,'number_of_matches','total_games','games','count','n'))||0,
+  };
+}
+function formatCount(n){
+  if(n>=1000000)return(Math.floor(n/100000)/10)+'M+';
+  if(n>=1000)return Math.floor(n/1000)+'K+';
+  return String(n);
+}
+
+const liveMetaPromise=(async()=>{
+  const [currRes,prevRes]=await Promise.all([
+    fetch('./data/stats/west.json',{cache:'no-store'}),
+    fetch('./data/stats/lw.json',{cache:'no-store'}),
+  ]);
+  if(!currRes.ok||!prevRes.ok)throw new Error('stats files unavailable');
+  const curr=(await currRes.json()).map(normalizeDeck).filter(d=>d.id&&d.wtdWR!=null);
+  const prev=(await prevRes.json()).map(normalizeDeck).filter(d=>d.id&&d.wtdWR!=null);
+  const prevById=new Map(prev.map(d=>[d.id,d]));
+  const deltas=curr
+    .filter(d=>prevById.has(d.id))
+    .map(d=>({name:d.name,delta:d.wtdWR-prevById.get(d.id).wtdWR}))
+    .filter(d=>!isNaN(d.delta));
+  const risers=[...deltas].sort((a,b)=>b.delta-a.delta).filter(d=>d.delta>0);
+  const fallers=[...deltas].sort((a,b)=>a.delta-b.delta).filter(d=>d.delta<0);
+  const leader=[...curr].sort((a,b)=>b.wtdWR-a.wtdWR)[0]||null;
+  const totalGames=curr.reduce((s,d)=>s+(d.games||0),0);
+  return{
+    deckCount:curr.length,
+    totalGames,
+    risers,fallers,
+    movementItems:[...risers.slice(0,2),...fallers.slice(0,2)],
+    leader,
+  };
+})();
+
+// ── Ticker — fills in the dynamic entries from the shared fetch above.
+(function(){
+  liveMetaPromise.then(data=>{
+    document.querySelectorAll('.tick-deckcount').forEach(el=>el.textContent=data.deckCount);
+    document.querySelectorAll('.tick-gamecount').forEach(el=>el.textContent=formatCount(data.totalGames));
+    document.querySelectorAll('.tick-riser').forEach(el=>{
+      if(data.risers[0])el.innerHTML=`${data.risers[0].name} <span class="up">▲ ${data.risers[0].delta.toFixed(1)}% WR</span> this week`;
+      else el.textContent='No risers this week';
+    });
+    document.querySelectorAll('.tick-faller').forEach(el=>{
+      if(data.fallers[0])el.innerHTML=`${data.fallers[0].name} <span class="down">▼ ${Math.abs(data.fallers[0].delta).toFixed(1)}% WR</span> this week`;
+      else el.textContent='No fallers this week';
+    });
+    document.querySelectorAll('.tick-leader').forEach(el=>{
+      if(data.leader)el.innerHTML=`<b>${data.leader.name}</b> leads at ${data.leader.wtdWR.toFixed(1)}% WR`;
+    });
+  }).catch(()=>{
+    // Live data isn't reachable — swap the "Loading…" placeholders for a
+    // plain notice instead of leaving them stuck looking broken forever.
+    document.querySelectorAll('.tick-deckcount,.tick-gamecount').forEach(el=>el.textContent='—');
+    document.querySelectorAll('.tick-riser,.tick-faller,.tick-leader').forEach(el=>el.textContent='live data unavailable');
+  });
+})();
+
+// ── Movement bars — same reveal language as the gauge: bars grow out from
+// the center line while their numbers count up, instead of appearing static.
 (function(){
   const panel=document.getElementById('move-panel');
   if(!panel)return;
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  function fld(o,...ks){for(const k of ks)if(o!=null&&o[k]!=null)return o[k];return null;}
-  function asPct(v){
-    if(v==null)return null;const n=parseFloat(v);if(isNaN(n))return null;
-    if(n>1&&n<=100)return parseFloat(n.toFixed(3));
-    if(n===0)return 0;
-    return parseFloat((n*100).toFixed(3));
-  }
-  function normalize(arr){
-    if(!Array.isArray(arr))return[];
-    return arr.map(d=>({
-      id:  fld(d,'leader','id','leaderId','cardId'),
-      name:fld(d,'leaderName','leader_name','name','displayName')||fld(d,'leader'),
-      wtdWR:asPct(fld(d,'weighted_win_rate','wtdWinRate','wtd_win_rate','wwr')),
-    })).filter(d=>d.id&&d.wtdWR!=null);
-  }
-
-  async function loadMovement(){
-    const [currRes,prevRes]=await Promise.all([
-      fetch('./data/stats/west.json',{cache:'no-store'}),
-      fetch('./data/stats/lw.json',{cache:'no-store'}),
-    ]);
-    if(!currRes.ok||!prevRes.ok)throw new Error('stats files unavailable');
-    const curr=normalize(await currRes.json());
-    const prev=normalize(await prevRes.json());
-    const prevById=new Map(prev.map(d=>[d.id,d]));
-    const deltas=curr
-      .filter(d=>prevById.has(d.id))
-      .map(d=>({name:d.name,delta:d.wtdWR-prevById.get(d.id).wtdWR}))
-      .filter(d=>!isNaN(d.delta));
-    const risers=[...deltas].sort((a,b)=>b.delta-a.delta).filter(d=>d.delta>0).slice(0,2);
-    const fallers=[...deltas].sort((a,b)=>a.delta-b.delta).filter(d=>d.delta<0).slice(0,2);
-    if(!risers.length&&!fallers.length)throw new Error('no movement in this data');
-    return[...risers,...fallers];
-  }
 
   function buildRows(items){
     panel.innerHTML='';
@@ -592,8 +628,9 @@ function countUp(el,target,duration,format){
     });
   }
 
-  loadMovement().then(items=>{
-    buildRows(items);
+  liveMetaPromise.then(data=>{
+    if(!data.movementItems.length)throw new Error('no movement in this data');
+    buildRows(data.movementItems);
     if('IntersectionObserver' in window){
       const io=new IntersectionObserver((entries)=>{
         entries.forEach(e=>{if(e.isIntersecting){play();io.disconnect();}});
