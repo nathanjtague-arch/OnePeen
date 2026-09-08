@@ -425,7 +425,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .mu-label{font-size:11px;font-family:var(--font-head);font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b8c4e0;margin-bottom:5px}
 .mu-val{font-family:var(--font-mono);font-size:20px;font-weight:700;margin-bottom:3px}
 .mu-note{font-size:9px;color:#8a93b0;font-family:var(--font-mono)}
-.deck-pair{display:grid;grid-template-columns:1fr 32px 1fr;gap:8px;align-items:center}
+.deck-pair{display:grid;grid-template-columns:1fr 84px 1fr;gap:8px;align-items:start}
 .deck-tile{background:var(--surf);border:1px solid var(--brd);border-radius:10px;padding:14px;text-align:center;transition:border .15s}
 .deck-img-wrap{width:90px;height:126px;margin:0 auto 10px;border-radius:8px;overflow:hidden;background:var(--card);display:flex;align-items:center;justify-content:center}
 .deck-img-wrap img{width:100%;height:100%;object-fit:cover;border-radius:8px}
@@ -505,16 +505,25 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
   58%   {transform:none}
 }
 
-/* Crossed swords flash for EVEN */
+/* Even matchup — same ring language as favourable/disadvantaged, in amber,
+   with a second ring a beat behind it (two forces meeting, neither winning
+   cleanly) instead of a sword emoji. */
 @keyframes swords-flash{
-  0%,35%{opacity:0;transform:translate(-50%,-50%) scale(0) rotate(-30deg)}
-  45%   {opacity:1;transform:translate(-50%,-50%) scale(2.4) rotate(0deg);
-         filter:drop-shadow(0 0 20px rgba(245,208,0,1)) drop-shadow(0 0 40px rgba(255,150,0,.6))}
-  58%   {opacity:0.9;transform:translate(-50%,-50%) scale(2.2) rotate(8deg)}
-  75%   {opacity:0;transform:translate(-50%,-50%) scale(1.4) rotate(-5deg)}
-  100%  {opacity:0}
+  0%,30%{opacity:0;transform:translate(-50%,-50%) scale(0.15)}
+  45%   {opacity:1;transform:translate(-50%,-50%) scale(1.3)}
+  100%  {opacity:0;transform:translate(-50%,-50%) scale(2.6)}
 }
-.clash-swords{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) scale(0);font-size:64px;pointer-events:none;opacity:0;z-index:25;}
+@keyframes swords-flash-2{
+  0%,42%{opacity:0;transform:translate(-50%,-50%) scale(0.15)}
+  55%   {opacity:.75;transform:translate(-50%,-50%) scale(1.15)}
+  100%  {opacity:0;transform:translate(-50%,-50%) scale(2.3)}
+}
+.clash-swords{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) scale(0);
+  width:76px;height:76px;border-radius:50%;pointer-events:none;opacity:0;z-index:25;
+  border:3px solid var(--y);box-shadow:0 0 24px rgba(245,208,0,.55),inset 0 0 20px rgba(245,208,0,.25);}
+.clash-swords-2{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) scale(0);
+  width:76px;height:76px;border-radius:50%;pointer-events:none;opacity:0;z-index:24;
+  border:3px solid var(--y);}
 
 
 /* ─── Updated battle selectors (specific classes, not :first/:last-child) ─── */
@@ -532,6 +541,7 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .deck-pair[data-anim='even'] .deck-tile-my             {animation:my-clash   1.6s cubic-bezier(.4,0,.2,1) forwards}
 .deck-pair[data-anim='even'] .deck-tile-opp            {animation:opp-clash  1.6s cubic-bezier(.4,0,.2,1) forwards}
 .deck-pair[data-anim='even'] .clash-swords             {animation:swords-flash 1.6s ease-out forwards}
+.deck-pair[data-anim='even'] .clash-swords-2           {animation:swords-flash-2 1.6s ease-out forwards}
 
 
 /* ─── Card hover zoom ─────────────────────────────────── */
@@ -609,23 +619,28 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
   transform:scale(3);
   box-shadow:0 16px 48px rgba(0,0,0,.85),0 0 24px rgba(244,0,161,.3)}
 
-/* Manga-style impact burst */
+/* Impact ring — expands and fades at the moment of contact, colored by
+   actual outcome (green = landed in your favour, coral = against you)
+   instead of an arbitrary yellow starburst that didn't distinguish them. */
 @keyframes impact-burst{
-  0%{opacity:0;transform:translate(-50%,-50%) scale(0) rotate(0deg)}
-  30%{opacity:1;transform:translate(-50%,-50%) scale(1.4) rotate(20deg);
-      filter:drop-shadow(0 0 16px rgba(255,220,0,1))}
-  50%{opacity:0.9;transform:translate(-50%,-50%) scale(1.6) rotate(-10deg)}
-  70%{opacity:0.4;transform:translate(-50%,-50%) scale(1.8) rotate(5deg)}
-  100%{opacity:0;transform:translate(-50%,-50%) scale(2) rotate(0deg)}
+  0%{opacity:0;transform:translate(-50%,-50%) scale(0.2)}
+  30%{opacity:1;transform:translate(-50%,-50%) scale(1.3)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(2.5)}
 }
 .impact-fx{
   position:absolute;top:35%;
-  width:110px;height:110px;
+  width:80px;height:80px;border-radius:50%;
   pointer-events:none;opacity:0;z-index:18;
-  /* 8-point starburst via clip-path */
-  clip-path:polygon(50% 0%,61% 35%,98% 24%,71% 50%,98% 76%,61% 65%,50% 100%,39% 65%,2% 76%,29% 50%,2% 24%,39% 35%);
-  background:linear-gradient(135deg,#ffe600,#ff8c00,#ff3300);
-  filter:drop-shadow(0 0 12px rgba(255,200,0,.8));
+  border:3px solid var(--acc);
+  box-shadow:0 0 24px rgba(244,0,161,.55),inset 0 0 20px rgba(244,0,161,.25);
+}
+.deck-pair[data-anim='favourable'] .impact-fx{
+  border-color:var(--g1);
+  box-shadow:0 0 24px rgba(0,232,122,.55),inset 0 0 20px rgba(0,232,122,.25);
+}
+.deck-pair[data-anim='disadvantaged'] .impact-fx{
+  border-color:var(--r);
+  box-shadow:0 0 24px rgba(239,68,68,.55),inset 0 0 20px rgba(239,68,68,.25);
 }
 
 /* Tooltip */
@@ -894,17 +909,17 @@ function loadCache(){
 }
 
 // ── App state ────────────────────────────────────────────────────
-// Dataset configuration — add new entries here when cardkaizoku adds new periods
+// Dataset configuration — add new entries here when cardkaizoku adds new periods.
+// Private-lobby variants were removed entirely (not representative of the
+// real meta — too small and skewed a sample to surface as a real option).
+// "(All Lobbies)" is dropped from the labels since it's now the only kind
+// on offer — no longer a meaningful distinction to spell out every time.
 const DATASETS=[
-  {id:'west_p',   label:'Standard (Private Lobbies)',        prefix:'stats_west_p_'  },
-  {id:'lw_p',     label:'Standard Last Week (Private Lobbies)', prefix:'stats_lw_p_' },
-  {id:'west',     label:'Standard (All Lobbies)',             prefix:'stats_west_'   },
-  {id:'lw',       label:'Standard Last Week (All Lobbies)',   prefix:'stats_lw_'     },
-  {id:'op17_lw_p',label:'OP17 Last Week (Private Lobbies)',   prefix:'stats_op17_lw_p_'},
-  {id:'op17_lw',  label:'OP17 Last Week (All Lobbies)',       prefix:'stats_op17_lw_' },
-  {id:'exreg_p',  label:'Extra Reg Last Week (Private Lobbies)', prefix:'stats_exreg_p_' },
-  {id:'exreg',    label:'Extra Reg Last Week (All Lobbies)',  prefix:'stats_exreg_'   },
-  {id:'op16_lw',  label:'OP16 Final Week',                    prefix:'stats_op16_lw_' },
+  {id:'west',     label:'Standard',              prefix:'stats_west_'   },
+  {id:'lw',       label:'Standard Last Week',    prefix:'stats_lw_'     },
+  {id:'op17_lw',  label:'OP17 Last Week',        prefix:'stats_op17_lw_' },
+  {id:'exreg',    label:'Extra Reg Last Week',   prefix:'stats_exreg_'   },
+  {id:'op16_lw',  label:'OP16 Final Week',       prefix:'stats_op16_lw_' },
 ];
 const LS_DATASET='optcg_dataset';
 const LS_FAVS='optcg_favs';
@@ -923,7 +938,7 @@ async function loadDatasetStatus(){
   if(!DATASET_ID){
     const withTimes=DATASETS.map(d=>({id:d.id,t:DATASET_STATUS[d.id]?.lastSuccessAt})).filter(d=>d.t);
     withTimes.sort((a,b)=>new Date(b.t)-new Date(a.t));
-    DATASET_ID=withTimes[0]?.id||'west_p';
+    DATASET_ID=withTimes[0]?.id||'west';
   }
 }
 function relTime(iso){
@@ -1106,15 +1121,12 @@ function visibleDecks(){
 // ── Filter bar component ─────────────────────────────────────────
 function mkFilterBar(){
   const fb=document.createElement('div');fb.className='filter-bar';
+  // "Show: All decks" was removed — it was the only option in its own
+  // group, permanently active, and did nothing when clicked.
   const lbl=document.createElement('span');lbl.className='label';lbl.textContent='Show:';
   fb.appendChild(lbl);
-  [['all','All decks']].forEach(([v,l])=>{
-    const b=document.createElement('button');
-    b.className='filter-btn'+(FILTER===v?' active':'');b.textContent=l;
-    b.onclick=()=>{FILTER=v;render();};fb.appendChild(b);
-  });
   // Low data exclusion checkbox
-  const cbLabel=document.createElement('label');cbLabel.className='cb-row';cbLabel.style.marginLeft='8px';
+  const cbLabel=document.createElement('label');cbLabel.className='cb-row';
   const cbEl=document.createElement('input');cbEl.type='checkbox';cbEl.checked=EXCL_LOW;
   cbEl.onchange=()=>{EXCL_LOW=cbEl.checked;render();};
   cbLabel.appendChild(cbEl);
@@ -1228,10 +1240,11 @@ function viewRank(){
 
 
 // ── Meta Trends ───────────────────────────────────────────────────
-// Compare pairs: current period vs last-week equivalent
+// Compare pairs: current period vs last-week equivalent.
+// Private-lobby pair removed — it was also the default (index 0), which is
+// exactly how this ended up quietly showing non-representative data by default.
 const TREND_PAIRS=[
-  {label:'Standard (Private Lobbies)', curr:'west_p',prev:'lw_p'},
-  {label:'Standard (All Lobbies)',     curr:'west',  prev:'lw'},
+  {label:'Standard', curr:'west', prev:'lw'},
 ];
 let TREND_PAIR_IDX=0;
 
@@ -1293,21 +1306,27 @@ function viewTrends(){
   cl.textContent=`Comparing: ${pair.label} (current) vs Last Week`;
   hero.append(ht,hs,cl);wrap.appendChild(hero);
 
-  // Pair selector + sort bar
+  // Pair selector — only rendered if there's an actual choice to make.
+  // With private lobbies removed, "Standard" is currently the only pair,
+  // so a one-option dropdown would just be dead UI; the "Comparing:" line
+  // above already says what's being compared.
   const ctrlRow=document.createElement('div');ctrlRow.className='trends-sort-bar';
-  const sl=document.createElement('span');sl.className='trends-sort-lbl';sl.textContent='Dataset:';
-  const pairSel=document.createElement('select');
-  pairSel.style.cssText='padding:6px 12px;font-size:13px;font-family:var(--font-body);font-weight:600;border:1px solid #3a4060;border-radius:8px;background:var(--card);color:var(--text)';
-  TREND_PAIRS.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.label;if(i===TREND_PAIR_IDX)o.selected=true;pairSel.appendChild(o);});
-  pairSel.onchange=()=>{TREND_PAIR_IDX=parseInt(pairSel.value);Object.keys(TREND_CACHE).forEach(k=>{/* keep cache */});render();};
-
-  const sl2=document.createElement('span');sl2.className='trends-sort-lbl';sl2.style.marginLeft='16px';sl2.textContent='Sort:';
+  const sl2=document.createElement('span');sl2.className='trends-sort-lbl';sl2.textContent='Sort:';
   const sortBtns=[['wr','WR Change'],['play','Play Rate Δ'],['momentum','Momentum'],['absolute','Current WR']];
   sortBtns.forEach(([v,l])=>{
     const b=document.createElement('button');b.className='sort-btn'+(TREND_SORT===v?' active':'');
     b.textContent=l;b.onclick=()=>{TREND_SORT=v;render();};ctrlRow.appendChild(b);
   });
-  ctrlRow.prepend(sl,pairSel,sl2);
+  if(TREND_PAIRS.length>1){
+    const sl=document.createElement('span');sl.className='trends-sort-lbl';sl.textContent='Dataset:';
+    const pairSel=document.createElement('select');
+    pairSel.style.cssText='padding:6px 12px;font-size:13px;font-family:var(--font-body);font-weight:600;border:1px solid #3a4060;border-radius:8px;background:var(--card);color:var(--text)';
+    TREND_PAIRS.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.label;if(i===TREND_PAIR_IDX)o.selected=true;pairSel.appendChild(o);});
+    pairSel.onchange=()=>{TREND_PAIR_IDX=parseInt(pairSel.value);render();};
+    ctrlRow.prepend(sl,pairSel,sl2);
+  }else{
+    ctrlRow.prepend(sl2);
+  }
   wrap.appendChild(ctrlRow);
 
   // Loading state
@@ -1999,8 +2018,7 @@ function viewAdvisor(){
   const pill=document.createElement('div');pill.className='advice-pill';pill.textContent='Recommendation';
   const txt=document.createElement('div');txt.className='advice-text';txt.style.color=advice.col;txt.textContent=advice.text;
   const sub=document.createElement('div');sub.className='advice-sub';sub.textContent=advice.sub;
-  const src=document.createElement('div');src.className='advice-src';src.textContent=`Source: ${advice.src}`;
-  info.append(pill,txt,sub,src);ac.appendChild(info);
+  info.append(pill,txt,sub);ac.appendChild(info);
   if(advice.winPct!=null){
     ac.classList.add('has-gauge');
     const gauge=document.createElement('div');gauge.className='advice-gauge';
@@ -2037,13 +2055,16 @@ function viewAdvisor(){
       const cb=document.createElement('div');cb.className='ctx-banner';
       const rgbMap={'var(--g1)':'0,232,122','var(--g2)':'110,232,122','var(--y)':'245,208,0','var(--o)':'249,115,22','var(--r)':'239,68,68','var(--rr)':'180,30,30'};
       const rgb=rgbMap[ctx.col]||'239,68,68';
-      // Secondary context line — demoted below the recommendation so it reads as
-      // supporting context (the matchup's overall shape), not a second headline.
-      cb.style.cssText=`border-left:3px solid ${ctx.col};border-radius:0;padding:6px 0 6px 12px;margin-bottom:14px;display:flex;align-items:baseline;justify-content:flex-start;gap:8px;text-align:left`;
+      // Centered and given real presence again — the humor ("Hydrogen bomb vs
+      // Coughing Baby") was always in the data, it just got visually buried
+      // when this was shrunk into a small left-aligned caption. Still sized
+      // and weighted below the primary recommendation (24px) so it reads as
+      // the second beat, not a second headline competing with it.
+      cb.style.cssText=`background:rgba(${rgb},.08);border:1px solid rgba(${rgb},.25);border-radius:10px;padding:14px 16px;margin-bottom:14px;text-align:center`;
       const lbl=document.createElement('div');lbl.className='ctx-label';
-      lbl.style.cssText=`color:${ctx.col};font-size:13px;font-weight:700;font-family:var(--font-body);letter-spacing:.02em`;
+      lbl.style.cssText=`color:${ctx.col};font-size:19px;font-weight:800;font-family:var(--font-head);letter-spacing:.02em`;
       lbl.textContent=ctx.label;
-      const sub=document.createElement('div');sub.style.cssText='font-size:12px;color:#8a93b0;font-family:var(--font-mono)';sub.textContent=ctx.sub;
+      const sub=document.createElement('div');sub.style.cssText='font-size:12px;color:#8a93b0;font-family:var(--font-mono);margin-top:4px';sub.textContent=ctx.sub;
       cb.append(lbl,sub);
       wrap.appendChild(cb);
     }
@@ -2080,15 +2101,21 @@ function viewAdvisor(){
     tile.append(lbl,imgWrap,code,name,wr,play);return tile;
   }
   const vs=document.createElement('div');vs.className='vs-label';
-  // Crossed swords — appears during even clash
-  const swords=document.createElement('div');swords.className='clash-swords';swords.textContent='⚔️';
+  // Impact rings — the swords/starburst were replaced with a ring-burst
+  // language colored by actual outcome, shared with .impact-fx below.
+  const swords=document.createElement('div');swords.className='clash-swords';
+  const swords2=document.createElement('div');swords2.className='clash-swords-2';
   const impactFx=document.createElement('div');impactFx.className='impact-fx';
-  // Plain typographic VS mark — matches the app's type system instead of a dropped-in icon
+  // Magenta, centered on the card art specifically (not the tile's full
+  // height, which includes the label and stats text below the image —
+  // that mismatch was what made it read as off-center).
   vs.textContent='VS';
-  vs.style.cssText='font-family:var(--font-head);font-size:16px;font-weight:700;color:#666;letter-spacing:.08em;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center';
+  vs.style.cssText='font-family:var(--font-head);font-size:19px;font-weight:800;color:var(--acc);letter-spacing:.06em;'
+    +'width:60px;height:60px;border-radius:50%;margin:65px auto 0;display:flex;align-items:center;justify-content:center;'
+    +'background:rgba(244,0,161,.12);border:2px solid var(--acc);box-shadow:0 0 20px rgba(244,0,161,.35);position:relative;z-index:10';
   const myTile=mkDeckTile(myDeck,'My deck'); myTile.classList.add('deck-tile-my');
   const oppTile=mkDeckTile(oppDeck,'Opponent'); oppTile.classList.add('deck-tile-opp');
-  dp.append(myTile,vs,oppTile,swords,impactFx);
+  dp.append(myTile,vs,oppTile,swords,swords2,impactFx);
   wrap.appendChild(dp);
   // Trigger battle animation based on matchup outcome
   if(muData?.wr!=null){
