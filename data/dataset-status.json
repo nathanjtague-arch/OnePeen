@@ -1,0 +1,37 @@
+{
+  "west_p": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-09-08T15:46:04.843Z",
+    "lastAttemptFailed": true
+  },
+  "lw_p": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-09-08T15:46:05.041Z",
+    "lastAttemptFailed": true
+  },
+  "west": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-09-08T15:46:05.228Z",
+    "lastAttemptFailed": true
+  },
+  "lw": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-09-08T15:46:05.422Z",
+    "lastAttemptFailed": true
+  },
+  "op17_lw": {
+    "lastSuccessAt": "2026-09-08T15:46:06.077Z",
+    "lastAttemptAt": "2026-09-08T15:46:06.077Z",
+    "lastAttemptFailed": false
+  },
+  "exreg": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-09-08T15:46:06.286Z",
+    "lastAttemptFailed": true
+  },
+  "op16_lw": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-09-08T15:46:06.493Z",
+    "lastAttemptFailed": true
+  }
+}
