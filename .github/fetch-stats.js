@@ -10,26 +10,26 @@ const WORKSPACE  = process.env.GITHUB_WORKSPACE;
 const COOKIE_STR = process.env.CARDKAIZOKU_COOKIES || '';
 
 const DATASETS = [
-  // Standard (current set folds in automatically — no separate "OP17" filter exists
-  // on cardkaizoku's own site anymore, confirmed via their dropdown)
+  // Real slugs confirmed 2026-09-08 by watching cardkaizoku's own Network
+  // tab, one period at a time. The old assumption (a stable "west" label
+  // for Standard) was wrong — cardkaizoku now names the current-set slug
+  // after the literal set number, so "Standard" = whatever OP is current.
+  // This will need updating again once OP18 (or later) becomes current —
+  // that's exactly the kind of drift the dropdown monitor below exists to
+  // catch automatically rather than this going stale silently again.
   //
-  // west_p / lw_p (Private Lobbies) are kept here on purpose even though they're
-  // no longer offered anywhere in the app's dropdowns — small, unrepresentative
-  // sample, not something anyone should pick as their main view. They're still
-  // fetched because Opening Hand Analysis has no All-Lobbies equivalent to fall
-  // back to; removing the fetch would silently break that feature, not just
-  // remove an unused option. op17_lw_p and exreg_p (Private) were dropped
-  // entirely — nothing in the app reads them.
-  { id: 'west_p',    period: 'west_p'    }, // internal only — feeds Opening Hand Analysis
-  { id: 'lw_p',      period: 'lw_p'      }, // internal only — feeds Opening Hand Analysis
-  { id: 'west',      period: 'west'      }, // Standard
-  { id: 'lw',        period: 'lw'        }, // Standard Last Week
-  // OP17 — only "Last Week" snapshots exist once a set folds into Standard
-  { id: 'op17_lw',   period: 'op17_lw'   }, // OP17 Last Week
-  // Extra Reg — cardkaizoku only exposes Last Week variants here too
-  { id: 'exreg',     period: 'exreg'     }, // Extra Reg Last Week
-  // Legacy
-  { id: 'op16_lw',   period: 'op16_lw'   }, // OP16 Final Week
+  // west_p / lw_p (Private Lobbies) are kept even though they're not
+  // offered anywhere in the app's dropdowns — small, unrepresentative
+  // sample, not something anyone should pick as their main view. They're
+  // still fetched because Opening Hand Analysis has no All-Lobbies
+  // equivalent to fall back to.
+  { id: 'west_p',    period: 'op17_p'     }, // Standard, Private Lobbies — internal only, feeds Opening Hand Analysis
+  { id: 'lw_p',      period: 'op17_lw_p'  }, // Standard Last Week, Private Lobbies — internal only, feeds Opening Hand Analysis
+  { id: 'west',      period: 'op17'       }, // Standard
+  { id: 'lw',        period: 'op17_lw'    }, // Standard Last Week
+  { id: 'op17_lw',   period: 'op17_lw'    }, // OP17 Last Week — currently identical to 'lw' above; will diverge once a new set releases
+  { id: 'exreg',     period: 'east_lw'    }, // Extra Reg Last Week
+  { id: 'op16_lw',   period: 'op16_lw'    }, // OP16 Final Week — real slug not yet confirmed, likely renamed to something like "op16_5" or "op165"; still 404ing until confirmed
 ];
 
 function parseCookies(str) {
