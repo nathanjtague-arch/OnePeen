@@ -78,6 +78,61 @@ async function nodeFetch(url) {
   } catch { return null; }
 }
 
+// ── Cardkaizoku dropdown monitor ─────────────────────────────────
+// Detects when cardkaizoku adds, removes, or renames a period on their own
+// site, by diffing their dropdown's text against what was seen last run —
+// catching drift (like "OP16 Final Week" quietly becoming "OP16.5 Final
+// Week Snapshot") as an explicit change, before it just shows up as an
+// unexplained 404 with no story behind it.
+//
+// This is genuinely best-effort: their page is a client-rendered SPA with
+// markup this script has never actually seen rendered, so it tries a
+// handful of common patterns to open the dropdown, in order, and gives up
+// gracefully — logging what it found (or that it found nothing) — rather
+// than ever failing the whole workflow over a monitoring step.
+async function checkCardkaizokuDropdown(ctx) {
+  const page = await ctx.newPage();
+  const snapshotPath = path.join(WORKSPACE, 'data', 'cardkaizoku-periods.json');
+  try {
+    await page.goto('https://www.cardkaizoku.com/ranking', { waitUntil: 'networkidle', timeout: 25000 });
+    await page.waitForTimeout(2500); // let the SPA hydrate before touching anything
+
+    const openStrategies = [
+      () => page.locator('select').first().click({ timeout: 3000 }),
+      () => page.locator('[role="combobox"]').first().click({ timeout: 3000 }),
+      () => page.locator('button, div').filter({ hasText: /Standard|Last Week|Lobbies/i }).first().click({ timeout: 3000 }),
+    ];
+    for (const strategy of openStrategies) {
+      try { await strategy(); await page.waitForTimeout(500); break; } catch {}
+    }
+
+    const bodyText = await page.evaluate(() => document.body.innerText);
+    const lines = bodyText.split('\n').map(l => l.trim()).filter(Boolean);
+    const periodPattern = /(Standard|Extra Reg|OP\d+(\.\d+)?\s*(Final|Last)|Last Week|Yesterday|Snapshot)/i;
+    const found = [...new Set(lines.filter(l => periodPattern.test(l) && l.length < 60))].sort();
+
+    if (!found.length) {
+      console.log('::warning::Cardkaizoku dropdown check found no recognizable period labels this run (best-effort check — their page markup may not match what this script expects). Worth a manual look at https://www.cardkaizoku.com/ranking.');
+      return;
+    }
+
+    console.log('\nCardkaizoku dropdown currently shows:');
+    found.forEach(f => console.log(`  - ${f}`));
+
+    let previous = [];
+    try { previous = JSON.parse(fs.readFileSync(snapshotPath, 'utf8')); } catch {}
+    const added = found.filter(f => !previous.includes(f));
+    const removed = previous.filter(f => !found.includes(f));
+    if (added.length) console.log(`::warning::New period label(s) on cardkaizoku since last check: ${added.join(' | ')}`);
+    if (removed.length) console.log(`::warning::Period label(s) that disappeared from cardkaizoku since last check: ${removed.join(' | ')}`);
+    fs.writeFileSync(snapshotPath, JSON.stringify(found, null, 2));
+  } catch (e) {
+    console.log(`::warning::Could not check cardkaizoku's dropdown this run (${e.message}). Not fatal — this is monitoring only.`);
+  } finally {
+    await page.close().catch(() => {});
+  }
+}
+
 (async () => {
   const today     = laDate(0);
   const yesterday = laDate(1);
@@ -226,6 +281,11 @@ async function nodeFetch(url) {
     }
     console.log(`Leader images: ${downloaded} downloaded, ${skipped} cached, ${failed} failed`);
   }
+
+  // Dropdown monitor — reuses the same authenticated context, runs last so
+  // it can't interfere with the actual data fetch above it.
+  await checkCardkaizokuDropdown(ctx);
+
   await browser.close();
 
   // ── Character card images (Bandai/Limitless — no Cloudflare, plain Node fetch works) ──
