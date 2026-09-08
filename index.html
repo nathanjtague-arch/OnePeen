@@ -193,9 +193,9 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
   font-family:var(--font-body);font-weight:600;
   border:1px solid #3a4060;border-radius:8px;background:var(--card);color:var(--text)}
 .db-add-btn{padding:10px 20px;font-size:14px;font-weight:700;font-family:var(--font-head);
-  background:rgba(244,0,161,.15);border:1px solid rgba(244,0,161,.4);border-radius:8px;
-  color:var(--acc);cursor:pointer;transition:all .15s;letter-spacing:.04em;white-space:nowrap}
-.db-add-btn:hover{background:rgba(244,0,161,.25)}
+  background:var(--acc);border:1px solid var(--acc);border-radius:8px;
+  color:var(--bg);cursor:pointer;transition:all .15s;letter-spacing:.04em;white-space:nowrap}
+.db-add-btn:hover{background:#D9008F;border-color:#D9008F;transform:translateY(-1px)}
 
 .db-selected{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0;min-height:60px;
   background:rgba(255,255,255,.02);border:1px dashed #2a3050;border-radius:10px;
@@ -776,6 +776,34 @@ body{
 }
 .stat-card:first-child .stat-label{color:rgba(244,0,161,.75)}
 .stat-card:first-child .stat-val{font-size:20px}
+
+/* ═══════════════════════════════════════════════════════
+   LANDING-PAGE ALIGNMENT — buttons
+   The app's active tabs/filters/sorts used an "outline chip" style —
+   transparent background, colored border and text. The landing page uses
+   solid filled magenta pills. Bringing the app's active states in line;
+   inactive states stay as they are, since only the current selection
+   should get the vibrant treatment. Same reason this sits last in the
+   stylesheet as the earlier alignment pass: wins the cascade cleanly over
+   the several earlier, superseded button rules above rather than
+   requiring a hunt-and-delete pass through duplicate definitions.
+   ═══════════════════════════════════════════════════════ */
+.tab-btn.active,
+.filter-btn.active,
+.sort-btn.active{
+  background:var(--acc);
+  border-color:var(--acc);
+  color:var(--bg);
+  font-weight:700;
+  box-shadow:0 6px 18px rgba(244,0,161,.3);
+  transition:background .15s ease,transform .15s ease,box-shadow .15s ease;
+}
+.tab-btn.active:hover,
+.filter-btn.active:hover,
+.sort-btn.active:hover{
+  transform:translateY(-1px);
+  box-shadow:0 8px 22px rgba(244,0,161,.4);
+}
 </style>
 </head>
 <body>
