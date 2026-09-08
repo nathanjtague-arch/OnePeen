@@ -91,24 +91,6 @@ img,svg{display:block;max-width:100%}
 .demo-gauge-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font-family:var(--font-mono);font-weight:700;font-size:14.5px;color:var(--paper)}
 
-/* Reused directly from the app's own "favourable matchup" animation —
-   same starburst shape, same colors — so the two products share one
-   visual signature instead of two unrelated animation languages. */
-@keyframes demo-impact-burst{
-  0%{opacity:0;transform:translate(-50%,-50%) scale(0) rotate(0deg)}
-  30%{opacity:1;transform:translate(-50%,-50%) scale(1.3) rotate(20deg);
-      filter:drop-shadow(0 0 14px rgba(255,220,0,1))}
-  50%{opacity:0.9;transform:translate(-50%,-50%) scale(1.5) rotate(-10deg)}
-  70%{opacity:0.4;transform:translate(-50%,-50%) scale(1.7) rotate(5deg)}
-  100%{opacity:0;transform:translate(-50%,-50%) scale(1.9) rotate(0deg)}
-}
-.demo-impact-fx{position:absolute;top:50%;left:50%;width:84px;height:84px;pointer-events:none;opacity:0;z-index:5;
-  clip-path:polygon(50% 0%,61% 35%,98% 24%,71% 50%,98% 76%,61% 65%,50% 100%,39% 65%,2% 76%,29% 50%,2% 24%,39% 35%);
-  background:linear-gradient(135deg,#ffe600,#ff8c00,#ff3300);
-  filter:drop-shadow(0 0 12px rgba(255,200,0,.8));
-  transform:translate(-50%,-50%) scale(0)}
-.demo-impact-fx.fire{animation:demo-impact-burst 1s ease-out forwards}
-
 @keyframes demo-chip-recoil{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(.9);filter:brightness(1.4) saturate(1.5)}}
 .demo-chip-img.recoil{animation:demo-chip-recoil .4s ease-out}
 .demo-breakdown{display:flex;gap:8px;margin-top:16px}
@@ -174,7 +156,8 @@ img,svg{display:block;max-width:100%}
 .move-row+.move-row{border-top:1px solid var(--border)}
 .move-name{font-weight:600;font-size:14.5px;color:var(--paper)}
 .move-track{height:10px;border-radius:6px;background:var(--panel-2);position:relative;overflow:hidden}
-.move-bar{position:absolute;top:0;bottom:0;border-radius:6px}
+.move-bar{position:absolute;top:0;bottom:0;border-radius:6px;width:0;
+  transition:width 1s cubic-bezier(.16,1,.3,1)}
 .move-bar.up{left:50%;background:var(--green)}
 .move-bar.down{right:50%;background:var(--coral)}
 .move-val{font-family:var(--font-mono);font-weight:700;font-size:13.5px;text-align:right}
@@ -253,7 +236,6 @@ footer .wrap{display:flex;justify-content:space-between;align-items:flex-start;g
               <circle class="demo-gauge-fill" cx="50" cy="50" r="42" fill="none" stroke-width="8" stroke-linecap="round" transform="rotate(-90 50 50)"/>
             </svg>
             <div class="demo-gauge-num">0.0%</div>
-            <div class="demo-impact-fx"></div>
           </div>
         </div>
         <div class="demo-breakdown">
@@ -352,23 +334,23 @@ footer .wrap{display:flex;justify-content:space-between;align-items:flex-start;g
     <div class="move-panel">
       <div class="move-row">
         <div class="move-name">Kuzan</div>
-        <div class="move-track"><div class="move-mid"></div><div class="move-bar up" style="width:28%"></div></div>
-        <div class="move-val up">+14.0%</div>
+        <div class="move-track"><div class="move-mid"></div><div class="move-bar up" data-width="28"></div></div>
+        <div class="move-val up" data-value="14.0">+0.0%</div>
       </div>
       <div class="move-row">
         <div class="move-name">Portgas.D.Ace</div>
-        <div class="move-track"><div class="move-mid"></div><div class="move-bar up" style="width:20%"></div></div>
-        <div class="move-val up">+10.1%</div>
+        <div class="move-track"><div class="move-mid"></div><div class="move-bar up" data-width="20"></div></div>
+        <div class="move-val up" data-value="10.1">+0.0%</div>
       </div>
       <div class="move-row">
         <div class="move-name">Dracule Mihawk</div>
-        <div class="move-track"><div class="move-mid"></div><div class="move-bar down" style="width:22%"></div></div>
-        <div class="move-val down">−10.8%</div>
+        <div class="move-track"><div class="move-mid"></div><div class="move-bar down" data-width="22"></div></div>
+        <div class="move-val down" data-value="10.8">−0.0%</div>
       </div>
       <div class="move-row">
         <div class="move-name">Marshall.D.Teach</div>
-        <div class="move-track"><div class="move-mid"></div><div class="move-bar down" style="width:21%"></div></div>
-        <div class="move-val down">−10.7%</div>
+        <div class="move-track"><div class="move-mid"></div><div class="move-bar down" data-width="21"></div></div>
+        <div class="move-val down" data-value="10.7">−0.0%</div>
       </div>
     </div>
   </div>
@@ -495,17 +477,30 @@ loadCardArt(document.getElementById('demo-img-ace'),'OP16-001');
   }
 })();
 
+// Shared easing/count-up helper — used by both the gauge and the movement
+// bars below, so the two reveals feel like one consistent language rather
+// than two separately-tuned animations.
+function easeOutCubic(p){return 1-Math.pow(1-p,3)}
+function countUp(el,target,duration,format){
+  const start=performance.now();
+  function tick(t){
+    const p=Math.min(1,(t-start)/duration);
+    el.textContent=format(easeOutCubic(p)*target);
+    if(p<1)requestAnimationFrame(tick);
+    else el.textContent=format(target);
+  }
+  requestAnimationFrame(tick);
+}
+
 // ── Win-rate gauge — sweeps to the real 57.2% when the demo card first
-// scrolls into view, number counting up in sync, ending with the same
-// impact-burst flash the app itself uses for a favourable matchup.
-// Fires once. Skips the sweep (shows the final state instantly) under
-// reduced motion, per the same rule the rest of this page follows.
+// scrolls into view, number counting up in sync. Fires once. Skips the
+// sweep (shows the final state instantly) under reduced motion, per the
+// same rule the rest of this page follows.
 (function(){
   const card=document.querySelector('.demo-card');
   const fill=document.querySelector('.demo-gauge-fill');
   const num=document.querySelector('.demo-gauge-num');
   const chip=document.querySelector('.demo-chip-img');
-  const burst=document.querySelector('.demo-impact-fx');
   if(!card||!fill||!num)return;
   const TARGET=57.2, CIRC=263.9;
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -519,15 +514,7 @@ loadCardArt(document.getElementById('demo-img-ace'),'OP16-001');
     }
     chip&&chip.classList.add('recoil');
     requestAnimationFrame(()=>{fill.style.strokeDashoffset=CIRC*(1-TARGET/100);});
-    const start=performance.now(), dur=1100;
-    function tick(t){
-      const p=Math.min(1,(t-start)/dur);
-      const eased=1-Math.pow(1-p,3);
-      num.textContent=(eased*TARGET).toFixed(1)+'%';
-      if(p<1)requestAnimationFrame(tick);
-      else{num.textContent=TARGET.toFixed(1)+'%';burst&&burst.classList.add('fire');}
-    }
-    requestAnimationFrame(tick);
+    countUp(num,TARGET,1100,v=>v.toFixed(1)+'%');
   }
 
   if('IntersectionObserver' in window){
@@ -539,6 +526,44 @@ loadCardArt(document.getElementById('demo-img-ace'),'OP16-001');
     play(); // ancient browser fallback — just play it
   }
 })();
+
+// ── Movement bars — same reveal language as the gauge: bars grow out from
+// the center line while their numbers count up, instead of appearing static.
+(function(){
+  const panel=document.querySelector('.move-panel');
+  if(!panel)return;
+  const rows=[...panel.querySelectorAll('.move-row')];
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function play(){
+    rows.forEach(row=>{
+      const bar=row.querySelector('.move-bar');
+      const val=row.querySelector('.move-val');
+      if(!bar||!val)return;
+      const width=parseFloat(bar.dataset.width);
+      const value=parseFloat(val.dataset.value);
+      const sign=val.classList.contains('down')?'−':'+';
+      if(reduce){
+        bar.style.transition='none';
+        bar.style.width=width+'%';
+        val.textContent=sign+value.toFixed(1)+'%';
+        return;
+      }
+      requestAnimationFrame(()=>{bar.style.width=width+'%';});
+      countUp(val,value,900,v=>sign+v.toFixed(1)+'%');
+    });
+  }
+
+  if('IntersectionObserver' in window){
+    const io=new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{if(e.isIntersecting){play();io.disconnect();}});
+    },{threshold:.3});
+    io.observe(panel);
+  }else{
+    play();
+  }
+})();
+
 
 // ── Holographic tilt on the demo card — mouse-tracked 3D perspective plus
 // a moving specular shine, like a foil trading card. Idle and inert on
