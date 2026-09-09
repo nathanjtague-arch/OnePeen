@@ -1957,7 +1957,7 @@ function viewDeckbuster(){
           mname.textContent=(mu.isMirror?'🪞 ':''+(oppDeck?.name||mu.oppId));
           const mwr=document.createElement('div');mwr.className='db-mu-wr';
           if(!mu.hasData){mwr.textContent='—';mwr.style.color='#555';}
-          else{mwr.textContent=mu.wr.toFixed(1)+'%';mwr.style.color=wrCol(mu.wr);}
+          else{mwr.textContent=mu.wr.toFixed(1)+'%';mwr.style.color='var(--text)';}
           const mgames=document.createElement('div');mgames.className='db-mu-games';
           mgames.textContent=mu.hasData?(mu.games+' games'+(mu.isMirror?' · not in score':'')):'no data';
           info.append(mname,mwr,mgames);
@@ -2420,7 +2420,7 @@ function viewAdvisor(){
       dual.appendChild(buildHandGrid(handsData,OPP_DECK,'OPPONENT','var(--r)'));
       ohCard.appendChild(dual);
       const dsNote=document.createElement('div');dsNote.className='oh-ds-note';
-      dsNote.textContent='source: hands_'+(HANDS_FILE_MAP[DATASET_ID]||'west_p');
+      dsNote.textContent='Based on private lobby games — opening-hand data isn\'t available for other lobby types yet';
       ohCard.appendChild(dsNote);
     }).catch(()=>{ohLoading.textContent='Failed to load hand data.';});
   } else {
