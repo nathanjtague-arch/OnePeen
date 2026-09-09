@@ -50,5 +50,21 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "chore: update stats $(date -u +'%Y-%m-%d %H:%M UTC')"
-            git push
+            # Pull any changes that landed on main since this run started —
+            # e.g. someone uploading a file through the GitHub website at
+            # the same moment this scheduled run is trying to push — before
+            # pushing, and retry a few times if two writers genuinely
+            # collide. This is the fix for the "fetch first" push rejection.
+            PUSHED=false
+            for i in 1 2 3; do
+              if git pull --rebase origin main && git push; then
+                PUSHED=true
+                break
+              fi
+              echo "Push attempt $i failed — pulling and retrying"
+              sleep 5
+            done
+            if [ "$PUSHED" = false ]; then
+              echo "::warning::Could not push stats update after 3 attempts — will retry on the next scheduled run"
+            fi
           fi
