@@ -1818,8 +1818,14 @@ function computeDeckbuster(oppIds){
     const totalGames=withData.reduce((s,m)=>s+m.games,0);
     const weightedWR=withData.reduce((s,m)=>s+m.wr*m.games,0)/totalGames;
 
-    // Coverage factor: penalise missing matchup data
-    const coverage=withData.length/oppIds.length;
+    // Coverage factor: penalise missing matchup data. If this candidate is
+    // itself one of the selected opponents, its own mirror slot never
+    // counts as real coverage — so the denominator drops by one too,
+    // instead of unfairly capping this candidate's max possible score just
+    // for being a deck someone might also expect to face.
+    const totalSlots=oppIds.includes(deck.id)?oppIds.length-1:oppIds.length;
+    if(totalSlots===0)return; // the only "opponent" selected is this deck's own mirror — nothing to score
+    const coverage=withData.length/totalSlots;
 
     // Final score: weighted WR blended with overall WR, scaled by coverage
     // 80% matchup performance, 20% overall meta standing
@@ -2095,14 +2101,25 @@ function viewAdvisor(){
     es.textContent='Select both decks above to get a recommendation.';
     wrap.appendChild(es);return wrap;
   }
-  if(MY_DECK===OPP_DECK){
-    const es=document.createElement('div');es.className='empty-state';es.style.marginTop='14px';
-    es.style.color='var(--y)';es.textContent='Mirror match selected.';
-    wrap.appendChild(es);return wrap;
-  }
   const myDeck=DATA.decks.find(d=>d.id===MY_DECK);
   const oppDeck=DATA.decks.find(d=>d.id===OPP_DECK);
   if(!myDeck||!oppDeck)return wrap;
+
+  if(MY_DECK===OPP_DECK){
+    const mirrorMu=myDeck.mu?.[OPP_DECK];
+    if(!mirrorMu||mirrorMu.wr==null){
+      const es=document.createElement('div');es.className='empty-state';es.style.marginTop='14px';
+      es.style.color='var(--y)';es.textContent='No mirror-match data recorded for this deck yet.';
+      wrap.appendChild(es);return wrap;
+    }
+    // Real mirror data exists — fall through to the same advice/stat-tile/
+    // deck-card pipeline every other matchup uses, instead of a dead end.
+    const mm=document.createElement('div');
+    mm.style.cssText='font-family:var(--font-mono);font-size:12px;color:var(--dim);margin-bottom:8px';
+    mm.textContent='🪞 Mirror match — same deck on both sides';
+    wrap.appendChild(mm);
+  }
+
   const advice=getAdvice(myDeck,oppDeck);
 
   // Advice banner
