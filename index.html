@@ -954,9 +954,9 @@ function getAdvice(myDeck,oppDeck){
   return{text:'Take 2nd',sub:`${fmt(s)} going second vs ${fmt(f)} going first`,col:'var(--info)',src,winPct:s};
 }
 
-function getMatchupCtx(wr){
+function getMatchupCtx(wr,games){
   if(wr==null)return null;
-  const s=fmt(wr)+' overall WR';
+  const s=games!=null?`${fmt(wr)} overall WR — based on ${games.toLocaleString()} recorded games`:fmt(wr)+' overall WR';
   if(wr>=75)return{label:'Hydrogen bomb vs Coughing Baby',sub:s,col:'var(--g1)'};
   if(wr>=60)return{label:'Heavily Favoured',sub:s,col:'var(--g1)'};
   if(wr>=55)return{label:'Favourable matchup',sub:s,col:'var(--g2)'};
@@ -2163,7 +2163,7 @@ function viewAdvisor(){
 
   // Matchup context banner — placed after muData is defined
   {
-    const ctx=getMatchupCtx(muData?.wr??null);
+    const ctx=getMatchupCtx(muData?.wr??null,muData?.n??null);
     if(ctx){
       const cb=document.createElement('div');cb.className='ctx-banner';
       const rgbMap={'var(--g1)':'0,232,122','var(--g2)':'110,232,122','var(--y)':'245,208,0','var(--o)':'249,115,22','var(--r)':'239,68,68','var(--rr)':'180,30,30'};
