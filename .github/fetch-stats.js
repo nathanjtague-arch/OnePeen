@@ -331,7 +331,7 @@ async function discoverDatasets(ctx, log) {
     if ((rt === 'fetch' || rt === 'xhr' || /\.json(\?|$)/i.test(u)) && pageReqs.length < 60) pageReqs.push(`${rt} ${u.slice(0, 180)}`);
   };
   const onResp = resp => {
-    if (parseStatsUrl(resp.url())) { log.pageResponses = log.pageResponses || []; if (log.pageResponses.length < 12) log.pageResponses.push({ url: resp.url().split('/stats/')[1], status: resp.status() }); }
+    if (parseStatsUrl(resp.url())) { log.pageResponses = log.pageResponses || []; if (log.pageResponses.length < 40) log.pageResponses.push({ url: resp.url().split('/stats/')[1], status: resp.status() }); }
   };
   ctx.on('request', onReq);
   ctx.on('response', onResp);
@@ -430,6 +430,68 @@ async function probeKnownPatterns(page, hintSet, log) {
     }
   }
   return found;
+}
+
+// ── Exploration (diagnostic) ─────────────────────────────────────────────
+// The ranking files no longer contain matchup or first/second-player data, so
+// that must come from another file. These two helpers record, in
+// data/discovery-log.json, where the site gets it: which data files each of its
+// pages (and a click on a leader row) request, and whether a set of plausible
+// file names exist. Best-effort and time-limited; never fails the run.
+async function exploreSite(ctx, log) {
+  const page = await ctx.newPage();
+  const found = {}; let current = 'ranking page';
+  const onReq = req => {
+    const u = req.url();
+    if (!/cdn\.cardkaizoku\.com|localhost/.test(u)) return;
+    if (/\.(png|webp|jpe?g|svg|gif|mp4|css|js|woff2?)(\?|$)|image_manifest|\/manifest\.json|card_data|navmerch|latest_video/i.test(u)) return;
+    (found[current] = found[current] || []);
+    if (found[current].length < 25) found[current].push(u.replace(/^https?:\/\/[^/]+\//, '').slice(0, 160));
+  };
+  ctx.on('request', onReq);
+  const origin = new URL(RANKING_URL).origin;
+  const t0 = Date.now();
+  try {
+    await page.goto(RANKING_URL, { waitUntil: 'networkidle', timeout: 30000 });
+    await page.waitForTimeout(2500);
+    const links = await page.evaluate(() => [...new Set([...document.querySelectorAll('a[href]')].map(a => a.getAttribute('href')).filter(h => h && h.startsWith('/') && !h.startsWith('//') && h.length < 60))].slice(0, 40));
+    log.siteLinks = links;
+    current = 'click on a leader row';
+    try { await page.locator('tr, [role="row"]').nth(1).click({ timeout: 3000 }); await page.waitForTimeout(3000); }
+    catch (e) { (found[current] = found[current] || []).push('click failed: ' + e.message.split('\n')[0].slice(0, 80)); }
+    for (const href of links.slice(0, 14)) {
+      if (Date.now() - t0 > 90000) break;
+      if (href === '/' || /^\/ranking\/?$/.test(href)) continue;
+      current = `page ${href}`;
+      try { await page.goto(origin + href, { waitUntil: 'networkidle', timeout: 20000 }); await page.waitForTimeout(2500); } catch {}
+    }
+  } catch (e) { log.exploreError = e.message.split('\n')[0].slice(0, 120); }
+  finally { ctx.off('request', onReq); await page.close().catch(() => {}); }
+  log.exploreRequests = found;
+}
+
+async function probeFileTypes(entries, log) {
+  if (!sitePage) return;
+  const e = entries.find(x => !x.internal && x.dated && x.lastDate) || entries.find(x => x.dated && x.lastDate);
+  if (!e) return;
+  const names = ['matchups', 'matchup', 'matchup_matrix', 'matrix', 'matchup_stats', 'mu', 'vs', 'versus', 'winrates',
+                 'details', 'detail', 'ranking_matchups', 'ranking_matchup', 'ranking_detail', 'ranking_details',
+                 'firstsecond', 'first_second', 'turn_order', 'leader', 'leaders', 'stats', 'ranking'];
+  const q = (e.query || '').replace(/(v=)\d{8}/, `$1${e.lastDate}`);
+  log.typeProbe = { using: `${e.slug}_${e.lastDate}`, results: {} };
+  for (const n of names) {
+    for (const slug of [e.slug, `${e.slug}_p`]) {
+      const url = `${e.urlBase}${n}_${slug}_${e.lastDate}.json${q}`;
+      try {
+        const r = await sitePage.evaluate(async ({ url, headers }) => {
+          try { const res = await fetch(url, { headers }); const t = res.status === 200 ? await res.text() : ''; return { status: res.status, len: t.length, head: t.slice(0, 160) }; }
+          catch (err) { return { status: 'error' }; }
+        }, { url, headers: siteHeaders });
+        if (r.status === 200) log.typeProbe.results[`${n}_${slug}`] = r;
+        else if (slug === e.slug) log.typeProbe.results[n] = r.status;
+      } catch {}
+    }
+  }
 }
 
 // ── Manifest ─────────────────────────────────────────────────────────────
@@ -578,7 +640,7 @@ function archiveHistory(historyDir, id, rows, dataDate) {
   const publicLeaders = new Map();   // leader id -> true, for portrait downloads
   for (const ds of manifest.datasets) {
     const ageHours = datasetStatus[ds.id]?.lastSuccessAt ? (Date.now() - new Date(datasetStatus[ds.id].lastSuccessAt).getTime()) / 3.6e6 : Infinity;
-    if (ds.frozen && fs.existsSync(path.join(statsDir, `${ds.id}.json`)) && ageHours < 168) {
+    if (ds.frozen && !ds.dated && fs.existsSync(path.join(statsDir, `${ds.id}.json`)) && ageHours < 168) {
       // A snapshot shouldn't change — skip re-downloading it every 6 hours,
       // but re-check weekly in case cardkaizoku ever corrects one.
       process.stdout.write(`${ds.id}... (frozen snapshot, checked within the last week)\n`);
@@ -624,6 +686,9 @@ function archiveHistory(historyDir, id, rows, dataDate) {
   dlog.manifestIds = manifest.datasets.map(d => d.id);
   dlog.fetchSample = FETCH_LOG;
   fs.writeFileSync(LOG_PATH, JSON.stringify(dlog, null, 2));
+  // Diagnostics for where matchup / first-second data now lives (see exploreSite).
+  try { await probeFileTypes(manifest.datasets, dlog); await exploreSite(ctx, dlog); } catch (e) { dlog.exploreError = e.message.split('\n')[0].slice(0, 120); }
+  fs.writeFileSync(LOG_PATH, JSON.stringify(dlog, null, 2));
 
   // ── Opening-hand + decklist data (private lobbies, internal only) ──
   // Only hands + decklist: the app never reads the other file types
@@ -634,7 +699,7 @@ function archiveHistory(historyDir, id, rows, dataDate) {
     console.log(`\n${type} data:`);
     for (const ds of manifest.datasets.filter(d => d.internal && handsIds.has(d.id))) {
       const out = path.join(statsDir, `${type}_${ds.id}.json`);
-      if (ds.frozen && fs.existsSync(out) && (Date.now() - fs.statSync(out).mtimeMs) / 3.6e6 < 168) { console.log(`  ${ds.id}... (frozen, checked within the last week)`); continue; }
+      if (ds.frozen && !ds.dated && fs.existsSync(out) && (Date.now() - fs.statSync(out).mtimeMs) / 3.6e6 < 168) { console.log(`  ${ds.id}... (frozen, checked within the last week)`); continue; }
       process.stdout.write(`  ${ds.id}... `);
       let result = null;
       for (const url of candidateUrls(ds, type)) { result = await dataFetch(url); if (result) break; }
