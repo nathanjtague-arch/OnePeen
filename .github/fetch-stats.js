@@ -103,11 +103,17 @@ function readJson(p, fallback) { try { return JSON.parse(fs.readFileSync(p, 'utf
 // A stats request looks like  <base>stats_<slug>_<YYYYMMDD>.json?v=8
 // (some periods may be undated or carry a different ?v= — we copy whatever
 // the site actually used instead of assuming).
-const STATS_URL_RE = /^(https?:\/\/[^/]*(?:cardkaizoku|localhost|127\.0\.0\.1)[^/]*\/(?:[^?#]*\/)?)stats_([^/?#]+?)(?:_(\d{8}))?\.json(\?[^#]*)?$/i;
+// The file prefix is captured too, not assumed: it was "stats_" until Nov 2026,
+// when cardkaizoku renamed it to "ranking_" (and made ?v= a date instead of 8),
+// which silently 403'd every download. Following whatever prefix the page uses
+// means the next rename is picked up automatically. Other known file types
+// (hands, decklist, ...) are excluded so they're never mistaken for rankings.
+const STATS_URL_RE = /^(https?:\/\/[^/]*(?:cardkaizoku|localhost|127\.0\.0\.1)[^/]*\/(?:[^?#]*\/)?)(?!hands_|decklist_|matchuptech_|curve_|ranking_hands|image_|card_data|manifest)([a-z]+)_([^/?#]+?)(?:_(\d{8}))?\.json(\?[^#]*)?$/i;
 function parseStatsUrl(url) {
   const m = STATS_URL_RE.exec(url);
   if (!m) return null;
-  return { base: m[1], slug: m[2], date: m[3] || null, query: m[4] || '' };
+  if (!/\/stats\/$/i.test(m[1])) return null;     // ranking files live under /stats/
+  return { base: m[1], filePrefix: m[2].toLowerCase(), slug: m[3], date: m[4] || null, query: m[5] || '' };
 }
 
 // Turn a dropdown label into structured facts. Handles both the current
@@ -152,6 +158,7 @@ function entryFromObservation(label, obs) {
     frozen: d.kind === 'snapshot',
     set: d.set,
     setNum: d.setNum,
+    filePrefix: obs.filePrefix || 'stats',
     slug: obs.slug,
     period: obs.slug,                    // kept under the old name too — the app's CDN fallback reads `period`
     prefix: `stats_${obs.slug}_`,
@@ -164,10 +171,21 @@ function entryFromObservation(label, obs) {
 
 // Candidate URLs for one file type of one dataset, most likely first.
 function candidateUrls(entry, type) {
-  const file = `${type}_${entry.slug}`;
-  if (!entry.dated) return [`${entry.urlBase}${file}.json${entry.query}`];
-  const dates = [...new Set([...tryDates(), entry.lastDate].filter(Boolean))];
-  return dates.map(d => `${entry.urlBase}${file}_${d}.json${entry.query}`);
+  const fp = entry.filePrefix || 'stats';
+  // Ranking files use the discovered prefix. Other types (hands, decklist) have
+  // not been observed being renamed, so try their plain name first, then the
+  // ranking-style prefixed name as a fallback.
+  const files = type === 'stats' ? [`${fp}_${entry.slug}`]
+                                 : [`${type}_${entry.slug}`, `${fp}_${type}_${entry.slug}`];
+  // A date-style cache-buster (?v=20261120) follows the date of the file requested.
+  const q = d => (entry.query || '').replace(/(v=)\d{8}/, `$1${d}`);
+  const urls = [];
+  for (const file of files) {
+    if (!entry.dated) { urls.push(`${entry.urlBase}${file}.json${entry.query}`); continue; }
+    const dates = [...new Set([...tryDates(), entry.lastDate].filter(Boolean))];
+    dates.forEach(d => urls.push(`${entry.urlBase}${file}_${d}.json${q(d)}`));
+  }
+  return urls;
 }
 function dateFromUrl(url) { const m = /_(\d{8})\.json/.exec(url); return m ? m[1] : null; }
 
@@ -350,9 +368,12 @@ async function probeKnownPatterns(page, hintSet, log) {
   for (const n of sets) for (const v of variants) {
     const slug = `op${n}${v.suffix}`;
     for (const d of tryDates()) {
-      const url = `https://cdn.cardkaizoku.com/stats/stats_${slug}_${d}.json?v=8`;
-      const r = await browserFetch(page, url);
-      if (r) { found.push({ label: v.label(n), obs: parseStatsUrl(url) }); log.probed.push(slug); break; }
+      for (const [pre, q] of [['ranking', `v=${d}`], ['stats', 'v=8']]) {
+        const url = `https://cdn.cardkaizoku.com/stats/${pre}_${slug}_${d}.json?${q}`;
+        const r = await browserFetch(page, url);
+        if (r) { found.push({ label: v.label(n), obs: parseStatsUrl(url) }); log.probed.push(`${pre}_${slug}`); break; }
+      }
+      if (log.probed.includes(`ranking_${slug}`) || log.probed.includes(`stats_${slug}`)) break;
     }
   }
   return found;
