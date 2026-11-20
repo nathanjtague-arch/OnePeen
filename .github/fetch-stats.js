@@ -87,6 +87,44 @@ async function browserFetch(page, url) {
   }
 }
 
+// ── Downloading data files ───────────────────────────────────────────────
+// Cardkaizoku's CDN answers 403 to a browser that simply navigates to a data
+// file (no referrer / site headers), yet serves the very same URL to the site's
+// own page. So files are requested from INSIDE a loaded cardkaizoku page via
+// fetch(), exactly as the site does — same origin, same cookies, and replaying
+// any extra request headers the page itself was seen sending (values are only
+// held in memory; never written to disk or the log). Plain navigation remains
+// as a fallback.
+let sitePage = null;          // a loaded cardkaizoku page we fetch from
+let navPage  = null;          // plain page used for navigation fallback and images
+let siteHeaders = {};         // extra headers the site's own data requests carried
+const SKIP_HEADERS = /^(host|user-agent|accept.*|sec-.*|referer|origin|cookie|connection|content-.*|cache-control|pragma|priority|upgrade-insecure-requests|if-.*|range|dnt|te|:.*)$/i;
+function captureHeaders(h) {
+  const keep = {};
+  for (const [k, v] of Object.entries(h || {})) if (!SKIP_HEADERS.test(k)) keep[k] = v;
+  return keep;
+}
+async function dataFetch(url) {
+  if (sitePage) {
+    try {
+      const r = await sitePage.evaluate(async ({ url, headers }) => {
+        try {
+          const res = await fetch(url, { credentials: 'include', headers });
+          return { status: res.status, text: await res.text() };
+        } catch (e) { return { status: 'error: ' + e.message, text: '' }; }
+      }, { url, headers: siteHeaders });
+      noteFetch(url, `${r.status} (in-page)`);
+      if (r.status === 200) {
+        try {
+          const data = JSON.parse(r.text);
+          if (Array.isArray(data) && data.length) return { text: JSON.stringify(data), data, url };
+        } catch {}
+      } else console.log(`  in-page HTTP ${r.status} — ${url}`);
+    } catch (e) { noteFetch(url, 'evaluate error: ' + e.message.split('\n')[0].slice(0, 60)); }
+  }
+  return browserFetch(navPage, url);
+}
+
 // Plain Node.js fetch — works for Bandai/Limitless (no Cloudflare on those hosts)
 async function nodeFetch(url) {
   try {
@@ -275,14 +313,25 @@ function scoreSlug(label, slug) {
 async function discoverDatasets(ctx, log) {
   const seen = [];
   const pageReqs = [];
+  let headersCaptured = false;
   const onReq = req => {
     const u = req.url();
     const p = parseStatsUrl(u);
-    if (p) seen.push({ url: u, ...p });
+    if (p) {
+      seen.push({ url: u, ...p });
+      if (!headersCaptured) {
+        headersCaptured = true;
+        req.allHeaders().then(h => { siteHeaders = captureHeaders(h); log.replayHeaderNames = Object.keys(siteHeaders); }).catch(() => {});
+      }
+    }
     const rt = req.resourceType();
     if ((rt === 'fetch' || rt === 'xhr' || /\.json(\?|$)/i.test(u)) && pageReqs.length < 60) pageReqs.push(`${rt} ${u.slice(0, 180)}`);
   };
+  const onResp = resp => {
+    if (parseStatsUrl(resp.url())) { log.pageResponses = log.pageResponses || []; if (log.pageResponses.length < 12) log.pageResponses.push({ url: resp.url().split('/stats/')[1], status: resp.status() }); }
+  };
   ctx.on('request', onReq);
+  ctx.on('response', onResp);
   const page = await ctx.newPage();
   const result = { labels: [], observed: new Map() };
   try {
@@ -347,6 +396,7 @@ async function discoverDatasets(ctx, log) {
     console.log(`::warning::Could not read cardkaizoku's dropdown this run (${e.message}).`);
   } finally {
     ctx.off('request', onReq);
+    ctx.off('response', onResp);
     log.pageRequests = pageReqs;
     await page.close().catch(() => {});
   }
@@ -370,7 +420,7 @@ async function probeKnownPatterns(page, hintSet, log) {
     for (const d of tryDates()) {
       for (const [pre, q] of [['ranking', `v=${d}`], ['stats', 'v=8']]) {
         const url = `https://cdn.cardkaizoku.com/stats/${pre}_${slug}_${d}.json?${q}`;
-        const r = await browserFetch(page, url);
+        const r = await dataFetch(url);
         if (r) { found.push({ label: v.label(n), obs: parseStatsUrl(url) }); log.probed.push(`${pre}_${slug}`); break; }
       }
       if (log.probed.includes(`ranking_${slug}`) || log.probed.includes(`stats_${slug}`)) break;
@@ -480,6 +530,12 @@ function archiveHistory(historyDir, id, rows, dataDate) {
   const trusted = disc.labels.length >= MIN_DISCOVERED && disc.observed.size >= 1;
 
   const page = await ctx.newPage();
+  navPage = page;
+  sitePage = await ctx.newPage();
+  try {
+    await sitePage.goto(RANKING_URL, { waitUntil: 'networkidle', timeout: 30000 });
+    await sitePage.waitForTimeout(3000);   // let the site's own verification finish before we fetch from it
+  } catch (e) { dlog.sitePageError = e.message.split('\n')[0]; }
   let observed = disc.observed;
   if (!trusted) {
     console.log('::warning::Dropdown discovery did not produce a usable list — falling back to previous manifest, plus a probe of known slug patterns.');
@@ -529,7 +585,7 @@ function archiveHistory(historyDir, id, rows, dataDate) {
     process.stdout.write(`${ds.id}... `);
     let result = null;
     for (const url of candidateUrls(ds, 'stats')) {
-      result = await browserFetch(page, url);
+      result = await dataFetch(url);
       if (result) break;
     }
     const now = new Date().toISOString();
@@ -578,7 +634,7 @@ function archiveHistory(historyDir, id, rows, dataDate) {
       if (ds.frozen && fs.existsSync(out) && (Date.now() - fs.statSync(out).mtimeMs) / 3.6e6 < 168) { console.log(`  ${ds.id}... (frozen, checked within the last week)`); continue; }
       process.stdout.write(`  ${ds.id}... `);
       let result = null;
-      for (const url of candidateUrls(ds, type)) { result = await browserFetch(page, url); if (result) break; }
+      for (const url of candidateUrls(ds, type)) { result = await dataFetch(url); if (result) break; }
       if (result) { fs.writeFileSync(out, result.text); console.log(`✓  (${Math.round(result.text.length/1024)}kB)`); }
       else console.log('✗');
     }
