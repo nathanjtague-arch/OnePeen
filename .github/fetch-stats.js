@@ -1,36 +1,42 @@
 // Uses Playwright purely as a Cloudflare-friendly HTTP client.
 // CDN is publicly accessible but Cloudflare blocks non-browser TLS fingerprints.
-// We navigate Chromium directly to each CDN URL — no cardkaizoku.com interaction needed.
+// We navigate Chromium directly to each CDN URL.
+//
+// ── HOW DATASETS WORK NOW (rewritten Nov 2026) ───────────────────────────
+// This file used to carry a hand-typed list of cardkaizoku period slugs
+// ("op17", "op17_lw", ...). That broke the moment cardkaizoku restructured
+// its dropdown (Standard disappeared, OP17 froze into a Snapshot, OP18 and
+// EB05 appeared), because nobody told the list.
+//
+// Now the site tells US. Every run we:
+//   1. DISCOVER  — open cardkaizoku's ranking page, read every option in the
+//                  period dropdown, click each one, and record the exact
+//                  CDN URL the page itself requests for it.
+//   2. MANIFEST  — write that to data/datasets.json. The app builds its
+//                  dropdown from this file, so it can never list something
+//                  that doesn't exist, and new periods appear on their own.
+//   3. FETCH     — download each dataset from the URL the site gave us.
+//   4. HISTORY   — keep a tiny daily snapshot of each live dataset so Meta
+//                  Trends can compare "now" vs "a week ago" from OUR data,
+//                  no matter how cardkaizoku names things.
+//
+// If discovery fails (their page changes shape), the previous manifest is
+// kept, a pattern-probe fallback tries the known slug conventions, and a
+// loud warning is raised. data/discovery-log.json records exactly what was
+// seen on every run, so a failure can be diagnosed from the repo alone.
 
-const { chromium } = require('/tmp/node_modules/playwright');
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/tmp/node_modules/playwright');
 const fs   = require('fs');
 const path = require('path');
 
 const WORKSPACE  = process.env.GITHUB_WORKSPACE;
 const COOKIE_STR = process.env.CARDKAIZOKU_COOKIES || '';
+const RANKING_URL = process.env.CK_RANKING_URL || 'https://www.cardkaizoku.com/ranking';
+const SKIP_IMAGES = process.env.SKIP_IMAGES === '1';
 
-const DATASETS = [
-  // Real slugs confirmed 2026-09-08 by watching cardkaizoku's own Network
-  // tab, one period at a time. The old assumption (a stable "west" label
-  // for Standard) was wrong — cardkaizoku now names the current-set slug
-  // after the literal set number, so "Standard" = whatever OP is current.
-  // This will need updating again once OP18 (or later) becomes current —
-  // that's exactly the kind of drift the dropdown monitor below exists to
-  // catch automatically rather than this going stale silently again.
-  //
-  // west_p / lw_p (Private Lobbies) are kept even though they're not
-  // offered anywhere in the app's dropdowns — small, unrepresentative
-  // sample, not something anyone should pick as their main view. They're
-  // still fetched because Opening Hand Analysis has no All-Lobbies
-  // equivalent to fall back to.
-  { id: 'west_p',    period: 'op17_p'     }, // Standard, Private Lobbies — internal only, feeds Opening Hand Analysis
-  { id: 'lw_p',      period: 'op17_lw_p'  }, // Standard Last Week, Private Lobbies — internal only, feeds Opening Hand Analysis
-  { id: 'west',      period: 'op17'       }, // Standard
-  { id: 'lw',        period: 'op17_lw'    }, // Standard Last Week
-  { id: 'op17_lw',   period: 'op17_lw'    }, // OP17 Last Week — currently identical to 'lw' above; will diverge once a new set releases
-  { id: 'exreg',     period: 'east_lw'    }, // Extra Reg Last Week
-  { id: 'op16_lw',   period: 'op16_lw'    }, // OP16 Final Week — real slug not yet confirmed, likely renamed to something like "op16_5" or "op165"; still 404ing until confirmed
-];
+const STALE_HOURS   = 48;  // warn if a dataset hasn't refreshed in this long
+const HISTORY_DAYS  = 35;  // daily trend snapshots kept per dataset
+const MIN_DISCOVERED = 3;  // fewer labels than this = discovery is not trusted
 
 function parseCookies(str) {
   if (!str) return [];
@@ -41,14 +47,20 @@ function parseCookies(str) {
   }).filter(Boolean);
 }
 
-// LA timezone date (YYYYMMDD) — matches cardkaizoku's fetchFile.js
+// LA timezone date (YYYYMMDD).
+// The previous version converted time zones twice, which on a UTC runner made
+// it return the PREVIOUS day between midnight and 8am Los Angeles time — so the
+// freshest file could be skipped for part of every day. This version asks Intl
+// for the LA calendar date directly, then steps back whole days.
+const LA_FMT = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' });
 function laDate(offset = 0) {
-  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-  d.setDate(d.getDate() - offset);
-  const s = d.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' });
-  const [m, dy, y] = s.split('/');
-  return `${y}${m}${dy}`;
+  const [y, m, d] = LA_FMT.format(new Date()).split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d) - offset * 86400000);
+  return `${t.getUTCFullYear()}${String(t.getUTCMonth() + 1).padStart(2, '0')}${String(t.getUTCDate()).padStart(2, '0')}`;
 }
+// Dates to try for any dated file: the real LA today, yesterday, and the day
+// before (that third one also covers every date the old buggy formula produced).
+const tryDates = () => [laDate(0), laDate(1), laDate(2)];
 
 // Navigate browser directly to a CDN JSON URL and read the response body
 async function browserFetch(page, url) {
@@ -78,65 +90,285 @@ async function nodeFetch(url) {
   } catch { return null; }
 }
 
-// ── Cardkaizoku dropdown monitor ─────────────────────────────────
-// Detects when cardkaizoku adds, removes, or renames a period on their own
-// site, by diffing their dropdown's text against what was seen last run —
-// catching drift (like "OP16 Final Week" quietly becoming "OP16.5 Final
-// Week Snapshot") as an explicit change, before it just shows up as an
-// unexplained 404 with no story behind it.
-//
-// This is genuinely best-effort: their page is a client-rendered SPA with
-// markup this script has never actually seen rendered, so it tries a
-// handful of common patterns to open the dropdown, in order, and gives up
-// gracefully — logging what it found (or that it found nothing) — rather
-// than ever failing the whole workflow over a monitoring step.
-async function checkCardkaizokuDropdown(ctx) {
+function readJson(p, fallback) { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return fallback; } }
+
+// ── Reading cardkaizoku's own naming ─────────────────────────────────────
+// A stats request looks like  <base>stats_<slug>_<YYYYMMDD>.json?v=8
+// (some periods may be undated or carry a different ?v= — we copy whatever
+// the site actually used instead of assuming).
+const STATS_URL_RE = /^(https?:\/\/[^/]*(?:cardkaizoku|localhost|127\.0\.0\.1)[^/]*\/(?:[^?#]*\/)?)stats_([^/?#]+?)(?:_(\d{8}))?\.json(\?[^#]*)?$/i;
+function parseStatsUrl(url) {
+  const m = STATS_URL_RE.exec(url);
+  if (!m) return null;
+  return { base: m[1], slug: m[2], date: m[3] || null, query: m[4] || '' };
+}
+
+// Turn a dropdown label into structured facts. Handles both the current
+// style ("OP18 · Last Week · All Lobbies") and the older one
+// ("Standard Last Week (All Lobbies)").
+function describeLabel(label) {
+  const lobby = /top\s*\d+\s*%/i.test(label) ? 'top'
+              : /private/i.test(label)       ? 'private'
+              : 'all';
+  const kind  = /snapshot|full format/i.test(label) ? 'snapshot'
+              : /last week/i.test(label)            ? 'last-week'
+              : /yesterday/i.test(label)            ? 'yesterday'
+              : 'live';
+  // key = the label with the lobby part removed, so "All Lobbies" and
+  // "Private" versions of the same period share a key (that's how a public
+  // dataset finds its private sibling for Opening Hand data).
+  const key = label
+    .replace(/\s*\((all|private)\s+lobbies\)/gi, '')
+    .split('·').map(s => s.trim())
+    .filter(s => s && !/^(all lobbies|private( lobbies)?|top\s*\d+\s*%)$/i.test(s))
+    .join(' · ')
+    .replace(/^top\s*\d+\s*%\s*/i, '')
+    .trim();
+  let display = key.replace(/^\[snapshot\]\s*/i, '').trim();
+  if (/^\[snapshot\]/i.test(key) && !/snapshot/i.test(display)) display += ' (Snapshot)';
+  const setMatch = /\b(OP|EB|ST|PRB)\s*-?(\d+)\b/i.exec(label);
+  return { lobby, kind, key, display, set: setMatch ? (setMatch[1] + setMatch[2]).toUpperCase() : null, setNum: setMatch && /^op$/i.test(setMatch[1]) ? parseInt(setMatch[2], 10) : null };
+}
+
+function idFromSlug(slug) { return slug.toLowerCase().replace(/[^a-z0-9_]+/g, '_'); }
+
+function entryFromObservation(label, obs) {
+  const d = describeLabel(label);
+  return {
+    id: idFromSlug(obs.slug),
+    label: d.display,
+    key: d.key,
+    cardkaizokuLabel: label,
+    kind: d.kind,
+    lobby: d.lobby,
+    internal: d.lobby === 'private',     // private lobbies: fetched for Opening Hands only, never shown in the dropdown
+    frozen: d.kind === 'snapshot',
+    set: d.set,
+    setNum: d.setNum,
+    slug: obs.slug,
+    period: obs.slug,                    // kept under the old name too — the app's CDN fallback reads `period`
+    prefix: `stats_${obs.slug}_`,
+    urlBase: obs.base,
+    query: obs.query,
+    dated: !!obs.date,
+    lastDate: obs.date || null,
+  };
+}
+
+// Candidate URLs for one file type of one dataset, most likely first.
+function candidateUrls(entry, type) {
+  const file = `${type}_${entry.slug}`;
+  if (!entry.dated) return [`${entry.urlBase}${file}.json${entry.query}`];
+  const dates = [...new Set([...tryDates(), entry.lastDate].filter(Boolean))];
+  return dates.map(d => `${entry.urlBase}${file}_${d}.json${entry.query}`);
+}
+function dateFromUrl(url) { const m = /_(\d{8})\.json/.exec(url); return m ? m[1] : null; }
+
+// ── Discovery: ask the site what it offers ───────────────────────────────
+const LABEL_LINE_RE = /(\bOP\d+|\bEB\d+|\bEGB|\bST\d+|\bPRB\d+|Snapshot|Last Week|Yesterday|Standard|Extra Reg|Spoiler)/i;
+function pickLabels(bodyText) {
+  const lines = bodyText.split('\n').map(l => l.trim()).filter(Boolean);
+  return [...new Set(lines.filter(l =>
+    l.length < 80 &&
+    LABEL_LINE_RE.test(l) &&
+    /Lobbies|Private|·|\(/.test(l) &&                       // must look like a period, not a heading
+    !(l === l.toUpperCase() && !/\d/.test(l))               // drop ALL-CAPS group headings such as "SNAPSHOT"
+  ))];
+}
+
+let workingOpener = null;   // remembered across calls so we stop paying timeouts for strategies that don't apply
+async function openDropdown(page) {
+  const bodyLabels = async () => pickLabels(await page.evaluate(() => document.body.innerText));
+  // Already open? Do NOT click again — on most dropdowns a second click closes it.
+  let labels = await bodyLabels();
+  if (labels.length >= MIN_DISCOVERED) return labels;
+
+  const strategies = [
+    () => page.locator('select').first().click({ timeout: 1500 }),
+    () => page.locator('[role="combobox"]').first().click({ timeout: 1500 }),
+    () => page.locator('[aria-haspopup]').first().click({ timeout: 1500 }),
+    () => page.locator('button, div').filter({ hasText: /Last Week|Snapshot|Lobbies|Standard/i }).first().click({ timeout: 1500 }),
+  ];
+  const order = workingOpener == null ? strategies.map((_, i) => i)
+                                      : [workingOpener, ...strategies.map((_, i) => i).filter(i => i !== workingOpener)];
+  for (const i of order) {
+    try {
+      await strategies[i]();
+      await page.waitForTimeout(600);
+      labels = await bodyLabels();
+      if (labels.length >= MIN_DISCOVERED) { workingOpener = i; return labels; }
+    } catch {}
+  }
+  return labels;
+}
+
+// When one click triggers several stats requests, prefer the one whose slug
+// matches the label's hints (…_lw for Last Week, …_p for Private).
+function scoreSlug(label, slug) {
+  const s = slug.toLowerCase(); let score = 0;
+  const d = describeLabel(label);
+  if (d.kind === 'last-week') score += /(^|_)lw($|_)/.test(s) ? 2 : -1;
+  if (d.kind === 'snapshot')  score += /snap|final|full/.test(s) ? 2 : 0;
+  score += d.lobby === 'private' ? (/(^|_)p$/.test(s) ? 2 : -1) : (/(^|_)p$/.test(s) ? -2 : 0);
+  if (d.set && s.includes(d.set.toLowerCase())) score += 1;
+  return score;
+}
+
+async function discoverDatasets(ctx, log) {
+  const seen = [];
+  const onReq = req => { const p = parseStatsUrl(req.url()); if (p) seen.push({ url: req.url(), ...p }); };
+  ctx.on('request', onReq);
   const page = await ctx.newPage();
-  const snapshotPath = path.join(WORKSPACE, 'data', 'cardkaizoku-periods.json');
+  const result = { labels: [], observed: new Map() };
   try {
-    await page.goto('https://www.cardkaizoku.com/ranking', { waitUntil: 'networkidle', timeout: 25000 });
-    await page.waitForTimeout(2500); // let the SPA hydrate before touching anything
+    await page.goto(RANKING_URL, { waitUntil: 'networkidle', timeout: 30000 });
+    await page.waitForTimeout(2500);
+    const initial = seen.slice();
+    log.initialRequests = initial.map(s => s.url);
 
-    const openStrategies = [
-      () => page.locator('select').first().click({ timeout: 3000 }),
-      () => page.locator('[role="combobox"]').first().click({ timeout: 3000 }),
-      () => page.locator('button, div').filter({ hasText: /Standard|Last Week|Lobbies/i }).first().click({ timeout: 3000 }),
-    ];
-    for (const strategy of openStrategies) {
-      try { await strategy(); await page.waitForTimeout(500); break; } catch {}
+    const labels = await openDropdown(page);
+    result.labels = labels;
+    log.labels = labels;
+    if (labels.length < MIN_DISCOVERED) { log.note = 'dropdown labels not found'; return result; }
+
+    // Top-N% variants aren't used anywhere; skip clicking them.
+    const toClick = labels.filter(l => describeLabel(l).lobby !== 'top');
+    const t0 = Date.now();
+    for (const label of toClick) {
+      if (Date.now() - t0 > 150000) { log.note = 'discovery time budget hit'; break; }
+      const entry = { label, requests: [] };
+      log.clicks = log.clicks || []; log.clicks.push(entry);
+      try {
+        await openDropdown(page);
+        const before = seen.length;
+        await page.getByText(label, { exact: true }).last().click({ timeout: 4000 });
+        await page.waitForTimeout(3200);
+        const fresh = seen.slice(before);
+        entry.requests = fresh.map(f => f.url);
+        if (!fresh.length) { entry.result = 'no request observed'; continue; }
+        const best = [...fresh].sort((a, b) => scoreSlug(label, b.slug) - scoreSlug(label, a.slug))[0];
+        result.observed.set(label, best);
+        entry.result = `slug=${best.slug}`;
+      } catch (e) { entry.result = `click failed: ${e.message.split('\n')[0]}`; }
     }
 
-    const bodyText = await page.evaluate(() => document.body.innerText);
-    const lines = bodyText.split('\n').map(l => l.trim()).filter(Boolean);
-    const periodPattern = /(Standard|Extra Reg|OP\d+(\.\d+)?\s*(Final|Last)|Last Week|Yesterday|Snapshot)/i;
-    const found = [...new Set(lines.filter(l => periodPattern.test(l) && l.length < 60))].sort();
-
-    if (!found.length) {
-      console.log('::warning::Cardkaizoku dropdown check found no recognizable period labels this run (best-effort check — their page markup may not match what this script expects). Worth a manual look at https://www.cardkaizoku.com/ranking.');
-      return;
+    // A label we couldn't observe might simply be the page's default (already
+    // loaded before we clicked anything). If exactly one label and one initial
+    // request are left over, they belong together.
+    const unresolved = toClick.filter(l => !result.observed.has(l));
+    const usedSlugs = new Set([...result.observed.values()].map(o => o.slug));
+    const spare = initial.filter(i => !usedSlugs.has(i.slug));
+    if (unresolved.length === 1 && spare.length === 1) {
+      result.observed.set(unresolved[0], spare[0]);
+      log.defaultAssignment = { label: unresolved[0], slug: spare[0].slug };
     }
 
-    console.log('\nCardkaizoku dropdown currently shows:');
-    found.forEach(f => console.log(`  - ${f}`));
-
-    let previous = [];
-    try { previous = JSON.parse(fs.readFileSync(snapshotPath, 'utf8')); } catch {}
-    const added = found.filter(f => !previous.includes(f));
-    const removed = previous.filter(f => !found.includes(f));
-    if (added.length) console.log(`::warning::New period label(s) on cardkaizoku since last check: ${added.join(' | ')}`);
-    if (removed.length) console.log(`::warning::Period label(s) that disappeared from cardkaizoku since last check: ${removed.join(' | ')}`);
-    fs.writeFileSync(snapshotPath, JSON.stringify(found, null, 2));
+    // Two different labels must never share a slug — if they do, a click didn't
+    // really change the request and we can't tell which is which. Drop both.
+    const bySlug = new Map();
+    for (const [label, o] of result.observed) bySlug.set(o.slug, [...(bySlug.get(o.slug) || []), label]);
+    for (const [slug, ls] of bySlug) if (ls.length > 1) {
+      log.collisions = log.collisions || []; log.collisions.push({ slug, labels: ls });
+      ls.forEach(l => result.observed.delete(l));
+    }
   } catch (e) {
-    console.log(`::warning::Could not check cardkaizoku's dropdown this run (${e.message}). Not fatal — this is monitoring only.`);
+    log.error = e.message;
+    console.log(`::warning::Could not read cardkaizoku's dropdown this run (${e.message}).`);
   } finally {
+    ctx.off('request', onReq);
     await page.close().catch(() => {});
   }
+  return result;
+}
+
+// Fallback when discovery yields nothing: try the slug conventions we have
+// actually seen (opN, opN_lw, opN_p, opN_lw_p) for the newest few sets.
+async function probeKnownPatterns(page, hintSet, log) {
+  const found = [];
+  const sets = [hintSet + 1, hintSet, hintSet - 1];
+  const variants = [
+    { suffix: '',      label: n => `OP${n} · Current · All Lobbies` },
+    { suffix: '_lw',   label: n => `OP${n} · Last Week · All Lobbies` },
+    { suffix: '_p',    label: n => `OP${n} · Current · Private Lobbies` },
+    { suffix: '_lw_p', label: n => `OP${n} · Last Week · Private Lobbies` },
+  ];
+  log.probed = [];
+  for (const n of sets) for (const v of variants) {
+    const slug = `op${n}${v.suffix}`;
+    for (const d of tryDates()) {
+      const url = `https://cdn.cardkaizoku.com/stats/stats_${slug}_${d}.json?v=8`;
+      const r = await browserFetch(page, url);
+      if (r) { found.push({ label: v.label(n), obs: parseStatsUrl(url) }); log.probed.push(slug); break; }
+    }
+  }
+  return found;
+}
+
+// ── Manifest ─────────────────────────────────────────────────────────────
+function chooseDefault(entries) {
+  const pub = entries.filter(e => !e.internal);
+  if (!pub.length) return null;
+  const score = e => (e.frozen ? 0 : 1000) + (e.kind === 'last-week' ? 100 : 0) + (e.setNum || 0);
+  return [...pub].sort((a, b) => score(b) - score(a))[0].id;
+}
+
+function buildManifest(observed, previous, discoveryTrusted, siteLabels = []) {
+  const fresh = [];
+  for (const [label, obs] of observed) {
+    const e = entryFromObservation(label, obs);
+    if (e.lobby === 'top') continue;
+    fresh.push(e);
+  }
+  let entries = fresh;
+  if (!discoveryTrusted && previous?.datasets?.length) {
+    // Couldn't read the site this run — keep what we knew rather than blank the dropdown.
+    entries = previous.datasets;
+  } else if (previous?.datasets?.length) {
+    const prevById = new Map(previous.datasets.map(p => [p.id, p]));
+    // Carry over lastDate for entries we already knew, so a frozen snapshot
+    // keeps pointing at the right file.
+    entries.forEach(e => { const p = prevById.get(e.id); if (p && !e.lastDate) e.lastDate = p.lastDate || null; });
+    // A label that is STILL on the site but whose click didn't yield a URL this
+    // run (a flaky click) keeps its previous entry, rather than vanishing from
+    // the dropdown for a run.
+    const freshIds = new Set(entries.map(e => e.id));
+    previous.datasets.forEach(p => {
+      if (!freshIds.has(p.id) && siteLabels.includes(p.cardkaizokuLabel)) entries.push(p);
+    });
+  }
+  // De-duplicate ids defensively.
+  const seenIds = new Set(); entries = entries.filter(e => !seenIds.has(e.id) && seenIds.add(e.id));
+  // Link each public dataset to its private sibling (same period, private lobbies) for Opening Hands.
+  const privByKey = new Map(entries.filter(e => e.internal).map(e => [e.key, e.id]));
+  entries.forEach(e => { if (!e.internal) e.handsId = privByKey.get(e.key) || null; });
+  return { generatedAt: new Date().toISOString(), defaultId: chooseDefault(entries), datasets: entries };
+}
+
+// ── History (for Meta Trends) ────────────────────────────────────────────
+const SLIM_KEYS = ['leader', 'leaderName', 'weighted_win_rate', 'raw_win_rate', 'play_rate', 'number_of_matches', 'first_win_rate', 'second_win_rate'];
+function archiveHistory(historyDir, id, rows, dataDate) {
+  fs.mkdirSync(historyDir, { recursive: true });
+  const file = path.join(historyDir, `${id}.json`);
+  const hist = readJson(file, { snapshots: [] });
+  const slim = rows.map(r => { const o = {}; SLIM_KEYS.forEach(k => { if (r[k] != null) o[k] = r[k]; }); return o; });
+  const snap = { date: dataDate, rows: slim };
+  const same = hist.snapshots.find(s => s.date === dataDate);
+  if (same) same.rows = slim; else hist.snapshots.push(snap);
+  // Skip storing a snapshot that is identical to the previous one (frozen data).
+  hist.snapshots.sort((a, b) => a.date.localeCompare(b.date));
+  const deduped = [];
+  for (const s of hist.snapshots) {
+    const last = deduped[deduped.length - 1];
+    if (last && JSON.stringify(last.rows) === JSON.stringify(s.rows)) continue;
+    deduped.push(s);
+  }
+  hist.snapshots = deduped.slice(-HISTORY_DAYS);
+  fs.writeFileSync(file, JSON.stringify(hist));
 }
 
 (async () => {
-  const today     = laDate(0);
-  const yesterday = laDate(1);
-  console.log(`Dates: today=${today}, yesterday=${yesterday} (LA timezone)\n`);
+  const today = laDate(0);
+  console.log(`Dates tried: ${tryDates().join(', ')} (LA timezone)\n`);
 
   const browser = await chromium.launch({ headless: true });
   const ctx = await browser.newContext({
@@ -151,107 +383,140 @@ async function checkCardkaizokuDropdown(ctx) {
     console.log('No cookies — CDN requests may be challenged by Cloudflare\n');
   }
 
-  const statsDir = path.join(WORKSPACE, 'data', 'stats');
-  const cardsDir = path.join(WORKSPACE, 'data', 'cards');
+  const dataDir    = path.join(WORKSPACE, 'data');
+  const statsDir   = path.join(dataDir, 'stats');
+  const cardsDir   = path.join(dataDir, 'cards');
+  const historyDir = path.join(dataDir, 'history');
   fs.mkdirSync(statsDir, { recursive: true });
   fs.mkdirSync(cardsDir, { recursive: true });
 
-  // ── Dataset freshness tracking ───────────────────────────────────
-  // Loaded once here, updated per-dataset below, written out at the end.
-  // This is what lets the app show real "updated Xh ago" text per dataset
-  // instead of a static hand-written label — and what lets this workflow
-  // loudly flag a dataset that's quietly stopped updating, instead of that
-  // only being noticed by chance months later.
-  const STATUS_PATH = path.join(WORKSPACE, 'data', 'dataset-status.json');
-  const STALE_HOURS = 48; // ~8 missed runs at the current 6-hour cadence
-  let datasetStatus = {};
-  try { datasetStatus = JSON.parse(fs.readFileSync(STATUS_PATH, 'utf8')); } catch {}
+  const MANIFEST_PATH = path.join(dataDir, 'datasets.json');
+  const STATUS_PATH   = path.join(dataDir, 'dataset-status.json');
+  const PERIODS_PATH  = path.join(dataDir, 'cardkaizoku-periods.json');
+  const LOG_PATH      = path.join(dataDir, 'discovery-log.json');
+
+  const previousManifest = readJson(MANIFEST_PATH, null);
+  let datasetStatus = readJson(STATUS_PATH, {});
+
+  // ── 1. Discover ────────────────────────────────────────────────────
+  console.log('Discovering datasets from cardkaizoku\'s own dropdown...');
+  const dlog = { at: new Date().toISOString() };
+  const disc = await discoverDatasets(ctx, dlog);
+  const trusted = disc.labels.length >= MIN_DISCOVERED && disc.observed.size >= 1;
 
   const page = await ctx.newPage();
-  let primaryData = null;
+  let observed = disc.observed;
+  if (!trusted) {
+    console.log('::warning::Dropdown discovery did not produce a usable list — falling back to previous manifest, plus a probe of known slug patterns.');
+    const hintSet = Math.max(18, ...((previousManifest?.datasets || []).map(d => d.setNum || 0)));
+    const probed = await probeKnownPatterns(page, hintSet, dlog);
+    observed = new Map(probed.map(p => [p.label, p.obs]));
+    dlog.usedProbe = true;
+  }
 
-  // ── Stats datasets ────────────────────────────────────────────────
-  for (const ds of DATASETS) {
+  // ── Label drift reporting (replaces the old standalone dropdown monitor) ──
+  if (disc.labels.length) {
+    const prevLabels = readJson(PERIODS_PATH, []);
+    const added = disc.labels.filter(l => !prevLabels.includes(l));
+    const removed = prevLabels.filter(l => !disc.labels.includes(l));
+    console.log('\nCardkaizoku dropdown currently shows:');
+    disc.labels.forEach(l => console.log(`  - ${l}`));
+    if (added.length)   console.log(`::warning::New period label(s) on cardkaizoku since last check: ${added.join(' | ')}`);
+    if (removed.length) console.log(`::warning::Period label(s) that disappeared from cardkaizoku since last check: ${removed.join(' | ')}`);
+    fs.writeFileSync(PERIODS_PATH, JSON.stringify(disc.labels.slice().sort(), null, 2));
+  }
+  const unmapped = disc.labels.filter(l => describeLabel(l).lobby !== 'top' && !disc.observed.has(l));
+  if (unmapped.length) console.log(`::warning::Could not work out the data URL for: ${unmapped.join(' | ')}`);
+
+  // ── 2. Manifest ────────────────────────────────────────────────────
+  const manifest = buildManifest(observed, previousManifest, trusted || observed.size > 0, disc.labels);
+  if (!manifest.datasets.length) {
+    console.log('::warning::No datasets known at all (discovery failed and there is no previous manifest). Leaving existing data untouched.');
+    dlog.finalNote = 'no datasets';
+    fs.writeFileSync(LOG_PATH, JSON.stringify(dlog, null, 2));
+    await browser.close();
+    process.exit(0);
+  }
+  console.log(`\nManifest: ${manifest.datasets.length} datasets, default = ${manifest.defaultId}`);
+
+  // ── 3. Fetch ───────────────────────────────────────────────────────
+  const publicLeaders = new Map();   // leader id -> true, for portrait downloads
+  for (const ds of manifest.datasets) {
+    const ageHours = datasetStatus[ds.id]?.lastSuccessAt ? (Date.now() - new Date(datasetStatus[ds.id].lastSuccessAt).getTime()) / 3.6e6 : Infinity;
+    if (ds.frozen && fs.existsSync(path.join(statsDir, `${ds.id}.json`)) && ageHours < 168) {
+      // A snapshot shouldn't change — skip re-downloading it every 6 hours,
+      // but re-check weekly in case cardkaizoku ever corrects one.
+      process.stdout.write(`${ds.id}... (frozen snapshot, checked within the last week)\n`);
+      try { JSON.parse(fs.readFileSync(path.join(statsDir, `${ds.id}.json`), 'utf8')).forEach(r => r.leader && !ds.internal && publicLeaders.set(r.leader, true)); } catch {}
+      continue;
+    }
     process.stdout.write(`${ds.id}... `);
-    const url1 = `https://cdn.cardkaizoku.com/stats/stats_${ds.period}_${today}.json?v=8`;
-    const url2 = `https://cdn.cardkaizoku.com/stats/stats_${ds.period}_${yesterday}.json?v=8`;
-    const result = await browserFetch(page, url1) || await browserFetch(page, url2);
+    let result = null;
+    for (const url of candidateUrls(ds, 'stats')) {
+      result = await browserFetch(page, url);
+      if (result) break;
+    }
     const now = new Date().toISOString();
     const prev = datasetStatus[ds.id] || {};
     if (result) {
+      const dataDate = dateFromUrl(result.url) || today;
+      ds.lastDate = dateFromUrl(result.url) || ds.lastDate;
       fs.writeFileSync(path.join(statsDir, `${ds.id}.json`), result.text);
-      console.log(`✓  (${result.data.length} leaders)`);
-      // Prefer 'west' (All Lobbies) as the source for which leaders to
-      // download portraits for — west_p gets processed first in this loop,
-      // but we don't want the private-lobby roster driving that list.
-      if (!primaryData || ds.id === 'west') primaryData = result.data;
-      if (ds.id === 'west') fs.writeFileSync(path.join(WORKSPACE, 'data', 'stats.json'), result.text);
-      datasetStatus[ds.id] = { lastSuccessAt: now, lastAttemptAt: now, lastAttemptFailed: false };
+      console.log(`✓  (${result.data.length} leaders, data dated ${dataDate})`);
+      if (!ds.internal) {
+        result.data.forEach(r => r.leader && publicLeaders.set(r.leader, true));
+        archiveHistory(historyDir, ds.id, result.data, dataDate);
+      }
+      // Legacy single-file copy of the default dataset (older app builds read it).
+      if (ds.id === manifest.defaultId) fs.writeFileSync(path.join(dataDir, 'stats.json'), result.text);
+      datasetStatus[ds.id] = { lastSuccessAt: now, lastAttemptAt: now, lastAttemptFailed: false, dataDate };
     } else {
       console.log('✗');
-      datasetStatus[ds.id] = { lastSuccessAt: prev.lastSuccessAt || null, lastAttemptAt: now, lastAttemptFailed: true };
-      // Loud, not silent: a dataset with no successful fetch in STALE_HOURS
-      // (or one that's never succeeded at all) gets a GitHub Actions warning
-      // annotation, which shows up directly in the workflow run summary.
+      datasetStatus[ds.id] = { ...prev, lastSuccessAt: prev.lastSuccessAt || null, lastAttemptAt: now, lastAttemptFailed: true };
       const last = prev.lastSuccessAt ? new Date(prev.lastSuccessAt) : null;
       const hoursSince = last ? (Date.now() - last.getTime()) / 3.6e6 : Infinity;
       if (hoursSince > STALE_HOURS) {
-        console.log(`::warning::Dataset "${ds.id}" has not updated successfully in ${last ? hoursSince.toFixed(0)+'h' : 'ever'} — check whether cardkaizoku renamed or removed this period.`);
+        console.log(`::warning::Dataset "${ds.id}" (${ds.cardkaizokuLabel}) has not updated successfully in ${last ? hoursSince.toFixed(0)+'h' : 'ever'} — its URL may have changed.`);
       }
     }
   }
+  // Forget status for datasets cardkaizoku no longer offers.
+  const liveIds = new Set(manifest.datasets.map(d => d.id));
+  Object.keys(datasetStatus).forEach(k => { if (!liveIds.has(k)) delete datasetStatus[k]; });
 
-  try { fs.writeFileSync(STATUS_PATH, JSON.stringify(datasetStatus, null, 2)); } catch(e) { console.log(`Could not write dataset-status.json: ${e.message}`); }
+  fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
+  fs.writeFileSync(STATUS_PATH, JSON.stringify(datasetStatus, null, 2));
+  dlog.manifestIds = manifest.datasets.map(d => d.id);
+  fs.writeFileSync(LOG_PATH, JSON.stringify(dlog, null, 2));
 
-
-  // ── Hands, Decklist, Matchuptech data ────────────────────────────
-  // Fetch these extra file types for each primary dataset
-  const EXTRA_TYPES = [
-    { type: 'hands',      datasets: ['west_p', 'lw_p'] },
-    { type: 'decklist',   datasets: ['west_p', 'lw_p'] },
-    { type: 'matchuptech',datasets: ['west_p', 'lw_p'] },
-  ];
-
-  for (const { type, datasets } of EXTRA_TYPES) {
+  // ── Opening-hand + decklist data (private lobbies, internal only) ──
+  // Only hands + decklist: the app never reads the other file types
+  // cardkaizoku publishes (matchuptech / curve), and they were ~17MB each
+  // committed to the repo every run, so they are no longer downloaded.
+  const handsIds = new Set(manifest.datasets.filter(d => !d.internal && d.handsId).map(d => d.handsId));
+  for (const type of ['hands', 'decklist']) {
     console.log(`\n${type} data:`);
-    for (const id of datasets) {
-      const ds = DATASETS.find(d => d.id === id);
-      if (!ds) { console.log(`  ${id}... ✗ (unknown dataset id — skipped)`); continue; }
-      process.stdout.write(`  ${id}... `);
-      const url1 = `https://cdn.cardkaizoku.com/stats/${type}_${ds.period}_${today}.json?v=8`;
-      const url2 = `https://cdn.cardkaizoku.com/stats/${type}_${ds.period}_${yesterday}.json?v=8`;
-      const result = await browserFetch(page, url1) || await browserFetch(page, url2);
-      if (result) {
-        fs.writeFileSync(path.join(statsDir, `${type}_${id}.json`), result.text);
-        console.log(`✓  (${Math.round(result.text.length/1024)}kB)`);
-      } else {
-        console.log('✗');
-      }
+    for (const ds of manifest.datasets.filter(d => d.internal && handsIds.has(d.id))) {
+      const out = path.join(statsDir, `${type}_${ds.id}.json`);
+      if (ds.frozen && fs.existsSync(out) && (Date.now() - fs.statSync(out).mtimeMs) / 3.6e6 < 168) { console.log(`  ${ds.id}... (frozen, checked within the last week)`); continue; }
+      process.stdout.write(`  ${ds.id}... `);
+      let result = null;
+      for (const url of candidateUrls(ds, type)) { result = await browserFetch(page, url); if (result) break; }
+      if (result) { fs.writeFileSync(out, result.text); console.log(`✓  (${Math.round(result.text.length/1024)}kB)`); }
+      else console.log('✗');
     }
   }
 
-  // ── Curve data ────────────────────────────────────────────────────
-  console.log('\nCurve data:');
-  process.stdout.write('  curve/lw... ');
-  const curve = await browserFetch(page, `https://cdn.cardkaizoku.com/stats/curve_lw_${today}.json?v=8`)
-             || await browserFetch(page, `https://cdn.cardkaizoku.com/stats/curve_lw_${yesterday}.json?v=8`);
-  if (curve) { fs.writeFileSync(path.join(statsDir, 'curve.json'), curve.text); console.log('✓'); }
-  else console.log('✗');
-
-  // ── Leader portrait images (via Playwright — needs cf_clearance for cardkaizoku CDN) ──
-  if (primaryData) {
-    const leaders = [...primaryData].sort((a,b) => (b.play_rate||0)-(a.play_rate||0)); // no limit — cache all leaders
-    console.log(`\nDownloading leader portraits for all ${leaders.length} decks...`);
+  // ── Leader portrait images ──
+  if (!SKIP_IMAGES && publicLeaders.size) {
+    const leaderIds = [...publicLeaders.keys()];
+    console.log(`\nDownloading leader portraits for all ${leaderIds.length} decks...`);
     let downloaded = 0, skipped = 0, failed = 0;
 
-    for (const entry of leaders) {
-      const id = entry.leader;
-      if (!id) continue;
+    for (const id of leaderIds) {
       const outPath = path.join(cardsDir, `${id}.png`);
       if (fs.existsSync(outPath) && fs.statSync(outPath).size > 1000) { skipped++; continue; }
       const set = id.split('-')[0];
-      // Try cardkaizoku CDN (via Playwright browser — passes Cloudflare)
-      // then fall back to Bandai which works without auth
       const cdnUrls = [
         `https://cdn.cardkaizoku.com/cards_en/${set}/${id}.png`,
         `https://cdn.cardkaizoku.com/cards_en/${set}/${id}_sm.webp`,
@@ -269,7 +534,6 @@ async function checkCardkaizokuDropdown(ctx) {
         }
         if (saved) break;
       }
-      // CDN failed — try Bandai and Limitless via plain fetch (no Cloudflare)
       if (!saved) {
         const buf =
           await nodeFetch(`https://en.onepiece-cardgame.com/images/cardlist/card/${id}.png`) ||
@@ -282,28 +546,18 @@ async function checkCardkaizokuDropdown(ctx) {
     console.log(`Leader images: ${downloaded} downloaded, ${skipped} cached, ${failed} failed`);
   }
 
-  // Dropdown monitor — reuses the same authenticated context, runs last so
-  // it can't interfere with the actual data fetch above it.
-  await checkCardkaizokuDropdown(ctx);
-
   await browser.close();
 
   // ── Character card images (Bandai/Limitless — no Cloudflare, plain Node fetch works) ──
-  // Collect all character/event card IDs from hands data
   const charIds = new Set();
-  for (const dsId of ['west_p', 'lw_p']) {
-    const handsPath = path.join(statsDir, `hands_${dsId}.json`);
-    if (fs.existsSync(handsPath)) {
-      try {
-        JSON.parse(fs.readFileSync(handsPath, 'utf8'))
-          .forEach(entry => (entry.common_cards || []).forEach(card => {
-            if (card.card) charIds.add(card.card);
-          }));
-      } catch {}
-    }
+  for (const f of fs.readdirSync(statsDir).filter(f => /^hands_.*\.json$/.test(f))) {
+    try {
+      JSON.parse(fs.readFileSync(path.join(statsDir, f), 'utf8'))
+        .forEach(entry => (entry.common_cards || []).forEach(card => { if (card.card) charIds.add(card.card); }));
+    } catch {}
   }
 
-  const charIdList = [...charIds];
+  const charIdList = SKIP_IMAGES ? [] : [...charIds];
   console.log(`
 Downloading ${charIdList.length} character card images (Bandai + Limitless)...`);
   let cDownloaded = 0, cSkipped = 0, cFailed = 0;
