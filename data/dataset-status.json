@@ -1,37 +1,47 @@
 {
-  "west_p": {
-    "lastSuccessAt": "2026-11-09T14:50:11.691Z",
-    "lastAttemptAt": "2026-11-20T00:09:02.804Z",
-    "lastAttemptFailed": true
-  },
-  "lw_p": {
-    "lastSuccessAt": "2026-11-09T14:50:12.323Z",
-    "lastAttemptAt": "2026-11-20T00:09:03.069Z",
-    "lastAttemptFailed": true
-  },
-  "west": {
-    "lastSuccessAt": "2026-11-09T14:50:12.795Z",
-    "lastAttemptAt": "2026-11-20T00:09:03.356Z",
-    "lastAttemptFailed": true
-  },
-  "lw": {
-    "lastSuccessAt": "2026-11-09T14:50:13.449Z",
-    "lastAttemptAt": "2026-11-20T00:09:03.631Z",
-    "lastAttemptFailed": true
-  },
-  "op17_lw": {
-    "lastSuccessAt": "2026-11-09T14:50:13.889Z",
-    "lastAttemptAt": "2026-11-20T00:09:03.843Z",
-    "lastAttemptFailed": true
-  },
-  "exreg": {
-    "lastSuccessAt": "2026-11-09T14:50:14.313Z",
-    "lastAttemptAt": "2026-11-20T00:09:04.103Z",
-    "lastAttemptFailed": true
-  },
-  "op16_lw": {
+  "op18_lw": {
     "lastSuccessAt": null,
-    "lastAttemptAt": "2026-11-20T00:09:04.359Z",
+    "lastAttemptAt": "2026-11-20T13:40:39.390Z",
+    "lastAttemptFailed": true
+  },
+  "egb_lw": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-11-20T13:40:40.348Z",
+    "lastAttemptFailed": true
+  },
+  "eb05_lw_p": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-11-20T13:40:41.360Z",
+    "lastAttemptFailed": true
+  },
+  "eb05_lw": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-11-20T13:40:42.329Z",
+    "lastAttemptFailed": true
+  },
+  "eb05_p": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-11-20T13:40:43.370Z",
+    "lastAttemptFailed": true
+  },
+  "eb05": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-11-20T13:40:44.419Z",
+    "lastAttemptFailed": true
+  },
+  "op17_p": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-11-20T13:40:45.837Z",
+    "lastAttemptFailed": true
+  },
+  "op17": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-11-20T13:40:47.246Z",
+    "lastAttemptFailed": true
+  },
+  "op18_lw_p": {
+    "lastSuccessAt": null,
+    "lastAttemptAt": "2026-11-20T13:40:48.287Z",
     "lastAttemptFailed": true
   }
 }
