@@ -1,54 +1,61 @@
 {
   "op18_lw": {
-    "lastSuccessAt": "2026-11-20T14:29:43.601Z",
-    "lastAttemptAt": "2026-11-20T14:29:43.601Z",
+    "lastSuccessAt": "2026-11-20T14:42:51.441Z",
+    "lastAttemptAt": "2026-11-20T14:42:51.441Z",
     "lastAttemptFailed": false,
-    "dataDate": "20261120"
+    "dataDate": "20261120",
+    "source": "full"
   },
   "egb_lw": {
-    "lastSuccessAt": "2026-11-20T14:29:43.618Z",
-    "lastAttemptAt": "2026-11-20T14:29:43.618Z",
+    "lastSuccessAt": "2026-11-20T14:42:51.487Z",
+    "lastAttemptAt": "2026-11-20T14:42:51.487Z",
     "lastAttemptFailed": false,
-    "dataDate": "20261120"
+    "dataDate": "20261120",
+    "source": "full"
   },
   "eb05_lw_p": {
-    "lastSuccessAt": "2026-11-20T14:29:44.522Z",
-    "lastAttemptAt": "2026-11-20T14:29:44.522Z",
+    "lastSuccessAt": "2026-11-20T14:42:52.341Z",
+    "lastAttemptAt": "2026-11-20T14:42:52.341Z",
     "lastAttemptFailed": false,
-    "dataDate": "20261119"
+    "dataDate": "20261119",
+    "source": "full"
   },
   "eb05_lw": {
-    "lastSuccessAt": "2026-11-20T14:29:45.273Z",
-    "lastAttemptAt": "2026-11-20T14:29:45.273Z",
+    "lastSuccessAt": "2026-11-20T14:42:53.081Z",
+    "lastAttemptAt": "2026-11-20T14:42:53.081Z",
     "lastAttemptFailed": false,
-    "dataDate": "20261119"
+    "dataDate": "20261119",
+    "source": "full"
   },
   "eb05_p": {
-    "lastSuccessAt": "2026-11-20T14:29:45.869Z",
-    "lastAttemptAt": "2026-11-20T14:29:45.869Z",
+    "lastSuccessAt": "2026-11-20T14:42:53.659Z",
+    "lastAttemptAt": "2026-11-20T14:42:53.659Z",
     "lastAttemptFailed": false,
-    "dataDate": "20261119"
+    "dataDate": "20261119",
+    "source": "full"
   },
   "eb05": {
-    "lastSuccessAt": "2026-11-20T14:29:46.478Z",
-    "lastAttemptAt": "2026-11-20T14:29:46.478Z",
+    "lastSuccessAt": "2026-11-20T14:42:54.410Z",
+    "lastAttemptAt": "2026-11-20T14:42:54.410Z",
     "lastAttemptFailed": false,
-    "dataDate": "20261119"
+    "dataDate": "20261119",
+    "source": "full"
   },
   "op17_p": {
     "lastSuccessAt": null,
-    "lastAttemptAt": "2026-11-20T14:29:48.184Z",
+    "lastAttemptAt": "2026-11-20T14:42:58.732Z",
     "lastAttemptFailed": true
   },
   "op17": {
     "lastSuccessAt": null,
-    "lastAttemptAt": "2026-11-20T14:29:49.871Z",
+    "lastAttemptAt": "2026-11-20T14:43:03.236Z",
     "lastAttemptFailed": true
   },
   "op18_lw_p": {
-    "lastSuccessAt": "2026-11-20T14:29:49.887Z",
-    "lastAttemptAt": "2026-11-20T14:29:49.887Z",
+    "lastSuccessAt": "2026-11-20T14:43:03.330Z",
+    "lastAttemptAt": "2026-11-20T14:43:03.330Z",
     "lastAttemptFailed": false,
-    "dataDate": "20261120"
+    "dataDate": "20261120",
+    "source": "full"
   }
 }
