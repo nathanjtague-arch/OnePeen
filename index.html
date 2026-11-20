@@ -968,12 +968,14 @@ function getMatchupCtx(wr,games){
 
 
 // ── Cache ────────────────────────────────────────────────────────
+// Cached per dataset, so a failed load of one dataset can never silently show another's numbers.
+function cacheKey(){return CACHE_KEY+':'+DATASET_ID;}
 function saveCache(json){
-  try{localStorage.setItem(CACHE_KEY,JSON.stringify({d:json,t:Date.now()}));}catch{}
+  try{localStorage.setItem(cacheKey(),JSON.stringify({d:json,t:Date.now()}));}catch{}
 }
 function loadCache(){
   try{
-    const c=localStorage.getItem(CACHE_KEY);if(!c)return null;
+    const c=localStorage.getItem(cacheKey());if(!c)return null;
     const p=JSON.parse(c);
     if(Date.now()-p.t>CACHE_TTL)return null;
     return p.d;
@@ -986,6 +988,10 @@ function loadCache(){
 // real meta — too small and skewed a sample to surface as a real option).
 // "(All Lobbies)" is dropped from the labels since it's now the only kind
 // on offer — no longer a meaningful distinction to spell out every time.
+// This hard-coded list is only a FALLBACK. Normally the list comes from
+// ./data/datasets.json, which the data workflow rewrites on every run straight
+// from cardkaizoku's own dropdown — so new periods appear (and retired ones
+// disappear) without anyone editing this file.
 const DATASETS=[
   {id:'west',     label:'Standard',              prefix:'stats_west_'   },
   {id:'lw',       label:'Standard Last Week',    prefix:'stats_lw_'     },
@@ -993,6 +999,20 @@ const DATASETS=[
   {id:'exreg',    label:'Extra Reg Last Week',   prefix:'stats_exreg_'   },
   {id:'op16_lw',  label:'OP16 Final Week',       prefix:'stats_op16_lw_' },
 ];
+let MANIFEST_DEFAULT=null,MANIFEST_LOADED=false;
+async function loadManifest(){
+  try{
+    const r=await fetch('./data/datasets.json',{cache:'no-store'});
+    if(!r.ok)return;
+    const m=await r.json();
+    const list=(m.datasets||[]).filter(d=>d&&d.id&&d.label);
+    if(!list.length)return;
+    DATASETS.length=0;
+    list.forEach(d=>DATASETS.push({...d,prefix:d.prefix||('stats_'+d.id+'_')}));
+    MANIFEST_DEFAULT=m.defaultId||null;
+    MANIFEST_LOADED=true;
+  }catch{}
+}
 const LS_DATASET='optcg_dataset';
 const LS_FAVS='optcg_favs';
 let FAVS=new Set(JSON.parse(localStorage.getItem(LS_FAVS)||'[]'));
@@ -1004,13 +1024,15 @@ let DATASET_ID=(()=>{try{return localStorage.getItem(LS_DATASET)||null;}catch{re
 let DATASET_STATUS={};
 async function loadDatasetStatus(){
   try{const r=await fetch('./data/dataset-status.json',{cache:'no-store'});if(r.ok)DATASET_STATUS=await r.json();}catch{}
-  // No saved preference yet — default to whichever dataset last updated most
-  // recently, so a new set rotating in on cardkaizoku's end doesn't require
-  // a code change here to stay current.
-  if(!DATASET_ID){
-    const withTimes=DATASETS.map(d=>({id:d.id,t:DATASET_STATUS[d.id]?.lastSuccessAt})).filter(d=>d.t);
+  // No saved preference — or the saved one no longer exists on cardkaizoku's
+  // side (e.g. 'west' after "Standard" was retired) — so fall back to the
+  // data workflow's chosen default, then to whichever dataset updated most
+  // recently. Not persisted: it's a fallback, not a choice the user made.
+  const pub=DATASETS.filter(d=>!d.internal);
+  if(!DATASET_ID||!pub.some(d=>d.id===DATASET_ID)){
+    const withTimes=pub.map(d=>({id:d.id,t:DATASET_STATUS[d.id]?.lastSuccessAt})).filter(d=>d.t);
     withTimes.sort((a,b)=>new Date(b.t)-new Date(a.t));
-    DATASET_ID=withTimes[0]?.id||'west';
+    DATASET_ID=(MANIFEST_DEFAULT&&pub.some(d=>d.id===MANIFEST_DEFAULT)&&MANIFEST_DEFAULT)||withTimes[0]?.id||pub[0]?.id||'west';
   }
 }
 function relTime(iso){
@@ -1028,9 +1050,16 @@ function sortedDatasets(){
   // The currently-selected dataset is always kept even if it's since gone
   // unavailable, so a saved selection never just vanishes from the list.
   const hasStatus=Object.keys(DATASET_STATUS).length>0;
+  // Internal (private-lobby) datasets are never offered — they only feed Opening Hands.
+  const pub=DATASETS.filter(d=>!d.internal);
   const pool=hasStatus
-    ? DATASETS.filter(d=>DATASET_STATUS[d.id]?.lastSuccessAt||d.id===DATASET_ID)
-    : DATASETS;
+    ? pub.filter(d=>DATASET_STATUS[d.id]?.lastSuccessAt||d.id===DATASET_ID)
+    : pub;
+  if(MANIFEST_LOADED){
+    // Their naming, our order: default first, live before frozen snapshots, newest set first.
+    const rank=d=>[d.id===MANIFEST_DEFAULT?0:1,d.frozen?1:0,-(d.setNum||0)];
+    return [...pool].sort((a,b)=>{const ra=rank(a),rb=rank(b);for(let i=0;i<ra.length;i++)if(ra[i]!==rb[i])return ra[i]-rb[i];return a.label.localeCompare(b.label);});
+  }
   return [...pool].sort((a,b)=>{
     const ta=DATASET_STATUS[a.id]?.lastSuccessAt, tb=DATASET_STATUS[b.id]?.lastSuccessAt;
     if(!ta&&!tb)return 0; if(!ta)return 1; if(!tb)return -1;
@@ -1039,6 +1068,7 @@ function sortedDatasets(){
 }
 function datasetLabel(ds){
   const stat=DATASET_STATUS[ds.id];
+  if(stat?.lastSuccessAt&&ds.frozen)return`${ds.label} — frozen`;
   if(stat?.lastSuccessAt)return`${ds.label} — ${relTime(stat.lastSuccessAt)}`;
   if(stat?.lastAttemptFailed)return`${ds.label} — unavailable`;
   return ds.label;
@@ -1076,18 +1106,31 @@ let TREND_SORT='wr';
 try{MY_DECK=localStorage.getItem(LS_DECK)||null;}catch{}
 
 // ── Dataset URL helpers ───────────────────────────────────────────
+// LA calendar date as YYYYMMDD. (The old version converted time zones twice and
+// returned the previous day for part of every day.)
+const LA_FMT=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'});
 function laDate(offset=0){
-  const d=new Date(new Date().toLocaleString('en-US',{timeZone:'America/Los_Angeles'}));
-  d.setDate(d.getDate()-offset);
-  const s=d.toLocaleDateString('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'});
-  const[m,dy,y]=s.split('/');return`${y}${m}${dy}`;
+  const[y,m,d]=LA_FMT.format(new Date()).split('-').map(Number);
+  const t=new Date(Date.UTC(y,m-1,d)-offset*864e5);
+  return`${t.getUTCFullYear()}${String(t.getUTCMonth()+1).padStart(2,'0')}${String(t.getUTCDate()).padStart(2,'0')}`;
 }
 const DS=laDate(0);
-function datasetPrefix(){return(DATASETS.find(d=>d.id===DATASET_ID)||DATASETS[0]).prefix;}
-function buildCdnUrl(prefix,date){return`https://cdn.cardkaizoku.com/stats/${prefix}${date}.json?v=8`;}
-async function fetchDataset(prefix){
-  for(const date of[laDate(0),laDate(1)]){
-    try{const r=await fetch(buildCdnUrl(prefix,date));if(r.ok){const j=await r.json();if(Array.isArray(j)&&j.length>0)return j;}
+function currentDataset(){return DATASETS.find(d=>d.id===DATASET_ID)||DATASETS.find(d=>!d.internal)||DATASETS[0];}
+// Candidate CDN URLs for a dataset. Datasets from the manifest carry the exact
+// URL shape cardkaizoku used (base, ?v=, dated or not); the old fallback list
+// uses the original pattern.
+function datasetCdnUrls(ds,type='stats'){
+  if(ds&&ds.urlBase){
+    const file=`${type}_${ds.slug||ds.period||ds.id}`;
+    if(ds.dated===false)return[`${ds.urlBase}${file}.json${ds.query||''}`];
+    return[...new Set([laDate(0),laDate(1),laDate(2),ds.lastDate].filter(Boolean))].map(d=>`${ds.urlBase}${file}_${d}.json${ds.query||''}`);
+  }
+  const prefix=type==='stats'?ds.prefix:ds.prefix.replace(/^stats_/,type+'_');
+  return[laDate(0),laDate(1),laDate(2)].map(d=>`https://cdn.cardkaizoku.com/stats/${prefix}${d}.json?v=8`);
+}
+async function fetchDataset(ds){
+  for(const url of datasetCdnUrls(ds)){
+    try{const r=await fetch(url);if(r.ok){const j=await r.json();if(Array.isArray(j)&&j.length>0)return j;}
     }catch{}
   }
   return null;
@@ -1099,8 +1142,16 @@ const HANDS_CACHE={};
 const HANDS_FILE_MAP={'op16':'op16','west_p':'west_p','west':'west_p','lw_p':'lw_p','lw':'lw_p','exreg_p':'west_p','exreg':'west_p'};
 const DECKLIST_FILE_MAP={'op16':'op16','west_p':'west_p','west':'west_p','lw_p':'lw_p','lw':'lw_p','exreg_p':'west_p','exreg':'west_p'};
 const DECKLIST_CACHE={};
+// With a manifest, each public dataset names its own private-lobby sibling
+// (handsId); with none, a dataset gets no hand/decklist data rather than some
+// other period's. Without a manifest the legacy maps apply.
+function privateFileId(datasetId,legacyMap){
+  if(MANIFEST_LOADED)return DATASETS.find(d=>d.id===datasetId)?.handsId||null;
+  return legacyMap[datasetId]||'west_p';
+}
 async function loadDecklist(datasetId){
-  const fileId=DECKLIST_FILE_MAP[datasetId]||'west_p';
+  const fileId=privateFileId(datasetId,DECKLIST_FILE_MAP);
+  if(!fileId)return null;
   if(DECKLIST_CACHE[fileId])return DECKLIST_CACHE[fileId];
   try{
     const r=await fetch(`./data/stats/decklist_${fileId}.json`);
@@ -1116,7 +1167,8 @@ function parseDecklist(str){
   },{});
 }
 async function loadHands(datasetId){
-  const fileId=HANDS_FILE_MAP[datasetId]||'west_p';
+  const fileId=privateFileId(datasetId,HANDS_FILE_MAP);
+  if(!fileId)return null;
   if(HANDS_CACHE[fileId])return HANDS_CACHE[fileId];
   try{
     const r=await fetch(`./data/stats/hands_${fileId}.json`);
@@ -1126,8 +1178,8 @@ async function loadHands(datasetId){
   try{
     const ds=DATASETS.find(d=>d.id===fileId);
     if(ds){
-      for(const date of[laDate(0),laDate(1)]){
-        const r=await fetch(`https://cdn.cardkaizoku.com/stats/hands_${ds.period}_${date}.json?v=8`);
+      for(const url of datasetCdnUrls(ds,'hands')){
+        const r=await fetch(url);
         if(r.ok){const j=await r.json();HANDS_CACHE[fileId]=j;return j;}
       }
     }
@@ -1321,24 +1373,32 @@ function viewRank(){
 
 
 // ── Meta Trends ───────────────────────────────────────────────────
-// Compare pairs: current period vs last-week equivalent.
-// Private-lobby pair removed — it was also the default (index 0), which is
-// exactly how this ended up quietly showing non-representative data by default.
-const TREND_PAIRS=[
-  {label:'Standard', curr:'west', prev:'lw'},
-];
-let TREND_PAIR_IDX=0;
-
-async function loadTrendDecks(datasetId){
-  if(TREND_CACHE[datasetId])return TREND_CACHE[datasetId];
+// Trends are computed from OUR OWN daily snapshots (data/history/<dataset>.json,
+// written by the data workflow), comparing the latest snapshot with one about a
+// week earlier. That makes them independent of how cardkaizoku names its
+// periods — there is no longer a "current" vs "last week" pair on their side to
+// rely on — and means Trends follows whichever dataset is selected.
+const HISTORY_CACHE={};
+async function loadHistory(id){
+  if(HISTORY_CACHE[id]!==undefined)return HISTORY_CACHE[id];
   try{
-    const r=await fetch(`./data/stats/${datasetId}.json`,{cache:'no-store'});
-    if(!r.ok)return null;
-    const j=await r.json();
-    const parsed=parseData(j);
-    TREND_CACHE[datasetId]=parsed.decks||null;
-    return parsed.decks||null;
-  }catch{return null;}
+    const r=await fetch(`./data/history/${id}.json`,{cache:'no-store'});
+    if(r.ok){const j=await r.json();HISTORY_CACHE[id]=Array.isArray(j.snapshots)?j.snapshots:null;}
+    else HISTORY_CACHE[id]=null;
+  }catch{HISTORY_CACHE[id]=null;}
+  return HISTORY_CACHE[id];
+}
+function ymdMs(s){return Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8));}
+function fmtYmd(s){return new Date(ymdMs(s)).toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'});}
+// Latest snapshot vs the earlier one closest to 7 days before it.
+function pickTrendPair(snaps){
+  if(!snaps||snaps.length<2)return null;
+  const sorted=[...snaps].sort((a,b)=>a.date.localeCompare(b.date));
+  const curr=sorted[sorted.length-1];
+  const target=ymdMs(curr.date)-7*864e5;
+  const older=sorted.slice(0,-1);
+  const prev=older.reduce((best,x)=>Math.abs(ymdMs(x.date)-target)<Math.abs(ymdMs(best.date)-target)?x:best,older[0]);
+  return{curr,prev,days:Math.round((ymdMs(curr.date)-ymdMs(prev.date))/864e5)};
 }
 
 function calcTrends(currDecks,prevDecks){
@@ -1380,11 +1440,11 @@ function viewTrends(){
   const hero=document.createElement('div');hero.className='trends-hero';
   const ht=document.createElement('div');ht.className='trends-hero-title';
   ht.textContent='META TRENDS';
-  const pair=TREND_PAIRS[TREND_PAIR_IDX];
+  const trendDs=currentDataset();
   const hs=document.createElement('div');hs.className='trends-hero-sub';
   hs.textContent='Win rate & play rate movement across the meta';
   const cl=document.createElement('div');cl.className='trends-compare-lbl';
-  cl.textContent=`Comparing: ${pair.label} (current) vs Last Week`;
+  cl.textContent=`Showing: ${trendDs.label}`;
   hero.append(ht,hs,cl);wrap.appendChild(hero);
 
   // Sort controls — built here but appended further down, right above the
@@ -1398,35 +1458,43 @@ function viewTrends(){
     const b=document.createElement('button');b.className='sort-btn'+(TREND_SORT===v?' active':'');
     b.textContent=l;b.onclick=()=>{TREND_SORT=v;render();};ctrlRow.appendChild(b);
   });
-  if(TREND_PAIRS.length>1){
+  {
+    // Trends follow the selected dataset (same choice as every other tab).
     const sl=document.createElement('span');sl.className='trends-sort-lbl';sl.textContent='Dataset:';
-    const pairSel=document.createElement('select');
-    pairSel.style.cssText='padding:6px 12px;font-size:13px;font-family:var(--font-body);font-weight:600;border:1px solid #3a4060;border-radius:8px;background:var(--card);color:var(--text)';
-    TREND_PAIRS.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.label;if(i===TREND_PAIR_IDX)o.selected=true;pairSel.appendChild(o);});
-    pairSel.onchange=()=>{TREND_PAIR_IDX=parseInt(pairSel.value);render();};
-    ctrlRow.prepend(sl,pairSel,sl2);
-  }else{
-    ctrlRow.prepend(sl2);
+    const dsTrend=document.createElement('select');
+    dsTrend.style.cssText='padding:6px 12px;font-size:13px;font-family:var(--font-body);font-weight:600;border:1px solid #3a4060;border-radius:8px;background:var(--card);color:var(--text)';
+    populateDatasetSelect(dsTrend);
+    dsTrend.onchange=()=>{DATASET_ID=dsTrend.value;try{localStorage.setItem(LS_DATASET,DATASET_ID);}catch{}STATE='loading';DATA=null;EXP_DECK=null;render();boot();};
+    ctrlRow.prepend(sl,dsTrend,sl2);
   }
-
 
   // Loading state
   const loadDiv=document.createElement('div');loadDiv.className='trends-loading';
   loadDiv.textContent='Loading trend data…';wrap.appendChild(loadDiv);
 
   // Async: load both datasets and render
-  Promise.all([loadTrendDecks(pair.curr),loadTrendDecks(pair.prev)]).then(([curr,prev])=>{
+  loadHistory(trendDs.id).then(snaps=>{
     loadDiv.remove();
+    const tp=pickTrendPair(snaps);
+    if(!tp){
+      const nd=document.createElement('div');nd.className='trends-no-data';
+      nd.textContent=trendDs.frozen
+        ?`${trendDs.label} is a frozen snapshot, so there is no movement to show. Pick a live dataset (one that shows "updated … ago") to see trends.`
+        :'Trend history is still building for this dataset. Meta Trends compares today against earlier days, so it comes alive after the next daily refresh.';
+      wrap.appendChild(nd);return;
+    }
+    cl.textContent=`Showing: ${trendDs.label} · ${fmtYmd(tp.curr.date)} vs ${fmtYmd(tp.prev.date)} (${tp.days} day${tp.days===1?'':'s'} earlier)`;
+    const curr=parseData(tp.curr.rows).decks,prev=parseData(tp.prev.rows).decks;
     if(!curr||!prev){
       const nd=document.createElement('div');nd.className='trends-no-data';
-      nd.innerHTML='Trend data not available for this pair.<br>The Action needs to run at least twice to accumulate last-week data.<br><br>Try switching to a different dataset above.';
+      nd.textContent='Trend history for this dataset could not be read.';
       wrap.appendChild(nd);return;
     }
 
     const trends=calcTrends(curr,prev);
     if(!trends.length){
       const nd=document.createElement('div');nd.className='trends-no-data';
-      nd.textContent='No overlapping decks found between current and last-week datasets.';
+      nd.textContent='No overlapping decks found between the two snapshots.';
       wrap.appendChild(nd);return;
     }
 
@@ -2559,8 +2627,7 @@ function render(){
   }
 
   if(STATE==='paste'){
-    const ds=DS;
-    const url=buildCdnUrl(datasetPrefix(),ds);
+    const url=datasetCdnUrls(currentDataset())[0];
     const card=document.createElement('div');card.className='paste-card';
     const backBtn=document.createElement('button');backBtn.className='btn-ghost';
     backBtn.textContent='← Back to Rankings';backBtn.style.cssText='margin-bottom:8px;margin-right:8px';
@@ -2651,6 +2718,7 @@ function render(){
 // ── Boot sequence ────────────────────────────────────────────────
 render();
 async function boot(){
+  await loadManifest();
   await loadDatasetStatus();
   // Load meta timestamp if available
   try{const m=await fetch('./data/meta.json');if(m.ok){const md=await m.json();META_UPDATED=md.updated?new Date(md.updated).toLocaleString():null;}}catch{}
@@ -2664,14 +2732,14 @@ async function boot(){
   if(cached){loadData(cached,true);return;}
   // 3. Try CDN directly with selected dataset
   try{
-    const j=await fetchDataset(datasetPrefix());
+    const j=await fetchDataset(currentDataset());
     if(j){loadData(j,false);return;}
   }catch{}
   // 4. Last resort: try stale localStorage regardless of expiry
   try{
-    const raw=localStorage.getItem(LS_CACHE);
+    const raw=localStorage.getItem(cacheKey());
     if(raw){
-      const {data}=JSON.parse(raw);
+      const {d:data}=JSON.parse(raw);
       if(Array.isArray(data)&&data.length>0){
         console.warn('Showing stale cached data — fresh fetch failed');
         loadData(data,true);return;
