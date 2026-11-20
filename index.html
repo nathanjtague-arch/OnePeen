@@ -1121,9 +1121,9 @@ function currentDataset(){return DATASETS.find(d=>d.id===DATASET_ID)||DATASETS.f
 // uses the original pattern.
 function datasetCdnUrls(ds,type='stats'){
   if(ds&&ds.urlBase){
-    const file=`${type}_${ds.slug||ds.period||ds.id}`;
+    const file=`${type==='stats'?(ds.filePrefix||'stats'):type}_${ds.slug||ds.period||ds.id}`;
     if(ds.dated===false)return[`${ds.urlBase}${file}.json${ds.query||''}`];
-    return[...new Set([laDate(0),laDate(1),laDate(2),ds.lastDate].filter(Boolean))].map(d=>`${ds.urlBase}${file}_${d}.json${ds.query||''}`);
+    return[...new Set([laDate(0),laDate(1),laDate(2),ds.lastDate].filter(Boolean))].map(d=>`${ds.urlBase}${file}_${d}.json${(ds.query||'').replace(/(v=)\d{8}/,'$1'+d)}`);
   }
   const prefix=type==='stats'?ds.prefix:ds.prefix.replace(/^stats_/,type+'_');
   return[laDate(0),laDate(1),laDate(2)].map(d=>`https://cdn.cardkaizoku.com/stats/${prefix}${d}.json?v=8`);
