@@ -540,13 +540,31 @@ function formatCount(n){
 }
 
 const liveMetaPromise=(async()=>{
-  const [currRes,prevRes]=await Promise.all([
-    fetch('./data/stats/west.json',{cache:'no-store'}),
-    fetch('./data/stats/lw.json',{cache:'no-store'}),
+  // Which dataset to show comes from the data workflow's manifest (it mirrors
+  // cardkaizoku's own period list), so this page can't get stuck on a retired
+  // dataset name. "Last week" movement is latest snapshot vs ~7 days earlier,
+  // from the app's own daily history.
+  const mres=await fetch('./data/datasets.json',{cache:'no-store'});
+  if(!mres.ok)throw new Error('dataset list unavailable');
+  const manifest=await mres.json();
+  const ds=(manifest.datasets||[]).find(d=>d.id===manifest.defaultId);
+  if(!ds)throw new Error('no default dataset');
+  const [currRes,histRes]=await Promise.all([
+    fetch(`./data/stats/${ds.id}.json`,{cache:'no-store'}),
+    fetch(`./data/history/${ds.id}.json`,{cache:'no-store'}),
   ]);
-  if(!currRes.ok||!prevRes.ok)throw new Error('stats files unavailable');
+  if(!currRes.ok)throw new Error('stats file unavailable');
   const curr=(await currRes.json()).map(normalizeDeck).filter(d=>d.id&&d.wtdWR!=null);
-  const prev=(await prevRes.json()).map(normalizeDeck).filter(d=>d.id&&d.wtdWR!=null);
+  let prev=[];
+  if(histRes.ok){
+    const snaps=((await histRes.json()).snapshots||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
+    if(snaps.length>=2){
+      const ms=x=>Date.UTC(+x.slice(0,4),+x.slice(4,6)-1,+x.slice(6,8));
+      const latest=snaps[snaps.length-1],older=snaps.slice(0,-1),target=ms(latest.date)-7*864e5;
+      const best=older.reduce((p,x)=>Math.abs(ms(x.date)-target)<Math.abs(ms(p.date)-target)?x:p,older[0]);
+      prev=best.rows.map(normalizeDeck).filter(d=>d.id&&d.wtdWR!=null);
+    }
+  }
   const prevById=new Map(prev.map(d=>[d.id,d]));
   const deltas=curr
     .filter(d=>prevById.has(d.id))
