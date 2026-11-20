@@ -216,7 +216,10 @@ function candidateUrls(entry, type) {
   // Ranking files use the discovered prefix. Other types (hands, decklist) have
   // not been observed being renamed, so try their plain name first, then the
   // ranking-style prefixed name as a fallback.
-  const files = type === 'stats' ? [`${fp}_${entry.slug}`]
+  // For ranking data there are two files per dataset: the FULL "stats_<slug>"
+  // (with matchups and first/second-player rates — what the app needs) and the
+  // slim "<prefix>_<slug>" the site's own ranking page loads. Full first.
+  const files = type === 'stats' ? [...new Set([`stats_${entry.slug}`, `${fp}_${entry.slug}`])]
                                  : [`${type}_${entry.slug}`, `${fp}_${type}_${entry.slug}`];
   // A date-style cache-buster (?v=20261120) follows the date of the file requested.
   const q = d => (entry.query || '').replace(/(v=)\d{8}/, `$1${d}`);
@@ -666,7 +669,10 @@ function archiveHistory(historyDir, id, rows, dataDate) {
       }
       // Legacy single-file copy of the default dataset (older app builds read it).
       if (ds.id === manifest.defaultId) fs.writeFileSync(path.join(dataDir, 'stats.json'), result.text);
-      datasetStatus[ds.id] = { lastSuccessAt: now, lastAttemptAt: now, lastAttemptFailed: false, dataDate };
+      const full = /\/stats_/.test(result.url) || result.data.some(r => Array.isArray(r.matchups) && r.matchups.length);
+      if (!full && !ds.internal) console.log(`::warning::Dataset "${ds.id}" only came from the summary-only file — no matchup or first/second-player data, so Deckbuster / Matchup Mastery will be limited for it.`);
+      ds.hasMatchups = full;
+      datasetStatus[ds.id] = { lastSuccessAt: now, lastAttemptAt: now, lastAttemptFailed: false, dataDate, source: full ? 'full' : 'summary-only' };
     } else {
       console.log('✗');
       datasetStatus[ds.id] = { ...prev, lastSuccessAt: prev.lastSuccessAt || null, lastAttemptAt: now, lastAttemptFailed: true };
@@ -686,8 +692,10 @@ function archiveHistory(historyDir, id, rows, dataDate) {
   dlog.manifestIds = manifest.datasets.map(d => d.id);
   dlog.fetchSample = FETCH_LOG;
   fs.writeFileSync(LOG_PATH, JSON.stringify(dlog, null, 2));
-  // Diagnostics for where matchup / first-second data now lives (see exploreSite).
-  try { await probeFileTypes(manifest.datasets, dlog); await exploreSite(ctx, dlog); } catch (e) { dlog.exploreError = e.message.split('\n')[0].slice(0, 120); }
+  // Only if a dataset fell back to summary-only data: record where the site gets matchup data (see exploreSite).
+  const summaryOnly = manifest.datasets.filter(d => !d.internal && datasetStatus[d.id]?.source === 'summary-only').map(d => d.id);
+  dlog.summaryOnlyDatasets = summaryOnly;
+  if (summaryOnly.length) try { await probeFileTypes(manifest.datasets, dlog); await exploreSite(ctx, dlog); } catch (e) { dlog.exploreError = e.message.split('\n')[0].slice(0, 120); }
   fs.writeFileSync(LOG_PATH, JSON.stringify(dlog, null, 2));
 
   // ── Opening-hand + decklist data (private lobbies, internal only) ──
