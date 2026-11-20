@@ -91,7 +91,7 @@ async function browserFetch(page, url) {
 // Cardkaizoku's CDN answers 403 to a browser that simply navigates to a data
 // file (no referrer / site headers), yet serves the very same URL to the site's
 // own page. So files are requested from INSIDE a loaded cardkaizoku page via
-// fetch(), exactly as the site does — same origin, same cookies, and replaying
+// fetch(), exactly as the site does — from the site's own origin (so it carries their referrer), and replaying
 // any extra request headers the page itself was seen sending (values are only
 // held in memory; never written to disk or the log). Plain navigation remains
 // as a fallback.
@@ -109,7 +109,10 @@ async function dataFetch(url) {
     try {
       const r = await sitePage.evaluate(async ({ url, headers }) => {
         try {
-          const res = await fetch(url, { credentials: 'include', headers });
+          // No credentials: a CDN that answers "any site may read this" (ACAO: *) makes the
+          // browser REFUSE a credentialed request ("Failed to fetch"), while a plain
+          // request — what the site itself sends — works.
+          const res = await fetch(url, { headers });
           return { status: res.status, text: await res.text() };
         } catch (e) { return { status: 'error: ' + e.message, text: '' }; }
       }, { url, headers: siteHeaders });
