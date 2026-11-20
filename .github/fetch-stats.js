@@ -62,10 +62,16 @@ function laDate(offset = 0) {
 // before (that third one also covers every date the old buggy formula produced).
 const tryDates = () => [laDate(0), laDate(1), laDate(2)];
 
+// Sample of fetch attempts (URL + HTTP status) kept for data/discovery-log.json,
+// so a failure can be diagnosed (404 = wrong name, 403 = blocked) from the repo alone.
+const FETCH_LOG = [];
+function noteFetch(url, status) { if (FETCH_LOG.length < 80) FETCH_LOG.push({ url: url.slice(0, 200), status }); }
+
 // Navigate browser directly to a CDN JSON URL and read the response body
 async function browserFetch(page, url) {
   try {
     const res = await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+    noteFetch(url, res ? res.status() : 'no response');
     if (!res || !res.ok()) {
       console.log(`  HTTP ${res?.status()} — ${url}`);
       return null;
@@ -75,6 +81,7 @@ async function browserFetch(page, url) {
     if (!Array.isArray(data) || data.length === 0) return null;
     return { text: JSON.stringify(data), data, url };
   } catch(e) {
+    noteFetch(url, 'error: ' + e.message.split('\n')[0].slice(0, 80));
     console.log(`  Error: ${e.message}`);
     return null;
   }
@@ -170,6 +177,9 @@ function pickLabels(bodyText) {
   const lines = bodyText.split('\n').map(l => l.trim()).filter(Boolean);
   return [...new Set(lines.filter(l =>
     l.length < 80 &&
+    !l.includes('\t') &&                                   // ranking-table rows are tab-separated; labels never are
+    !/^\[[A-Z]{1,4}\d+-\d+\]/.test(l) &&                    // a leader row such as "[ST38-001] Mr.0 (Crocodile) ..."
+    !/\d\.\d+\s*%/.test(l) &&                              // win-rate figures like 36.58% (labels only ever say "Top 20%")
     LABEL_LINE_RE.test(l) &&
     /Lobbies|Private|·|\(/.test(l) &&                       // must look like a period, not a heading
     !(l === l.toUpperCase() && !/\d/.test(l))               // drop ALL-CAPS group headings such as "SNAPSHOT"
@@ -202,6 +212,36 @@ async function openDropdown(page) {
   return labels;
 }
 
+const norm = t => (t || '').replace(/\s+/g, ' ').trim();
+async function chooseLabel(page, label) {
+  // (a) native <select>: its options exist as text but can't be "clicked", so use selectOption.
+  const sel = await page.evaluate(lbl => {
+    const n = t => (t || '').replace(/\s+/g, ' ').trim();
+    const selects = [...document.querySelectorAll('select')];
+    for (let i = 0; i < selects.length; i++) {
+      const o = [...selects[i].options].find(o => n(o.textContent) === lbl);
+      if (o) return { index: i, value: o.value };
+    }
+    return null;
+  }, norm(label));
+  if (sel) { await page.locator('select').nth(sel.index).selectOption({ value: sel.value }, { timeout: 4000 }); return 'select'; }
+  // (b) custom dropdown: find the deepest visible element whose text is exactly the label and click it with a real mouse event.
+  const box = await page.evaluate(lbl => {
+    const n = t => (t || '').replace(/\s+/g, ' ').trim();
+    const visible = [...document.querySelectorAll('body *')].filter(e => e.getClientRects().length);
+    const matches = visible.filter(e => n(e.innerText) === lbl);
+    const deepest = matches.filter(e => ![...e.children].some(c => matches.includes(c)));
+    const el = deepest[deepest.length - 1];
+    if (!el) return null;
+    el.scrollIntoView({ block: 'center' });
+    const r = el.getBoundingClientRect();
+    return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+  }, norm(label));
+  if (!box) throw new Error('no visible element with that text');
+  await page.mouse.click(box.x, box.y);
+  return 'click';
+}
+
 // When one click triggers several stats requests, prefer the one whose slug
 // matches the label's hints (…_lw for Last Week, …_p for Private).
 function scoreSlug(label, slug) {
@@ -216,7 +256,14 @@ function scoreSlug(label, slug) {
 
 async function discoverDatasets(ctx, log) {
   const seen = [];
-  const onReq = req => { const p = parseStatsUrl(req.url()); if (p) seen.push({ url: req.url(), ...p }); };
+  const pageReqs = [];
+  const onReq = req => {
+    const u = req.url();
+    const p = parseStatsUrl(u);
+    if (p) seen.push({ url: u, ...p });
+    const rt = req.resourceType();
+    if ((rt === 'fetch' || rt === 'xhr' || /\.json(\?|$)/i.test(u)) && pageReqs.length < 60) pageReqs.push(`${rt} ${u.slice(0, 180)}`);
+  };
   ctx.on('request', onReq);
   const page = await ctx.newPage();
   const result = { labels: [], observed: new Map() };
@@ -225,6 +272,7 @@ async function discoverDatasets(ctx, log) {
     await page.waitForTimeout(2500);
     const initial = seen.slice();
     log.initialRequests = initial.map(s => s.url);
+    log.pageRequests = pageReqs;       // every fetch/xhr/json request the page made (diagnostic)
 
     const labels = await openDropdown(page);
     result.labels = labels;
@@ -241,7 +289,7 @@ async function discoverDatasets(ctx, log) {
       try {
         await openDropdown(page);
         const before = seen.length;
-        await page.getByText(label, { exact: true }).last().click({ timeout: 4000 });
+        entry.how = await chooseLabel(page, label);
         await page.waitForTimeout(3200);
         const fresh = seen.slice(before);
         entry.requests = fresh.map(f => f.url);
@@ -257,10 +305,15 @@ async function discoverDatasets(ctx, log) {
     // request are left over, they belong together.
     const unresolved = toClick.filter(l => !result.observed.has(l));
     const usedSlugs = new Set([...result.observed.values()].map(o => o.slug));
-    const spare = initial.filter(i => !usedSlugs.has(i.slug));
-    if (unresolved.length === 1 && spare.length === 1) {
-      result.observed.set(unresolved[0], spare[0]);
-      log.defaultAssignment = { label: unresolved[0], slug: spare[0].slug };
+    const spare = [...new Map(initial.filter(i => !usedSlugs.has(i.slug)).map(i => [i.slug, i])).values()];
+    if (unresolved.length >= 1 && spare.length === 1) {
+      // Pick the unresolved label whose wording best fits the spare slug, but only
+      // if it clearly beats the runner-up — otherwise leave it unresolved and say so.
+      const ranked = unresolved.map(l => ({ l, sc: scoreSlug(l, spare[0].slug) })).sort((a, b) => b.sc - a.sc);
+      if (ranked[0].sc >= 2 && (ranked.length === 1 || ranked[0].sc > ranked[1].sc)) {
+        result.observed.set(ranked[0].l, spare[0]);
+        log.defaultAssignment = { label: ranked[0].l, slug: spare[0].slug };
+      } else log.defaultAssignment = { ambiguous: ranked.map(r => `${r.l} (${r.sc})`), slug: spare[0].slug };
     }
 
     // Two different labels must never share a slug — if they do, a click didn't
@@ -276,6 +329,7 @@ async function discoverDatasets(ctx, log) {
     console.log(`::warning::Could not read cardkaizoku's dropdown this run (${e.message}).`);
   } finally {
     ctx.off('request', onReq);
+    log.pageRequests = pageReqs;
     await page.close().catch(() => {});
   }
   return result;
@@ -433,6 +487,7 @@ function archiveHistory(historyDir, id, rows, dataDate) {
   if (!manifest.datasets.length) {
     console.log('::warning::No datasets known at all (discovery failed and there is no previous manifest). Leaving existing data untouched.');
     dlog.finalNote = 'no datasets';
+    dlog.fetchSample = FETCH_LOG;
     fs.writeFileSync(LOG_PATH, JSON.stringify(dlog, null, 2));
     await browser.close();
     process.exit(0);
@@ -487,6 +542,7 @@ function archiveHistory(historyDir, id, rows, dataDate) {
   fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
   fs.writeFileSync(STATUS_PATH, JSON.stringify(datasetStatus, null, 2));
   dlog.manifestIds = manifest.datasets.map(d => d.id);
+  dlog.fetchSample = FETCH_LOG;
   fs.writeFileSync(LOG_PATH, JSON.stringify(dlog, null, 2));
 
   // ── Opening-hand + decklist data (private lobbies, internal only) ──
