@@ -1,5 +1,5 @@
 {
-  "at": "2026-11-20T14:13:26.240Z",
+  "at": "2026-11-20T14:29:04.153Z",
   "pageResponses": [
     {
       "url": "ranking_op18_lw_p_20261120.json?v=20261120",
@@ -48,6 +48,22 @@
     {
       "url": "ranking_eb05_p_20261117.json?v=20261117",
       "status": 200
+    },
+    {
+      "url": "ranking_eb05_20261118.json?v=20261118",
+      "status": 200
+    },
+    {
+      "url": "ranking_eb05_20261117.json?v=20261117",
+      "status": 200
+    },
+    {
+      "url": "ranking_op17_p_20261106.json?v=20261106",
+      "status": 404
+    },
+    {
+      "url": "ranking_op17_20261106.json?v=20261106",
+      "status": 404
     }
   ],
   "replayHeaderNames": [],
@@ -57,65 +73,65 @@
   ],
   "pageRequests": [
     "fetch https://auth.cardkaizoku.com/verify",
-    "fetch https://cdn.cardkaizoku.com/image_manifest.json?t=1795184006844",
+    "fetch https://cdn.cardkaizoku.com/image_manifest.json?t=1795184944745",
     "xhr https://www.cardkaizoku.com/cdn-cgi/rum?",
-    "xhr https://www.cardkaizoku.com/cdn-cgi/challenge-platform/h/b/jsd/oneshot/f8df4d4a0cd6/0.8979489344924809:1795180837:Dgv1LHuWWf7IyGX_7e47-b4Gq2XB7Q1GDoDxEH1WALQ/a5d80e27cd751476",
+    "xhr https://www.cardkaizoku.com/cdn-cgi/challenge-platform/h/b/jsd/oneshot/f8df4d4a0cd6/0.8979489344924809:1795180837:Dgv1LHuWWf7IyGX_7e47-b4Gq2XB7Q1GDoDxEH1WALQ/a5d8250de928c654",
     "fetch https://cdn.cardkaizoku.com/latest_video.txt",
     "fetch https://cdn.cardkaizoku.com/navbar/navmerch.json",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184007408",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184007408",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184007409",
-    "xhr https://ep1.adtrafficquality.google/getconfig/sodar?sv=200&tid=gda&tv=r20261118&st=env&sjk=5949477679923178",
-    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxUN62wdEmJzQ1aJw5X3ftArfXuCLo4pKr388rowNfW0eWp8gg3Qk0GQEVlKQTjkFbKVF44JWbPVixdiGx9YmNhbKCUEZrfXVxDAQlEtaY0nmWrVgZbXuSpOs03earML6_X",
-    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxUN62wdEmJzQ1aJw5X3ftArfXuCLo4pKr388rowNfW0eWp8gg3Qk0GQEVlKQTjkFbKVF44JWbPVixdiGx9YmNhbKCUEZrfXVxDAQlEtaY0nmWrVgZbXuSpOs03earML6_X",
-    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxUN62wdEmJzQ1aJw5X3ftArfXuCLo4pKr388rowNfW0eWp8gg3Qk0GQEVlKQTjkFbKVF44JWbPVixdiGx9YmNhbKCUEZrfXVxDAQlEtaY0nmWrVgZbXuSpOs03earML6_X",
-    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxVHcgk7Mq79YmTAE7uyWEj4bNidA6rDY5oxTIn-DKLGntEBxwLGMzd4QXJ43OcYS2HMqGbTM1z2Nia5dgTa-6iDakF2917uMOhATgb25SNkjS2eoaKZKtjcfphU58ylNBo",
-    "fetch https://cdn.cardkaizoku.com/card_data_v20261120T041531.json",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184944984",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184944984",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184944985",
+    "fetch https://cdn.cardkaizoku.com/card_data_v20261120T061533.json",
+    "xhr https://ep1.adtrafficquality.google/getconfig/sodar?sv=200&tid=gda&tv=r20261118&st=env&sjk=2827129850019975",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_op18_lw_p_20261120.json?v=20261120",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_op18_lw_p_20261119.json?v=20261119",
-    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxUN62wdEmJzQ1aJw5X3ftArfXuCLo4pKr388rowNfW0eWp8gg3Qk0GQEVlKQTjkFbKVF44JWbPVixdiGx9YmNhbKCUEZrfXVxDAQlEtaY0nmWrVgZbXuSpOs03earML6_X",
-    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxUN62wdEmJzQ1aJw5X3ftArfXuCLo4pKr388rowNfW0eWp8gg3Qk0GQEVlKQTjkFbKVF44JWbPVixdiGx9YmNhbKCUEZrfXVxDAQlEtaY0nmWrVgZbXuSpOs03earML6_X",
-    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxUN62wdEmJzQ1aJw5X3ftArfXuCLo4pKr388rowNfW0eWp8gg3Qk0GQEVlKQTjkFbKVF44JWbPVixdiGx9YmNhbKCUEZrfXVxDAQlEtaY0nmWrVgZbXuSpOs03earML6_X",
-    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxUN62wdEmJzQ1aJw5X3ftArfXuCLo4pKr388rowNfW0eWp8gg3Qk0GQEVlKQTjkFbKVF44JWbPVixdiGx9YmNhbKCUEZrfXVxDAQlEtaY0nmWrVgZbXuSpOs03earML6_X",
-    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxVJLpM8Sgys7cEaUKFt6Lrr3dUBP5OZGOQoZ1DScMZKnYRMj3PGTcnAvYLysuPtIGTrliW8LAgm_-IQpwd_AwBpzpQCo6ryvq4rSHoGr8D-BdCOJm-mTxBcfe4xLwdcnr_",
-    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxUN62wdEmJzQ1aJw5X3ftArfXuCLo4pKr388rowNfW0eWp8gg3Qk0GQEVlKQTjkFbKVF44JWbPVixdiGx9YmNhbKCUEZrfXVxDAQlEtaY0nmWrVgZbXuSpOs03earML6_X",
-    "fetch https://pagead2.googlesyndication.com/pagead/ping?e=1",
+    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxVNh0LY9QMerHJHVbDRmwaQ8OQTx0G7Yf4r6GQSrJ3668uDXUaIveKx4SniDh1rk_SUs424hAPojibmYX-bagdwBgWPgVeLcls6s3kfREoYfAmQl0zkasxTO6ZfeZouePJ",
+    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxVNh0LY9QMerHJHVbDRmwaQ8OQTx0G7Yf4r6GQSrJ3668uDXUaIveKx4SniDh1rk_SUs424hAPojibmYX-bagdwBgWPgVeLcls6s3kfREoYfAmQl0zkasxTO6ZfeZouePJ",
+    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxVNh0LY9QMerHJHVbDRmwaQ8OQTx0G7Yf4r6GQSrJ3668uDXUaIveKx4SniDh1rk_SUs424hAPojibmYX-bagdwBgWPgVeLcls6s3kfREoYfAmQl0zkasxTO6ZfeZouePJ",
+    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxUv2Xp_e2rfah0MR76vcRz4S7cAjWZCKPHj0nMQ05Vt6CeEj00v_K2oDr4qMOb5sCTuLDqSaWYkSSDUkVb6efoGUfB-MPftkUBRjUlfvq4vpWsukk0is-gCd2HeFoU9Nwm",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=fle-fetch-start2",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=colleague-executed&name=4",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=reach&proto=CAlgAWgD",
-    "fetch https://googleads4.g.doubleclick.net/pcs/view?xai=AKAOjsvXW0bJbmP606CvsfCDgpGOViQXzE6D87VCn7Tg_-zk6aDf-DmpHu3A6a2cTrltq3Nj3J1DEqk9Fd_n6w5siBxqpRHtCttIpm4EpXskf7oOjolu6fSfrrWZsmVGMg",
-    "fetch https://googleads4.g.doubleclick.net/pcs/view?xai=AKAOjsvXW0bJbmP606CvsfCDgpGOViQXzE6D87VCn7Tg_-zk6aDf-DmpHu3A6a2cTrltq3Nj3J1DEqk9Fd_n6w5siBxqpRHtCttIpm4EpXskf7oOjolu6fSfrrWZsmVGMg",
-    "fetch https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjstNx1phB3K18B7TSFiqQauBjNi5S4NytQXH7Q0BwigaLEpKi_v4CcImO-Cqa-0Lux-H9GXK5KT8dNWxM0cZEp75nIWqPHRsGwwxC61u5311fInlQxYvYox",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184015699",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184015700",
+    "fetch https://googleads4.g.doubleclick.net/pcs/view?xai=AKAOjsua8hdx6J6PRrUlN8Y0Um9PvJ0F-n_IBvd0Adyw32Mm46vJMx0Xd_IEplVAKa96tQtK-UkGg5no-ZBMnEpR63LBOURAOXtaU0jIOXR5tZPOklbPeabj5vP_6BYbAB",
+    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxVNh0LY9QMerHJHVbDRmwaQ8OQTx0G7Yf4r6GQSrJ3668uDXUaIveKx4SniDh1rk_SUs424hAPojibmYX-bagdwBgWPgVeLcls6s3kfREoYfAmQl0zkasxTO6ZfeZouePJ",
+    "fetch https://googleads4.g.doubleclick.net/pcs/view?xai=AKAOjsua8hdx6J6PRrUlN8Y0Um9PvJ0F-n_IBvd0Adyw32Mm46vJMx0Xd_IEplVAKa96tQtK-UkGg5no-ZBMnEpR63LBOURAOXtaU0jIOXR5tZPOklbPeabj5vP_6BYbAB",
+    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxVNh0LY9QMerHJHVbDRmwaQ8OQTx0G7Yf4r6GQSrJ3668uDXUaIveKx4SniDh1rk_SUs424hAPojibmYX-bagdwBgWPgVeLcls6s3kfREoYfAmQl0zkasxTO6ZfeZouePJ",
+    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxVNh0LY9QMerHJHVbDRmwaQ8OQTx0G7Yf4r6GQSrJ3668uDXUaIveKx4SniDh1rk_SUs424hAPojibmYX-bagdwBgWPgVeLcls6s3kfREoYfAmQl0zkasxTO6ZfeZouePJ",
+    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxVNh0LY9QMerHJHVbDRmwaQ8OQTx0G7Yf4r6GQSrJ3668uDXUaIveKx4SniDh1rk_SUs424hAPojibmYX-bagdwBgWPgVeLcls6s3kfREoYfAmQl0zkasxTO6ZfeZouePJ",
+    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxUF4Tl9r9DKt9hIE9l4KQRhUwUr1UKDSEh4eLVN0KysPm90MrY7kkKIE9Puanl0XCQmo94imD1lezjgyS4oU0Timb47EuqC-3va2QY5H_7osAloy4rAk5hGih5J52umFR2",
+    "xhr https://fundingchoicesmessages.google.com/el/AGSKWxVNh0LY9QMerHJHVbDRmwaQ8OQTx0G7Yf4r6GQSrJ3668uDXUaIveKx4SniDh1rk_SUs424hAPojibmYX-bagdwBgWPgVeLcls6s3kfREoYfAmQl0zkasxTO6ZfeZouePJ",
+    "fetch https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjsta5iasAl2UzYR4FfeXYWoNqvji6r3DCYqXygU2D60o7wo5hMXiwdAgrc3WYIWPA_PgrvNXjQaXlA1qmvwt5gOY0EDR1nK4nGA20Rp9w2XdYgb-FQoea2F",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184952759",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184952760",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=fle-fetch-later2",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=fle-fetch-pagehide2",
-    "fetch https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjstNx1phB3K18B7TSFiqQauBjNi5S4NytQXH7Q0BwigaLEpKi_v4CcImO-Cqa-0Lux-H9GXK5KT8dNWxM0cZEp75nIWqPHRsGwwxC61u5311fInlQxYvYox",
+    "fetch https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjsta5iasAl2UzYR4FfeXYWoNqvji6r3DCYqXygU2D60o7wo5hMXiwdAgrc3WYIWPA_PgrvNXjQaXlA1qmvwt5gOY0EDR1nK4nGA20Rp9w2XdYgb-FQoea2F",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_op18_lw_20261120.json?v=20261120",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_op18_lw_20261119.json?v=20261119",
-    "fetch https://pagead2.googlesyndication.com/pagead/ping?e=1",
-    "fetch https://googleads4.g.doubleclick.net/pcs/view?xai=AKAOjssz_ql-oTDiuAsW9mVEA8Go5w95A7AU9AAQ8AAHqDbxk6kFBie5SuPHTVfnwKSxPV0pflQ0MaYowoK4Bh7OSyulElbyurOCZcH_XZfxVaVyuQ1u604tfJ2Q601xeZ",
+    "fetch https://googleads4.g.doubleclick.net/pcs/view?xai=AKAOjsuErcCSWDEOfwh8p3MONdjX-5qlg1tCz4IyD4W52jSqZZs4_s9vHhW_43_Idnx6LKIWS54uD8KHeXaAJ8QvwxhiyRq0lnlkqsO-V14_5D8iWRGT_0UHZTt8p_vzje",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=fle-fetch-start2",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=colleague-executed&name=4",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=reach&proto=CAlgAWgD",
-    "fetch https://googleads4.g.doubleclick.net/pcs/view?xai=AKAOjssz_ql-oTDiuAsW9mVEA8Go5w95A7AU9AAQ8AAHqDbxk6kFBie5SuPHTVfnwKSxPV0pflQ0MaYowoK4Bh7OSyulElbyurOCZcH_XZfxVaVyuQ1u604tfJ2Q601xeZ",
-    "fetch https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjstEcPcphuqEpCXn2zPlJHIMnvweuD8QBDMmxTIvQbUbk6enVZo9399dNgI_wgp24iQ-9mLNAMRphhLj5tTUErQvXh3weD3N77yp89_fqDjzdlAA5rdMPKY",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184018923",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184018923",
+    "fetch https://googleads4.g.doubleclick.net/pcs/view?xai=AKAOjsuErcCSWDEOfwh8p3MONdjX-5qlg1tCz4IyD4W52jSqZZs4_s9vHhW_43_Idnx6LKIWS54uD8KHeXaAJ8QvwxhiyRq0lnlkqsO-V14_5D8iWRGT_0UHZTt8p_vzje",
+    "fetch https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjstw9CmhzmJPiarFPiRG39GFi6RN0jruUE_-GbqWa9niqvYBP1Vk81l5L6JE3g4dEiLpGq7MceexNsUpFZ-6L9jB17W1dmCw9pY9qYUBgNV3z7y5RAGlI5-",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184955979",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795184955980",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=fle-fetch-later2",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=fle-fetch-pagehide2",
-    "fetch https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjstEcPcphuqEpCXn2zPlJHIMnvweuD8QBDMmxTIvQbUbk6enVZo9399dNgI_wgp24iQ-9mLNAMRphhLj5tTUErQvXh3weD3N77yp89_fqDjzdlAA5rdMPKY",
+    "fetch https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjstw9CmhzmJPiarFPiRG39GFi6RN0jruUE_-GbqWa9niqvYBP1Vk81l5L6JE3g4dEiLpGq7MceexNsUpFZ-6L9jB17W1dmCw9pY9qYUBgNV3z7y5RAGlI5-",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_egb_lw_20261120.json?v=20261120",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_egb_lw_20261119.json?v=20261119",
-    "fetch https://pagead2.googlesyndication.com/pagead/ping?e=1",
-    "fetch https://googleads4.g.doubleclick.net/pcs/view?xai=AKAOjssjxYn5AZTUhaUbklMp4BEP4kWYTmn4w-bHzCwBBamxp0rrdydZXQi0NVsHDMcE0cKgMzcjYCyy1AInaPGRS-ShP83KK_dlaqmrqlMSQ52wWoSl_BGUNPVLzOhHSy",
+    "fetch https://googleads4.g.doubleclick.net/pcs/view?xai=AKAOjstQff3F1hqwH_VLaq-iiTjqvA56G5r7Ze5TA3-s7PnXz8dCJzaRelmr92vuL5XN3mWyhukOIbWWqCzERZj1a-inwVUdk66-WBE_r6UTrmuaugseuPPHP80uYJx2Ne",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=fle-fetch-start2",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=colleague-executed&name=4",
     "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=reach&proto=CAlgAWgD",
-    "fetch https://googleads4.g.doubleclick.net/pcs/view?xai=AKAOjssjxYn5AZTUhaUbklMp4BEP4kWYTmn4w-bHzCwBBamxp0rrdydZXQi0NVsHDMcE0cKgMzcjYCyy1AInaPGRS-ShP83KK_dlaqmrqlMSQ52wWoSl_BGUNPVLzOhHSy",
-    "fetch https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjsuIKKdrM_-ep18w493mHm_IYFTsw1XzK8mZhH4J4sYPl9iesTXxN6EHqBY22GqNwdgsy8-qhAAh4J4dcNgeqq_Ca6gapknd_PzlDIuVylxt0N8LTyR3ny4",
+    "fetch https://googleads4.g.doubleclick.net/pcs/view?xai=AKAOjstQff3F1hqwH_VLaq-iiTjqvA56G5r7Ze5TA3-s7PnXz8dCJzaRelmr92vuL5XN3mWyhukOIbWWqCzERZj1a-inwVUdk66-WBE_r6UTrmuaugseuPPHP80uYJx2Ne",
+    "fetch https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjsv-cQ966EWrt9VRqjzSrVYl73z2e9RQYaSUgMLitJVQNdRqHXpBRnm7ESZtRy-VNKUmzWABoTmBhO53kIblvZ7JUNfRkicAfjbK9QNr7Z5-iUNEhCHWEzE",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_eb05_lw_p_20261118.json?v=20261118",
-    "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=fle-fetch-later2"
+    "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=fle-fetch-later2",
+    "fetch https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=fle-fetch-pagehide2",
+    "fetch https://pagead2.googlesyndication.com/pcs/activeview?xai=AKAOjsv-cQ966EWrt9VRqjzSrVYl73z2e9RQYaSUgMLitJVQNdRqHXpBRnm7ESZtRy-VNKUmzWABoTmBhO53kIblvZ7JUNfRkicAfjbK9QNr7Z5-iUNEhCHWEzE",
+    "fetch https://cdn.cardkaizoku.com/stats/ranking_eb05_lw_p_20261117.json?v=20261117"
   ],
   "labels": [
     "OP18 · Last Week · Top 20% · Private",
@@ -348,5 +364,96 @@
       "url": "https://cdn.cardkaizoku.com/stats/ranking_op18_lw_p_20261120.json?v=20261120",
       "status": "200 (in-page)"
     }
-  ]
+  ],
+  "typeProbe": {
+    "using": "op18_lw_20261120",
+    "results": {
+      "matchups": 404,
+      "matchup": 404,
+      "matchup_matrix": 404,
+      "matrix": 404,
+      "matchup_stats": 404,
+      "mu": 404,
+      "vs": 404,
+      "versus": 404,
+      "winrates": 404,
+      "details": 404,
+      "detail": 404,
+      "ranking_matchups": 404,
+      "ranking_matchup": 404,
+      "ranking_detail": 404,
+      "ranking_details": 404,
+      "firstsecond": 404,
+      "first_second": 404,
+      "turn_order": 404,
+      "leader": 404,
+      "leaders": 404,
+      "stats_op18_lw": {
+        "status": 200,
+        "len": 1939992,
+        "head": "[{\"leader\":\"OP09-042\",\"leaderKey\":\"OP09-042\",\"variantName\":null,\"leaderName\":\"Buggy\",\"wins\":18869,\"number_of_matches\":32721,\"total_matches\":552934,\"raw_win_rate"
+      },
+      "stats_op18_lw_p": {
+        "status": 200,
+        "len": 1053866,
+        "head": "[{\"leader\":\"OP09-042\",\"leaderKey\":\"OP09-042\",\"variantName\":null,\"leaderName\":\"Buggy\",\"wins\":5817,\"number_of_matches\":10280,\"total_matches\":127792,\"raw_win_rate\""
+      },
+      "ranking_op18_lw": {
+        "status": 200,
+        "len": 31459,
+        "head": "[{\"leader\":\"OP09-042\",\"leaderKey\":\"OP09-042\",\"variantName\":null,\"leaderName\":\"Buggy\",\"wins\":18869,\"number_of_matches\":32721,\"total_matches\":552934,\"raw_win_rate"
+      },
+      "ranking_op18_lw_p": {
+        "status": 200,
+        "len": 30410,
+        "head": "[{\"leader\":\"OP09-042\",\"leaderKey\":\"OP09-042\",\"variantName\":null,\"leaderName\":\"Buggy\",\"wins\":5817,\"number_of_matches\":10280,\"total_matches\":127792,\"raw_win_rate\""
+      }
+    }
+  },
+  "siteLinks": [
+    "/",
+    "/deckbuilder?view=deck",
+    "/matchhistory",
+    "/spoilers",
+    "/cards",
+    "/reportlist",
+    "/deckbuilder?view=game",
+    "/deckbuilder?view=tierlist",
+    "/deckbuilder?view=matrix",
+    "/gridmaker",
+    "/curvemaker",
+    "/timeline",
+    "/cardbackfight",
+    "/ranking",
+    "/matchhistory/stats",
+    "/cardstats",
+    "/decklists",
+    "/matchups",
+    "/counter",
+    "/playerranking",
+    "/mirror",
+    "/tournament",
+    "/market/collection",
+    "/market/movers",
+    "/market/buildplanner",
+    "/pickups",
+    "/market/ev",
+    "/opcgleadle",
+    "/eventcalendar",
+    "/features",
+    "/faq",
+    "/changelog",
+    "/troubleshooting",
+    "/about",
+    "/privacy-policy",
+    "/terms"
+  ],
+  "exploreRequests": {
+    "ranking page": [
+      "stats/ranking_op17_20261106.json?v=20261106"
+    ],
+    "click on a leader row": [
+      "click failed: locator.click: Timeout 3000ms exceeded."
+    ]
+  }
 }
