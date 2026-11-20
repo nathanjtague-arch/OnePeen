@@ -1,0 +1,73 @@
+{
+  "at": "2026-11-20T12:29:41.581Z",
+  "initialRequests": [],
+  "labels": [
+    "OP18 · Last Week · Top 20% · Private",
+    "OP18 · Last Week · Private",
+    "OP18 · Last Week · All Lobbies",
+    "EGB · Last Week · All Lobbies",
+    "[Snapshot] EB05 · Last Week · Top 20% · Private Lobbies",
+    "[Snapshot] EB05 · Last Week · Private Lobbies",
+    "[Snapshot] EB05 · Last Week · All Lobbies",
+    "[Snapshot] EB05 · Full Format · Private Lobbies",
+    "[Snapshot] EB05 · Full Format · All Lobbies",
+    "OP17 · Snapshot · Private Lobbies",
+    "OP17 · Snapshot · All Lobbies",
+    "[ST38-001] Mr.0 (Crocodile)\t36.58%\t26.47%\t0.03%\t9\t34"
+  ],
+  "clicks": [
+    {
+      "label": "OP18 · Last Week · Private",
+      "requests": [],
+      "result": "click failed: locator.click: Timeout 4000ms exceeded."
+    },
+    {
+      "label": "OP18 · Last Week · All Lobbies",
+      "requests": [],
+      "result": "click failed: locator.click: Timeout 4000ms exceeded."
+    },
+    {
+      "label": "EGB · Last Week · All Lobbies",
+      "requests": [],
+      "result": "click failed: locator.click: Timeout 4000ms exceeded."
+    },
+    {
+      "label": "[Snapshot] EB05 · Last Week · Private Lobbies",
+      "requests": [],
+      "result": "click failed: locator.click: Timeout 4000ms exceeded."
+    },
+    {
+      "label": "[Snapshot] EB05 · Last Week · All Lobbies",
+      "requests": [],
+      "result": "click failed: locator.click: Timeout 4000ms exceeded."
+    },
+    {
+      "label": "[Snapshot] EB05 · Full Format · Private Lobbies",
+      "requests": [],
+      "result": "click failed: locator.click: Timeout 4000ms exceeded."
+    },
+    {
+      "label": "[Snapshot] EB05 · Full Format · All Lobbies",
+      "requests": [],
+      "result": "click failed: locator.click: Timeout 4000ms exceeded."
+    },
+    {
+      "label": "OP17 · Snapshot · Private Lobbies",
+      "requests": [],
+      "result": "click failed: locator.click: Timeout 4000ms exceeded."
+    },
+    {
+      "label": "OP17 · Snapshot · All Lobbies",
+      "requests": [],
+      "result": "click failed: locator.click: Timeout 4000ms exceeded."
+    },
+    {
+      "label": "[ST38-001] Mr.0 (Crocodile)\t36.58%\t26.47%\t0.03%\t9\t34",
+      "requests": [],
+      "result": "click failed: locator.click: Timeout 4000ms exceeded."
+    }
+  ],
+  "probed": [],
+  "usedProbe": true,
+  "finalNote": "no datasets"
+}
