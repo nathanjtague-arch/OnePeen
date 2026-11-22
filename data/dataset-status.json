@@ -1,61 +1,75 @@
 {
   "op18_lw": {
-    "lastSuccessAt": "2026-11-21T22:40:23.771Z",
-    "lastAttemptAt": "2026-11-22T04:25:52.685Z",
-    "lastAttemptFailed": true,
+    "lastSuccessAt": "2026-11-22T13:52:35.889Z",
+    "lastAttemptAt": "2026-11-22T13:52:35.889Z",
+    "lastAttemptFailed": false,
     "dataDate": "20261121",
     "source": "full"
   },
   "egb_lw": {
-    "lastSuccessAt": "2026-11-21T22:40:23.910Z",
-    "lastAttemptAt": "2026-11-22T04:25:54.817Z",
-    "lastAttemptFailed": true,
+    "lastSuccessAt": "2026-11-22T13:52:36.604Z",
+    "lastAttemptAt": "2026-11-22T13:52:36.604Z",
+    "lastAttemptFailed": false,
     "dataDate": "20261121",
     "source": "full"
   },
   "eb05_lw_p": {
-    "lastSuccessAt": "2026-11-21T22:40:25.348Z",
-    "lastAttemptAt": "2026-11-22T04:25:57.660Z",
-    "lastAttemptFailed": true,
-    "dataDate": "20261119",
+    "lastSuccessAt": "2026-11-22T13:52:23.692Z",
+    "lastAttemptAt": "2026-11-22T13:52:23.692Z",
+    "lastAttemptFailed": false,
+    "dataDate": "20261118",
     "source": "full"
   },
   "eb05_lw": {
-    "lastSuccessAt": "2026-11-21T22:40:26.875Z",
-    "lastAttemptAt": "2026-11-22T04:26:00.547Z",
-    "lastAttemptFailed": true,
-    "dataDate": "20261119",
+    "lastSuccessAt": "2026-11-22T13:52:25.327Z",
+    "lastAttemptAt": "2026-11-22T13:52:25.327Z",
+    "lastAttemptFailed": false,
+    "dataDate": "20261118",
     "source": "full"
   },
   "eb05_p": {
-    "lastSuccessAt": "2026-11-21T22:40:28.257Z",
-    "lastAttemptAt": "2026-11-22T04:26:03.421Z",
-    "lastAttemptFailed": true,
-    "dataDate": "20261119",
+    "lastSuccessAt": "2026-11-22T13:52:27.154Z",
+    "lastAttemptAt": "2026-11-22T13:52:27.154Z",
+    "lastAttemptFailed": false,
+    "dataDate": "20261118",
     "source": "full"
   },
   "eb05": {
-    "lastSuccessAt": "2026-11-21T22:40:29.592Z",
-    "lastAttemptAt": "2026-11-22T04:26:06.287Z",
-    "lastAttemptFailed": true,
-    "dataDate": "20261119",
+    "lastSuccessAt": "2026-11-22T13:52:28.514Z",
+    "lastAttemptAt": "2026-11-22T13:52:28.514Z",
+    "lastAttemptFailed": false,
+    "dataDate": "20261118",
     "source": "full"
   },
   "op17_p": {
     "lastSuccessAt": null,
-    "lastAttemptAt": "2026-11-22T04:26:09.166Z",
+    "lastAttemptAt": "2026-11-22T13:52:31.796Z",
     "lastAttemptFailed": true
   },
   "op17": {
     "lastSuccessAt": null,
-    "lastAttemptAt": "2026-11-22T04:26:12.120Z",
+    "lastAttemptAt": "2026-11-22T13:52:35.350Z",
     "lastAttemptFailed": true
   },
   "op18_lw_p": {
-    "lastSuccessAt": "2026-11-21T22:40:39.006Z",
-    "lastAttemptAt": "2026-11-22T04:26:14.284Z",
-    "lastAttemptFailed": true,
+    "lastSuccessAt": "2026-11-22T13:52:37.164Z",
+    "lastAttemptAt": "2026-11-22T13:52:37.164Z",
+    "lastAttemptFailed": false,
     "dataDate": "20261121",
+    "source": "full"
+  },
+  "op18_lw_20261122t001506": {
+    "lastSuccessAt": "2026-11-22T13:52:21.936Z",
+    "lastAttemptAt": "2026-11-22T13:52:21.936Z",
+    "lastAttemptFailed": false,
+    "dataDate": "20261122",
+    "source": "full"
+  },
+  "egb_lw_20261122t001506": {
+    "lastSuccessAt": "2026-11-22T13:52:22.096Z",
+    "lastAttemptAt": "2026-11-22T13:52:22.096Z",
+    "lastAttemptFailed": false,
+    "dataDate": "20261122",
     "source": "full"
   }
 }
