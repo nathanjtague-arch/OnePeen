@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-21T22:40:23.676Z",
+  "generatedAt": "2026-11-22T04:25:50.513Z",
   "defaultId": "op18_lw",
   "datasets": [
     {
@@ -21,8 +21,7 @@
       "query": "?v=20261121",
       "dated": true,
       "lastDate": "20261121",
-      "handsId": "op18_lw_p",
-      "hasMatchups": true
+      "handsId": "op18_lw_p"
     },
     {
       "id": "egb_lw",
@@ -43,8 +42,7 @@
       "query": "?v=20261121",
       "dated": true,
       "lastDate": "20261121",
-      "handsId": null,
-      "hasMatchups": true
+      "handsId": null
     },
     {
       "id": "eb05_lw_p",
@@ -64,8 +62,7 @@
       "urlBase": "https://cdn.cardkaizoku.com/stats/",
       "query": "?v=20261118",
       "dated": true,
-      "lastDate": "20261119",
-      "hasMatchups": true
+      "lastDate": "20261118"
     },
     {
       "id": "eb05_lw",
@@ -85,9 +82,8 @@
       "urlBase": "https://cdn.cardkaizoku.com/stats/",
       "query": "?v=20261118",
       "dated": true,
-      "lastDate": "20261119",
-      "handsId": "eb05_lw_p",
-      "hasMatchups": true
+      "lastDate": "20261118",
+      "handsId": "eb05_lw_p"
     },
     {
       "id": "eb05_p",
@@ -107,8 +103,7 @@
       "urlBase": "https://cdn.cardkaizoku.com/stats/",
       "query": "?v=20261118",
       "dated": true,
-      "lastDate": "20261119",
-      "hasMatchups": true
+      "lastDate": "20261118"
     },
     {
       "id": "eb05",
@@ -128,9 +123,8 @@
       "urlBase": "https://cdn.cardkaizoku.com/stats/",
       "query": "?v=20261118",
       "dated": true,
-      "lastDate": "20261119",
-      "handsId": "eb05_p",
-      "hasMatchups": true
+      "lastDate": "20261118",
+      "handsId": "eb05_p"
     },
     {
       "id": "op17_p",
@@ -191,8 +185,7 @@
       "urlBase": "https://cdn.cardkaizoku.com/stats/",
       "query": "?v=20261120",
       "dated": true,
-      "lastDate": "20261121",
-      "hasMatchups": true
+      "lastDate": "20261120"
     }
   ]
 }
