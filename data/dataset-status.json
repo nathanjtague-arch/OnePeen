@@ -1,73 +1,73 @@
 {
   "op18_lw": {
-    "lastSuccessAt": "2026-11-22T23:03:39.911Z",
-    "lastAttemptAt": "2026-11-22T23:03:39.911Z",
+    "lastSuccessAt": "2026-11-23T05:01:39.409Z",
+    "lastAttemptAt": "2026-11-23T05:01:39.409Z",
     "lastAttemptFailed": false,
     "dataDate": "20261121",
     "source": "full"
   },
   "egb_lw": {
-    "lastSuccessAt": "2026-11-22T23:03:40.438Z",
-    "lastAttemptAt": "2026-11-22T23:03:40.438Z",
+    "lastSuccessAt": "2026-11-23T05:01:40.141Z",
+    "lastAttemptAt": "2026-11-23T05:01:40.141Z",
     "lastAttemptFailed": false,
     "dataDate": "20261121",
     "source": "full"
   },
   "eb05_lw_p": {
-    "lastSuccessAt": "2026-11-22T23:03:28.995Z",
-    "lastAttemptAt": "2026-11-22T23:03:28.995Z",
+    "lastSuccessAt": "2026-11-23T05:01:21.812Z",
+    "lastAttemptAt": "2026-11-23T05:01:21.812Z",
     "lastAttemptFailed": false,
     "dataDate": "20261118",
     "source": "full"
   },
   "eb05_lw": {
-    "lastSuccessAt": "2026-11-22T23:03:30.221Z",
-    "lastAttemptAt": "2026-11-22T23:03:30.221Z",
+    "lastSuccessAt": "2026-11-23T05:01:23.805Z",
+    "lastAttemptAt": "2026-11-23T05:01:23.805Z",
     "lastAttemptFailed": false,
     "dataDate": "20261118",
     "source": "full"
   },
   "eb05_p": {
-    "lastSuccessAt": "2026-11-22T23:03:31.660Z",
-    "lastAttemptAt": "2026-11-22T23:03:31.660Z",
+    "lastSuccessAt": "2026-11-23T05:01:25.934Z",
+    "lastAttemptAt": "2026-11-23T05:01:25.934Z",
     "lastAttemptFailed": false,
     "dataDate": "20261118",
     "source": "full"
   },
   "eb05": {
-    "lastSuccessAt": "2026-11-22T23:03:32.885Z",
-    "lastAttemptAt": "2026-11-22T23:03:32.885Z",
+    "lastSuccessAt": "2026-11-23T05:01:28.102Z",
+    "lastAttemptAt": "2026-11-23T05:01:28.102Z",
     "lastAttemptFailed": false,
     "dataDate": "20261118",
     "source": "full"
   },
   "op17_p": {
     "lastSuccessAt": null,
-    "lastAttemptAt": "2026-11-22T23:03:36.075Z",
+    "lastAttemptAt": "2026-11-23T05:01:33.313Z",
     "lastAttemptFailed": true
   },
   "op17": {
     "lastSuccessAt": null,
-    "lastAttemptAt": "2026-11-22T23:03:39.325Z",
+    "lastAttemptAt": "2026-11-23T05:01:38.358Z",
     "lastAttemptFailed": true
   },
   "op18_lw_p": {
-    "lastSuccessAt": "2026-11-22T23:03:40.967Z",
-    "lastAttemptAt": "2026-11-22T23:03:40.967Z",
+    "lastSuccessAt": "2026-11-23T05:01:40.958Z",
+    "lastAttemptAt": "2026-11-23T05:01:40.958Z",
     "lastAttemptFailed": false,
     "dataDate": "20261121",
     "source": "full"
   },
   "op18_lw_20261122t001506": {
-    "lastSuccessAt": "2026-11-22T23:03:27.629Z",
-    "lastAttemptAt": "2026-11-22T23:03:27.629Z",
+    "lastSuccessAt": "2026-11-23T05:01:19.497Z",
+    "lastAttemptAt": "2026-11-23T05:01:19.497Z",
     "lastAttemptFailed": false,
     "dataDate": "20261122",
     "source": "full"
   },
   "egb_lw_20261122t001506": {
-    "lastSuccessAt": "2026-11-22T23:03:27.760Z",
-    "lastAttemptAt": "2026-11-22T23:03:27.760Z",
+    "lastSuccessAt": "2026-11-23T05:01:19.735Z",
+    "lastAttemptAt": "2026-11-23T05:01:19.735Z",
     "lastAttemptFailed": false,
     "dataDate": "20261122",
     "source": "full"
