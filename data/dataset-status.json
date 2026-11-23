@@ -1,73 +1,59 @@
 {
   "op18_lw": {
-    "lastSuccessAt": "2026-11-23T05:01:39.409Z",
-    "lastAttemptAt": "2026-11-23T05:01:39.409Z",
+    "lastSuccessAt": "2026-11-23T16:43:03.564Z",
+    "lastAttemptAt": "2026-11-23T16:43:03.564Z",
     "lastAttemptFailed": false,
-    "dataDate": "20261121",
+    "dataDate": "20261123",
     "source": "full"
   },
   "egb_lw": {
-    "lastSuccessAt": "2026-11-23T05:01:40.141Z",
-    "lastAttemptAt": "2026-11-23T05:01:40.141Z",
+    "lastSuccessAt": "2026-11-23T16:43:03.762Z",
+    "lastAttemptAt": "2026-11-23T16:43:03.762Z",
     "lastAttemptFailed": false,
-    "dataDate": "20261121",
+    "dataDate": "20261123",
     "source": "full"
   },
   "eb05_lw_p": {
-    "lastSuccessAt": "2026-11-23T05:01:21.812Z",
-    "lastAttemptAt": "2026-11-23T05:01:21.812Z",
+    "lastSuccessAt": "2026-11-23T16:43:03.845Z",
+    "lastAttemptAt": "2026-11-23T16:43:03.845Z",
     "lastAttemptFailed": false,
     "dataDate": "20261118",
     "source": "full"
   },
   "eb05_lw": {
-    "lastSuccessAt": "2026-11-23T05:01:23.805Z",
-    "lastAttemptAt": "2026-11-23T05:01:23.805Z",
+    "lastSuccessAt": "2026-11-23T16:43:03.945Z",
+    "lastAttemptAt": "2026-11-23T16:43:03.945Z",
     "lastAttemptFailed": false,
     "dataDate": "20261118",
     "source": "full"
   },
   "eb05_p": {
-    "lastSuccessAt": "2026-11-23T05:01:25.934Z",
-    "lastAttemptAt": "2026-11-23T05:01:25.934Z",
+    "lastSuccessAt": "2026-11-23T16:43:04.051Z",
+    "lastAttemptAt": "2026-11-23T16:43:04.051Z",
     "lastAttemptFailed": false,
     "dataDate": "20261118",
     "source": "full"
   },
   "eb05": {
-    "lastSuccessAt": "2026-11-23T05:01:28.102Z",
-    "lastAttemptAt": "2026-11-23T05:01:28.102Z",
+    "lastSuccessAt": "2026-11-23T16:43:04.255Z",
+    "lastAttemptAt": "2026-11-23T16:43:04.255Z",
     "lastAttemptFailed": false,
     "dataDate": "20261118",
     "source": "full"
   },
   "op17_p": {
     "lastSuccessAt": null,
-    "lastAttemptAt": "2026-11-23T05:01:33.313Z",
+    "lastAttemptAt": "2026-11-23T16:43:09.362Z",
     "lastAttemptFailed": true
   },
   "op17": {
     "lastSuccessAt": null,
-    "lastAttemptAt": "2026-11-23T05:01:38.358Z",
+    "lastAttemptAt": "2026-11-23T16:43:14.232Z",
     "lastAttemptFailed": true
   },
   "op18_lw_p": {
-    "lastSuccessAt": "2026-11-23T05:01:40.958Z",
-    "lastAttemptAt": "2026-11-23T05:01:40.958Z",
-    "lastAttemptFailed": false,
-    "dataDate": "20261121",
-    "source": "full"
-  },
-  "op18_lw_20261122t001506": {
-    "lastSuccessAt": "2026-11-23T05:01:19.497Z",
-    "lastAttemptAt": "2026-11-23T05:01:19.497Z",
-    "lastAttemptFailed": false,
-    "dataDate": "20261122",
-    "source": "full"
-  },
-  "egb_lw_20261122t001506": {
-    "lastSuccessAt": "2026-11-23T05:01:19.735Z",
-    "lastAttemptAt": "2026-11-23T05:01:19.735Z",
+    "lastSuccessAt": "2026-11-23T16:43:14.391Z",
+    "lastAttemptAt": "2026-11-23T16:43:14.391Z",
     "lastAttemptFailed": false,
     "dataDate": "20261122",
     "source": "full"
