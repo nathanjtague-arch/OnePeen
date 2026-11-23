@@ -76,7 +76,9 @@ async function openHistory(page, name) {
     const u = page.url().replace(/(playerId|deviceId)=[^&]*/g, '$1=X');
     const txt = clean(await page.evaluate(() => (document.querySelector('main') || document.body).innerText).catch(() => '')).slice(0, 700);
     const tables = await page.locator('table').count().catch(() => -1);
-    throw new Error(`Match table did not appear. url=${u} tables=${tables} pageText="${txt}"`);
+    const trs = await page.evaluate(() => [...document.querySelectorAll('tr')].slice(0, 6).map(r => (r.className || 'tr') + ':' + r.innerText.replace(/\s+/g, ' ').slice(0, 60))).catch(() => []);
+    const tail = clean(await page.evaluate(() => (document.querySelector('main') || document.body).innerText).catch(() => '')).slice(-600);
+    throw new Error(`Match table did not appear. url=${u} tables=${tables} trs=${JSON.stringify(trs)} tail="${tail}"`);
   }
 }
 
