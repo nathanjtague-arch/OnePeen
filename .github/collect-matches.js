@@ -61,6 +61,12 @@ async function openHistory(page, name) {
   const onResp = r => { const u = r.url(); if (/\.(png|webp|jpe?g|svg|css|woff2?|ico)(\?|$)|cdn-cgi|google|doubleclick|adsbygoogle|gstatic/i.test(u)) return;
     seen.push(`${r.request().method()} ${r.status()} ${u.replace(/(playerId|deviceId|token|key)=[^&]*/gi, '$1=X').replace(/^https?:\/\//, '').slice(0, 110)}`); };
   page.on('response', onResp);
+  const onReq = r => { const u = r.url(); if (/api\.cardkaizoku|auth\.cardkaizoku/i.test(u)) seen.push(`REQ ${r.method()} ${u.replace(/^https?:\/\//, '').slice(0, 90)}`); };
+  const onFail = r => { const u = r.url(); if (!/adsafe|2mdn|google|doubleclick|adsbygoogle|gstatic|cdn-cgi/i.test(u)) seen.push(`FAIL ${u.replace(/^https?:\/\//, '').slice(0, 90)} ${r.failure()?.errorText || ''}`); };
+  const errs = [];
+  const onCons = m => { if (m.type() === 'error') errs.push(m.text().slice(0, 160)); };
+  const onPageErr = e => errs.push('pageerror: ' + String(e.message).slice(0, 160));
+  page.on('request', onReq); page.on('requestfailed', onFail); page.on('console', onCons); page.on('pageerror', onPageErr);
   await page.goto('https://www.cardkaizoku.com/matchhistory', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForSelector('input', { timeout: 30000 });
   const input = page.locator('main input').first();
@@ -83,7 +89,8 @@ async function openHistory(page, name) {
     const trs = await page.evaluate(() => [...document.querySelectorAll('tr')].slice(0, 6).map(r => (r.className || 'tr') + ':' + r.innerText.replace(/\s+/g, ' ').slice(0, 60))).catch(() => []);
     const tail = clean(await page.evaluate(() => (document.querySelector('main') || document.body).innerText).catch(() => '')).slice(-600);
     page.off('response', onResp);
-    console.log('  requests seen: ' + JSON.stringify(seen.slice(-25)));
+    console.log('  requests seen: ' + JSON.stringify(seen.filter(x => !/adsafe|2mdn|google|doubleclick/i.test(x)).slice(-30)));
+    console.log('  page errors: ' + JSON.stringify(errs.slice(0, 8)));
     const cookieNames = (await page.context().cookies()).map(c => c.name).join(',');
     console.log('  cookie names in browser: ' + cookieNames);
     if (seen.some(x => / 401 auth\.cardkaizoku\.com\/verify/.test(x))) throw new Error('LOGIN EXPIRED: Kaizoku rejected the saved login (401). Refresh the CARDKAIZOKU_COOKIES secret with fresh auth_token and cf_clearance values from a logged-in browser.');
