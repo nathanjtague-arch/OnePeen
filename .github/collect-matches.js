@@ -86,6 +86,7 @@ async function openHistory(page, name) {
     console.log('  requests seen: ' + JSON.stringify(seen.slice(-25)));
     const cookieNames = (await page.context().cookies()).map(c => c.name).join(',');
     console.log('  cookie names in browser: ' + cookieNames);
+    if (seen.some(x => / 401 auth\.cardkaizoku\.com\/verify/.test(x))) throw new Error('LOGIN EXPIRED: Kaizoku rejected the saved login (401). Refresh the CARDKAIZOKU_COOKIES secret with fresh auth_token and cf_clearance values from a logged-in browser.');
     throw new Error(`Match table did not appear. url=${u} tables=${tables} trs=${JSON.stringify(trs)} tail="${tail}"`);
   }
 }
