@@ -67,8 +67,17 @@ async function openHistory(page, name) {
   // The search can show several people with a similar name; only continue if the heading is an exact match.
   const heads = await page.locator('main h2, main h3').allInnerTexts();
   if (!heads.map(clean).includes(name)) throw new Error(`Exact player "${name}" not found (saw: ${heads.map(clean).join(' | ').slice(0, 120)})`);
+  console.log('  search ok, opening matches…');
   await view.click();
-  await page.waitForSelector('tr.match-summary-row', { timeout: 60000 });
+  try {
+    await page.waitForSelector('tr.match-summary-row', { timeout: 45000 });
+  } catch (e) {
+    // Say what the page actually showed, so a failure is diagnosable from the log (no secrets, ids redacted).
+    const u = page.url().replace(/(playerId|deviceId)=[^&]*/g, '$1=X');
+    const txt = clean(await page.evaluate(() => document.body.innerText).catch(() => '')).slice(0, 500);
+    const tables = await page.locator('table').count().catch(() => -1);
+    throw new Error(`Match table did not appear. url=${u} tables=${tables} pageText="${txt}"`);
+  }
 }
 
 async function readRows(page) {
