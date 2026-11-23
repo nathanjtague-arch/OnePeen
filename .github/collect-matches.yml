@@ -1,0 +1,40 @@
+name: Collect Match History
+
+on:
+  schedule:
+    - cron: '35 */4 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'incremental = new games only, full = everything from the start'
+        default: 'incremental'
+        type: choice
+        options: [incremental, full]
+      dry_run:
+        description: 'Dry run = read and report, save nothing'
+        default: false
+        type: boolean
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Playwright + Chromium
+        run: |
+          cd /tmp && npm init -y > /dev/null
+          npm install playwright > /dev/null 2>&1
+          npx playwright install chromium --with-deps > /dev/null 2>&1
+      - name: Collect matches
+        env:
+          CARDKAIZOKU_COOKIES: ${{ secrets.CARDKAIZOKU_COOKIES }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          MODE: ${{ github.event.inputs.mode || 'incremental' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '0' }}
+        run: node .github/collect-matches.js
