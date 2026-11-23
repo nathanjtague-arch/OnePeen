@@ -1058,7 +1058,12 @@ function sortedDatasets(){
   if(MANIFEST_LOADED){
     // Their naming, our order: default first, live before frozen snapshots, newest set first.
     const rank=d=>[d.id===MANIFEST_DEFAULT?0:1,d.frozen?1:0,-(d.setNum||0)];
-    return [...pool].sort((a,b)=>{const ra=rank(a),rb=rank(b);for(let i=0;i<ra.length;i++)if(ra[i]!==rb[i])return ra[i]-rb[i];return a.label.localeCompare(b.label);});
+    // Safety net: one entry per label. If two ever share a name, keep the default, else the most recently refreshed.
+    const best=new Map();
+    pool.forEach(d=>{const k=d.cardkaizokuLabel||d.label,cur=best.get(k);
+      const t=x=>(x.id===MANIFEST_DEFAULT?1e15:0)+(Date.parse(DATASET_STATUS[x.id]?.lastSuccessAt||'')||0);
+      if(!cur||t(d)>t(cur))best.set(k,d);});
+    return [...best.values()].sort((a,b)=>{const ra=rank(a),rb=rank(b);for(let i=0;i<ra.length;i++)if(ra[i]!==rb[i])return ra[i]-rb[i];return a.label.localeCompare(b.label);});
   }
   return [...pool].sort((a,b)=>{
     const ta=DATASET_STATUS[a.id]?.lastSuccessAt, tb=DATASET_STATUS[b.id]?.lastSuccessAt;
@@ -1906,6 +1911,12 @@ function computeDeckbuster(oppIds){
 }
 
 // ── Deckbuster view ───────────────────────────────────────────────
+/* Red -> amber -> green by win rate: 38% or less = full red, 50% = amber, 62% or more = full green */
+function wrGradient(wr){
+  const t=Math.max(0,Math.min(1,(wr-38)/24));
+  const hue=Math.round(t*125);          // 0 = red, ~60 = amber, 125 = green
+  return `hsl(${hue},92%,${58+Math.round(Math.sin(t*Math.PI)*-6)}%)`;
+}
 function viewDeckbuster(){
   const wrap=document.createElement('div');
   if(!DATA){const m=document.createElement('div');m.className='db-no-data';m.textContent='Load data first.';wrap.appendChild(m);return wrap;}
@@ -2028,10 +2039,10 @@ function viewDeckbuster(){
           miw.append(mim,mph);applyCardImg(mim,mph,mu.oppId);
           const info=document.createElement('div');info.className='db-mu-info';
           const mname=document.createElement('div');mname.className='db-mu-name';
-          mname.textContent=(mu.isMirror?'🪞 ':''+(oppDeck?.name||mu.oppId));
+          mname.textContent=(mu.isMirror?'🪞 ':'')+(oppDeck?.name||mu.oppId);
           const mwr=document.createElement('div');mwr.className='db-mu-wr';
           if(!mu.hasData){mwr.textContent='—';mwr.style.color='#555';}
-          else{mwr.textContent=mu.wr.toFixed(1)+'%';mwr.style.color='var(--text)';}
+          else{mwr.textContent=mu.wr.toFixed(1)+'%';mwr.style.color=wrGradient(mu.wr);mwr.style.fontWeight='800';if(mu.isMirror)mwr.style.opacity='.6';}
           const mgames=document.createElement('div');mgames.className='db-mu-games';
           mgames.textContent=mu.hasData?(mu.games+' games'+(mu.isMirror?' · not in score':'')):'no data';
           info.append(mname,mwr,mgames);
