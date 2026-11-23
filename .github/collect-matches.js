@@ -57,6 +57,10 @@ function toIso(dmy, hm) {
 const code = s => (/\[([A-Z0-9]+-\d+)\]/.exec(s || '') || [])[1] || null;
 
 async function openHistory(page, name) {
+  const seen = [];
+  const onResp = r => { const u = r.url(); if (/\.(png|webp|jpe?g|svg|css|woff2?|ico)(\?|$)|cdn-cgi|google|doubleclick|adsbygoogle|gstatic/i.test(u)) return;
+    seen.push(`${r.request().method()} ${r.status()} ${u.replace(/(playerId|deviceId|token|key)=[^&]*/gi, '$1=X').replace(/^https?:\/\//, '').slice(0, 110)}`); };
+  page.on('response', onResp);
   await page.goto('https://www.cardkaizoku.com/matchhistory', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForSelector('input', { timeout: 30000 });
   const input = page.locator('main input').first();
@@ -78,6 +82,10 @@ async function openHistory(page, name) {
     const tables = await page.locator('table').count().catch(() => -1);
     const trs = await page.evaluate(() => [...document.querySelectorAll('tr')].slice(0, 6).map(r => (r.className || 'tr') + ':' + r.innerText.replace(/\s+/g, ' ').slice(0, 60))).catch(() => []);
     const tail = clean(await page.evaluate(() => (document.querySelector('main') || document.body).innerText).catch(() => '')).slice(-600);
+    page.off('response', onResp);
+    console.log('  requests seen: ' + JSON.stringify(seen.slice(-25)));
+    const cookieNames = (await page.context().cookies()).map(c => c.name).join(',');
+    console.log('  cookie names in browser: ' + cookieNames);
     throw new Error(`Match table did not appear. url=${u} tables=${tables} trs=${JSON.stringify(trs)} tail="${tail}"`);
   }
 }
