@@ -74,7 +74,7 @@ async function openHistory(page, name) {
   } catch (e) {
     // Say what the page actually showed, so a failure is diagnosable from the log (no secrets, ids redacted).
     const u = page.url().replace(/(playerId|deviceId)=[^&]*/g, '$1=X');
-    const txt = clean(await page.evaluate(() => document.body.innerText).catch(() => '')).slice(0, 500);
+    const txt = clean(await page.evaluate(() => (document.querySelector('main') || document.body).innerText).catch(() => '')).slice(0, 700);
     const tables = await page.locator('table').count().catch(() => -1);
     throw new Error(`Match table did not appear. url=${u} tables=${tables} pageText="${txt}"`);
   }
