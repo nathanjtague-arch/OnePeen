@@ -357,12 +357,34 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .clear-btn:hover{color:var(--text);border-color:#444444}
 
 /* Rank table */
-.rank-header{display:grid;grid-template-columns:32px 48px 26px 1fr 66px 52px;gap:8px;align-items:center;padding:0 10px 8px;border-bottom:2px solid var(--brd);margin-bottom:0}
+.rank-header{display:grid;grid-template-columns:32px 48px 52px 1fr 66px 52px;gap:8px;align-items:center;padding:0 10px 8px;border-bottom:2px solid var(--brd);margin-bottom:0}
 .rank-header span{font-size:10px;font-family:var(--font-head);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);cursor:pointer;user-select:none}
 .rank-header span.sort-active{color:var(--acc)}
 .rank-header span:hover{color:var(--text)}
-.rank-row{display:grid;grid-template-columns:32px 48px 26px 1fr 66px 52px;gap:12px;align-items:center;padding:12px 14px;border-radius:0;cursor:pointer;transition:background .1s;border-left:3px solid transparent;border-bottom:1px solid rgba(255,255,255,.05)}
+.rank-row{display:grid;grid-template-columns:32px 48px 52px 1fr 66px 52px;gap:12px;align-items:center;padding:12px 14px;border-radius:0;cursor:pointer;transition:background .1s;border-left:3px solid transparent;border-bottom:1px solid rgba(255,255,255,.05)}
 .rank-row:hover{background:rgba(255,255,255,.04)}
+.dd{display:flex;flex-direction:column;gap:14px}
+.dd-head{display:flex;gap:16px;align-items:center}
+.dd-img{width:130px;height:46px;border-radius:6px;overflow:hidden;flex-shrink:0;background:#111;position:relative}
+.dd-img img,.dd-mu-img img,.dd-c-img img{width:100%;height:100%;object-fit:cover;display:block}
+.dd-name{font-family:var(--font-head);font-size:24px;font-weight:800;line-height:1.1}
+.dd-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.dd-tile{background:var(--surf);border:1px solid var(--brd);border-radius:6px;padding:12px;text-align:center}
+.dd-tl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#b8c4e0;margin-bottom:4px}
+.dd-tv{font-family:var(--font-mono);font-size:20px;font-weight:800}
+.dd-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.dd-card{background:var(--surf);border:1px solid var(--brd);border-radius:6px;padding:14px}
+.dd-h{font-family:var(--font-head);font-weight:800;font-size:15px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.dd-sub{font-size:12px;color:#9aa4c4;margin-bottom:10px}
+.dd-mu{display:grid;grid-template-columns:70px 1fr auto;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.dd-mu-img,.dd-c-img{height:28px;border-radius:4px;overflow:hidden;background:#111;position:relative}
+.dd-mu-n{font-size:13px;font-weight:600}.dd-mu-g{font-size:11px;color:#8a93b0;font-weight:400}
+.dd-mu-w{font-family:var(--font-mono);font-weight:800;font-size:15px}
+.dd-dl{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.dd-dl-top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.dd-dl-t{font-size:13px}
+.dd-cards{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:10px}
+.dd-c-img{height:60px}.dd-c-q{font-size:11px;font-family:var(--font-mono);margin-top:3px;color:#c8d0e8}
 .rank-row.off{opacity:.3}
 .rank-num{font-family:var(--font-mono);font-size:12px;color:#9aa8cc;text-align:right;font-weight:700}
 .rank-name{font-size:15px;font-weight:700;color:var(--text);font-family:var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -590,10 +612,10 @@ input[type=checkbox]{accent-color:var(--acc);cursor:pointer;width:14px;height:14
 .combo-no-results{padding:14px;text-align:center;color:#555;font-size:13px;font-style:italic}
 
 /* Toggle button on rank row */
-.rank-toggle-btn{width:22px;height:22px;border-radius:4px;border:1.5px solid;
-  font-size:13px;line-height:1;cursor:pointer;flex-shrink:0;
+.rank-toggle-btn{min-width:46px;height:24px;border-radius:14px;border:1.5px solid;
+  font-size:11px;font-weight:700;padding:0 8px;line-height:1;cursor:pointer;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;transition:all .15s;
-  background:transparent;padding:0}
+  background:transparent}
 .rank-toggle-btn.on{border-color:var(--g1);color:var(--g1);
   box-shadow:0 0 8px rgba(0,232,122,.3)}
 .rank-toggle-btn.off{border-color:#444;color:#555}
@@ -1102,7 +1124,7 @@ function countUpEl(el,target,duration=900,decimals=1){
   requestAnimationFrame(tick);
 }
 
-let TAB='rank',FILTER='all',SORT='wtdWR',PASTE_ERR='';
+let TAB='rank',FILTER='all',SORT='wtdWR',PASTE_ERR='',DETAIL_ID=null;
 let MY_DECK=null,OPP_DECK=null,EXCL_LOW=false;
 let EXP_DECK=null;
 let BUSTED_DECKS=[],BUST_RESULTS=null;
@@ -1281,6 +1303,112 @@ function mkFilterBar(){
 }
 
 // ── Views ────────────────────────────────────────────────────────
+
+// ── Deck detail page ─────────────────────────────────────────────
+function copyText(text,btn,doneLabel){
+  const done=()=>{const old=btn.dataset.l||btn.textContent;btn.dataset.l=old;btn.textContent=doneLabel||'Copied ✓';setTimeout(()=>{btn.textContent=old;},1800);};
+  const fallback=()=>{const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch{btn.textContent='Copy failed';}ta.remove();};
+  if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(done,fallback);}else fallback();
+}
+function mkDeckImg(id,cls){
+  const w=document.createElement('div');w.className=cls;
+  const im=document.createElement('img');im.alt='';const ph=document.createElement('div');ph.className='rank-img-ph';
+  w.append(im,ph);applyCardImg(im,ph,id);return w;
+}
+function viewDeckDetail(id){
+  const d=DATA.decks.find(x=>x.id===id);
+  const wrap=document.createElement('div');wrap.className='dd';
+  const back=document.createElement('button');back.className='sort-btn';back.style.alignSelf='flex-start';back.textContent='← Back to rankings';
+  back.onclick=()=>{DETAIL_ID=null;render();window.scrollTo(0,0);};
+  wrap.appendChild(back);
+
+  const head=document.createElement('div');head.className='dd-head';
+  head.appendChild(mkDeckImg(id,'dd-img'));
+  const hm=document.createElement('div');hm.style.cssText='display:flex;flex-direction:column;gap:6px;align-items:flex-start';
+  const nm=document.createElement('div');nm.className='dd-name';nm.textContent=d.name;
+  const cd=document.createElement('div');cd.className='rank-code';cd.textContent='['+d.id+']';
+  const hideBtn=document.createElement('button');hideBtn.className='rank-toggle-btn '+(HIDDEN.has(id)?'off':'on');
+  hideBtn.textContent=HIDDEN.has(id)?'Include in rankings':'Hide from rankings';
+  hideBtn.onclick=()=>{if(HIDDEN.has(id))HIDDEN.delete(id);else HIDDEN.add(id);render();};
+  hm.append(nm,cd,hideBtn);head.appendChild(hm);wrap.appendChild(head);
+
+  const tiles=document.createElement('div');tiles.className='dd-tiles';
+  const tile=(l,txt,col)=>{const t=document.createElement('div');t.className='dd-tile';
+    const a=document.createElement('div');a.className='dd-tl';a.textContent=l;
+    const b=document.createElement('div');b.className='dd-tv';b.textContent=txt;if(col)b.style.color=col;
+    t.append(a,b);tiles.appendChild(t);};
+  tile('Weighted WR',fmt(d.wtdWR),d.wtdWR!=null?wrGradient(d.wtdWR):null);
+  tile('Raw WR',fmt(d.rawWR),d.rawWR!=null?wrGradient(d.rawWR):null);
+  tile('Play rate',fmt(d.play));
+  tile('Going 1st',fmt(d.f),d.f!=null?wrGradient(d.f):null);
+  tile('Going 2nd',fmt(d.s),d.s!=null?wrGradient(d.s):null);
+  tile('Games',d.games!=null?d.games.toLocaleString():'—');
+  wrap.appendChild(tiles);
+
+  const mus=Object.values(d.mu||{}).filter(m=>m.wr!=null&&m.opp!==id&&(m.n==null||m.n>=30)).map(m=>{
+    const o=DATA.decks.find(x=>x.id===m.opp);return{...m,name:o?.name||m.opp};
+  });
+  const mk=(title,list)=>{
+    const c=document.createElement('div');c.className='dd-card';
+    const h=document.createElement('div');h.className='dd-h';h.textContent=title;c.appendChild(h);
+    list.forEach(m=>{
+      const r=document.createElement('div');r.className='dd-mu';
+      r.appendChild(mkDeckImg(m.opp,'dd-mu-img'));
+      const n=document.createElement('div');n.className='dd-mu-n';n.textContent=m.name;
+      const g=document.createElement('div');g.className='dd-mu-g';g.textContent='['+m.opp+']'+(m.n!=null?' · '+m.n.toLocaleString()+' games':'');n.appendChild(g);
+      const w=document.createElement('div');w.className='dd-mu-w';w.textContent=fmt(m.wr);w.style.color=wrGradient(m.wr);
+      r.append(n,w);c.appendChild(r);
+    });
+    return c;
+  };
+  if(mus.length>=2){
+    const sorted=[...mus].sort((a,b)=>b.wr-a.wr);
+    const k=Math.min(6,Math.floor(sorted.length/2));
+    const grid=document.createElement('div');grid.className='dd-two';
+    grid.append(mk('Best matchups',sorted.slice(0,k)),mk('Worst matchups',sorted.slice(-k).reverse()));
+    wrap.appendChild(grid);
+  }
+
+  const dl=document.createElement('div');dl.className='dd-card';
+  const dh=document.createElement('div');dh.className='dd-h';dh.textContent='Top decklists';dl.appendChild(dh);
+  const dsub=document.createElement('div');dsub.className='dd-sub';dsub.textContent="Ranked by Kaizoku's score across the meta. \"Copy for sim\" puts the list on your clipboard, leader first.";dl.appendChild(dsub);
+  const body=document.createElement('div');body.textContent='Loading decklists…';body.className='dl-empty';dl.appendChild(body);
+  wrap.appendChild(dl);
+  loadDecklist(DATASET_ID).then(dlData=>{
+    body.textContent='';body.className='';
+    const entry=Array.isArray(dlData)?dlData.find(e=>e.leader===id||e.leaderKey===id):null;
+    const lists=(entry?.best_decklists||[]).filter(x=>x.total_games>=3).slice(0,8);
+    if(!lists.length){body.className='dl-empty';body.textContent='No decklist data for this leader in the selected dataset yet.';return;}
+    lists.forEach((x,i)=>{
+      const cards=parseDecklist(x.decklist);
+      const codes=Object.keys(cards).sort();
+      const simText=['1x'+id,...codes.map(c=>cards[c]+'x'+c)].join('\n');
+      const row=document.createElement('div');row.className='dd-dl';
+      const top=document.createElement('div');top.className='dd-dl-top';
+      const t=document.createElement('div');t.className='dd-dl-t';
+      const rk=document.createElement('b');rk.textContent='#'+(i+1);rk.style.color=wrGradient(x.raw_win_rate*100);
+      const tx=document.createElement('span');tx.textContent=` ${(x.raw_win_rate*100).toFixed(1)}% WR · ${x.total_games} games · ${x.unique_pilots} pilot${x.unique_pilots===1?'':'s'}`;
+      t.append(rk,tx);
+      const cp=document.createElement('button');cp.className='sort-btn active';cp.textContent='Copy for sim';
+      cp.onclick=()=>copyText(simText,cp);
+      const sh=document.createElement('button');sh.className='sort-btn';sh.textContent='Show cards';
+      const list=document.createElement('div');list.className='dd-cards';list.style.display='none';
+      let built=false;
+      sh.onclick=()=>{
+        const open=list.style.display==='none';list.style.display=open?'grid':'none';sh.textContent=open?'Hide cards':'Show cards';
+        if(open&&!built){built=true;codes.forEach(c=>{
+          const cell=document.createElement('div');
+          cell.appendChild(mkDeckImg(c,'dd-c-img'));
+          const q=document.createElement('div');q.className='dd-c-q';q.textContent=cards[c]+'×  '+c;cell.appendChild(q);list.appendChild(cell);
+        });}
+      };
+      const btns=document.createElement('div');btns.style.cssText='display:flex;gap:8px;flex-wrap:wrap';btns.append(cp,sh);
+      top.append(t,btns);row.append(top,list);body.appendChild(row);
+    });
+  });
+  return wrap;
+}
+
 function viewRank(){
   const decks=visibleDecks();
   const activeIds=decks.filter(d=>!HIDDEN.has(d.id)).map(d=>d.id);
@@ -1337,7 +1465,7 @@ function viewRank(){
     row.className='rank-row'+(isOff?' off':'');
     row.style.borderLeftColor='transparent'; // WR tier is now carried by the number's color only — no double-encoding
     row.onmouseenter=e=>showTip(e,d,adjWR);row.onmouseleave=hideTip;
-    row.onclick=()=>{if(HIDDEN.has(d.id))HIDDEN.delete(d.id);else HIDDEN.add(d.id);render();};
+    row.onclick=()=>{hideTip();DETAIL_ID=d.id;render();window.scrollTo(0,0);};
     // Rank number
     const rn=document.createElement('div');rn.className='rank-num';rn.textContent=isOff?'—':'#'+(rank+1);
     // Inline card image with toggle dot
@@ -1351,8 +1479,8 @@ function viewRank(){
     // Toggle button — row click handles toggle, button is a clear visual affordance
     const togBtn=document.createElement('button');
     togBtn.className='rank-toggle-btn '+(isOff?'off':'on');
-    togBtn.textContent=isOff?'○':'●';
-    togBtn.title=isOff?'Click row to re-enable':'Click row to hide';
+    togBtn.textContent=isOff?'Show':'Hide';
+    togBtn.title=isOff?'Include this deck in the calculations again':'Leave this deck out of the win-rate calculations';
     togBtn.onclick=e=>{e.stopPropagation();if(HIDDEN.has(d.id))HIDDEN.delete(d.id);else HIDDEN.add(d.id);render();};
     const nmRow=document.createElement('div');nmRow.style.cssText='display:flex;align-items:center;gap:5px;overflow:hidden';
     const nm=document.createElement('div');nm.className='rank-name';nm.textContent=d.name;
@@ -1371,7 +1499,7 @@ function viewRank(){
     wrap.appendChild(row);
   });
   const note=document.createElement('div');note.className='note';
-  note.textContent='Sort by any metric above · click any row to toggle · hover for detail · border = tier';
+  note.textContent='Click a deck for its full breakdown and best decklists · use Hide/Show to leave a deck out of the calculations · hover for detail';
   wrap.appendChild(note);
   return wrap;
 }
@@ -2710,11 +2838,12 @@ function render(){
     const tabs=document.createElement('div');tabs.className='tabs';
     [['rank','Rankings'],['top25','Top 25 Decks'],['trends','Meta Trends'],['deckbuster','Deckbuster'],['advisor','Matchup Mastery'],['experimental','Experimental'],['debug','Debug']].forEach(([id,l])=>{
       const b=document.createElement('button');b.className='tab-btn'+(TAB===id?' active':'');b.textContent=l;
-      b.onclick=()=>{TAB=id;render();};tabs.appendChild(b);
+      b.onclick=()=>{TAB=id;DETAIL_ID=null;render();};tabs.appendChild(b);
     });
     app.appendChild(tabs);
 
-    if(TAB==='rank'){const sf=FILTER;FILTER='all';app.appendChild(viewRank());FILTER=sf;}
+    if((TAB==='rank'||TAB==='top25')&&DETAIL_ID&&DATA?.decks?.some(d=>d.id===DETAIL_ID))app.appendChild(viewDeckDetail(DETAIL_ID));
+    else if(TAB==='rank'){const sf=FILTER;FILTER='all';app.appendChild(viewRank());FILTER=sf;}
     else if(TAB==='top25'){const sf=FILTER;FILTER='top25';app.appendChild(viewRank());FILTER=sf;}
     else if(TAB==='trends')app.appendChild(viewTrends());
     else if(TAB==='experimental')app.appendChild(viewExperimental());
