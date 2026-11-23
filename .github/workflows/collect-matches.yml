@@ -1,8 +1,7 @@
 name: Collect Match History
 
 on:
-  schedule:
-    - cron: '35 */4 * * *'
+  # Scheduled runs paused: Kaizoku's match API is behind a Cloudflare challenge that blocks GitHub's servers.
   workflow_dispatch:
     inputs:
       mode:
