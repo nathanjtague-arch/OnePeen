@@ -144,12 +144,15 @@ function readJson(p, fallback) { try { return JSON.parse(fs.readFileSync(p, 'utf
 // A stats request looks like  <base>stats_<slug>_<YYYYMMDD>.json?v=8
 // (some periods may be undated or carry a different ?v= — we copy whatever
 // the site actually used instead of assuming).
+// Dated files come in two forms: a plain day (…_20261121) and, since Nov 2026,
+// a build timestamp (…_20261122T001506) that is fresher than that day's file. Both
+// are treated as the file's "date"; the slug is everything before it.
 // The file prefix is captured too, not assumed: it was "stats_" until Nov 2026,
 // when cardkaizoku renamed it to "ranking_" (and made ?v= a date instead of 8),
 // which silently 403'd every download. Following whatever prefix the page uses
 // means the next rename is picked up automatically. Other known file types
 // (hands, decklist, ...) are excluded so they're never mistaken for rankings.
-const STATS_URL_RE = /^(https?:\/\/[^/]*(?:cardkaizoku|localhost|127\.0\.0\.1)[^/]*\/(?:[^?#]*\/)?)(?!hands_|decklist_|matchuptech_|curve_|ranking_hands|image_|card_data|manifest)([a-z]+)_([^/?#]+?)(?:_(\d{8}))?\.json(\?[^#]*)?$/i;
+const STATS_URL_RE = /^(https?:\/\/[^/]*(?:cardkaizoku|localhost|127\.0\.0\.1)[^/]*\/(?:[^?#]*\/)?)(?!hands_|decklist_|matchuptech_|curve_|ranking_hands|image_|card_data|manifest)([a-z]+)_([^/?#]+?)(?:_(\d{8}(?:T\d{6})?))?\.json(\?[^#]*)?$/i;
 function parseStatsUrl(url) {
   const m = STATS_URL_RE.exec(url);
   if (!m) return null;
@@ -222,16 +225,16 @@ function candidateUrls(entry, type) {
   const files = type === 'stats' ? [...new Set([`stats_${entry.slug}`, `${fp}_${entry.slug}`])]
                                  : [`${type}_${entry.slug}`, `${fp}_${type}_${entry.slug}`];
   // A date-style cache-buster (?v=20261120) follows the date of the file requested.
-  const q = d => (entry.query || '').replace(/(v=)\d{8}/, `$1${d}`);
+  const q = d => (entry.query || '').replace(/(v=)\d{8}/, `$1${String(d).slice(0, 8)}`);
   const urls = [];
   for (const file of files) {
     if (!entry.dated) { urls.push(`${entry.urlBase}${file}.json${entry.query}`); continue; }
-    const dates = [...new Set([...tryDates(), entry.lastDate].filter(Boolean))];
+    const dates = [...new Set([entry.lastDate, ...tryDates()].filter(Boolean))];
     dates.forEach(d => urls.push(`${entry.urlBase}${file}_${d}.json${q(d)}`));
   }
   return urls;
 }
-function dateFromUrl(url) { const m = /_(\d{8})\.json/.exec(url); return m ? m[1] : null; }
+function dateFromUrl(url) { const m = /_(\d{8})(?:T\d{6})?\.json/i.exec(url); return m ? m[1] : null; }
 
 // ── Discovery: ask the site what it offers ───────────────────────────────
 const LABEL_LINE_RE = /(\bOP\d+|\bEB\d+|\bEGB|\bST\d+|\bPRB\d+|Snapshot|Last Week|Yesterday|Standard|Extra Reg|Spoiler)/i;
@@ -367,9 +370,12 @@ async function discoverDatasets(ctx, log) {
         const fresh = seen.slice(before);
         entry.requests = fresh.map(f => f.url);
         if (!fresh.length) { entry.result = 'no request observed'; continue; }
-        const best = [...fresh].sort((a, b) => scoreSlug(label, b.slug) - scoreSlug(label, a.slug))[0];
-        result.observed.set(label, best);
-        entry.result = `slug=${best.slug}`;
+        // Different slugs: the one whose wording fits the label. Same slug (several
+        // dated versions of one dataset): the newest date / timestamp.
+        const best = [...fresh].sort((a, b) => (scoreSlug(label, b.slug) - scoreSlug(label, a.slug)) || String(b.date || '').localeCompare(String(a.date || '')))[0];
+        const newest = fresh.filter(f => f.slug === best.slug).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))[0];
+        result.observed.set(label, newest);
+        entry.result = `slug=${best.slug} newest=${newest.date || 'undated'}`;
       } catch (e) { entry.result = `click failed: ${e.message.split('\n')[0]}`; }
     }
 
@@ -480,7 +486,7 @@ async function probeFileTypes(entries, log) {
   const names = ['matchups', 'matchup', 'matchup_matrix', 'matrix', 'matchup_stats', 'mu', 'vs', 'versus', 'winrates',
                  'details', 'detail', 'ranking_matchups', 'ranking_matchup', 'ranking_detail', 'ranking_details',
                  'firstsecond', 'first_second', 'turn_order', 'leader', 'leaders', 'stats', 'ranking'];
-  const q = (e.query || '').replace(/(v=)\d{8}/, `$1${e.lastDate}`);
+  const q = (e.query || '').replace(/(v=)\d{8}/, `$1${String(e.lastDate).slice(0, 8)}`);
   log.typeProbe = { using: `${e.slug}_${e.lastDate}`, results: {} };
   for (const n of names) {
     for (const slug of [e.slug, `${e.slug}_p`]) {
@@ -525,10 +531,13 @@ function buildManifest(observed, previous, discoveryTrusted, siteLabels = []) {
     // run (a flaky click) keeps its previous entry, rather than vanishing from
     // the dropdown for a run.
     const freshIds = new Set(entries.map(e => e.id));
+    const freshLabels = new Set(entries.map(e => e.cardkaizokuLabel));
     previous.datasets.forEach(p => {
-      if (!freshIds.has(p.id) && siteLabels.includes(p.cardkaizokuLabel)) entries.push(p);
+      if (!freshIds.has(p.id) && !freshLabels.has(p.cardkaizokuLabel) && siteLabels.includes(p.cardkaizokuLabel)) entries.push(p);
     });
   }
+  // Safety net: never two entries for the same cardkaizoku label.
+  const seenLabels = new Set(); entries = entries.filter(e => !seenLabels.has(e.cardkaizokuLabel) && seenLabels.add(e.cardkaizokuLabel));
   // De-duplicate ids defensively.
   const seenIds = new Set(); entries = entries.filter(e => !seenIds.has(e.id) && seenIds.add(e.id));
   // Link each public dataset to its private sibling (same period, private lobbies) for Opening Hands.
@@ -687,6 +696,17 @@ function archiveHistory(historyDir, id, rows, dataDate) {
   const liveIds = new Set(manifest.datasets.map(d => d.id));
   Object.keys(datasetStatus).forEach(k => { if (!liveIds.has(k)) delete datasetStatus[k]; });
 
+  // Datasets that have left cardkaizoku's dropdown for good: remove their files so the repo doesn't keep growing.
+  if (trusted && previousManifest?.datasets) {
+    const keep = new Set(manifest.datasets.map(d => d.id));
+    const retired = previousManifest.datasets.map(d => d.id).filter(id => !keep.has(id));
+    for (const id of retired) {
+      for (const f of [`stats/${id}.json`, `stats/hands_${id}.json`, `stats/decklist_${id}.json`, `history/${id}.json`]) {
+        try { fs.unlinkSync(path.join(dataDir, f)); } catch {}
+      }
+    }
+    if (retired.length) { console.log(`Retired datasets cleaned up: ${retired.join(', ')}`); dlog.retired = retired; }
+  }
   fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
   fs.writeFileSync(STATUS_PATH, JSON.stringify(datasetStatus, null, 2));
   dlog.manifestIds = manifest.datasets.map(d => d.id);
