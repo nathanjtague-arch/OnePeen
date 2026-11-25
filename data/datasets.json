@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-25T01:48:40.863Z",
+  "generatedAt": "2026-11-25T16:35:56.530Z",
   "defaultId": "op18_lw",
   "datasets": [
     {
@@ -18,9 +18,9 @@
       "period": "op18_lw",
       "prefix": "stats_op18_lw_",
       "urlBase": "https://cdn.cardkaizoku.com/stats/",
-      "query": "?v=20261124",
+      "query": "?v=20261125",
       "dated": true,
-      "lastDate": "20261124",
+      "lastDate": "20261125",
       "handsId": "op18_lw_p",
       "hasMatchups": true
     },
@@ -40,9 +40,9 @@
       "period": "egb_lw",
       "prefix": "stats_egb_lw_",
       "urlBase": "https://cdn.cardkaizoku.com/stats/",
-      "query": "?v=20261124",
+      "query": "?v=20261125",
       "dated": true,
-      "lastDate": "20261124",
+      "lastDate": "20261125",
       "handsId": null,
       "hasMatchups": true
     },
@@ -189,9 +189,9 @@
       "period": "op18_lw_p",
       "prefix": "stats_op18_lw_p_",
       "urlBase": "https://cdn.cardkaizoku.com/stats/",
-      "query": "?v=20261123",
+      "query": "?v=20261124",
       "dated": true,
-      "lastDate": "20261123",
+      "lastDate": "20261124",
       "hasMatchups": true
     }
   ]
