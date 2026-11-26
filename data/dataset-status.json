@@ -1,59 +1,59 @@
 {
   "op18_lw": {
-    "lastSuccessAt": "2026-11-25T16:35:56.617Z",
-    "lastAttemptAt": "2026-11-25T16:35:56.617Z",
+    "lastSuccessAt": "2026-11-26T01:24:39.780Z",
+    "lastAttemptAt": "2026-11-26T01:24:39.780Z",
     "lastAttemptFailed": false,
     "dataDate": "20261125",
     "source": "full"
   },
   "egb_lw": {
-    "lastSuccessAt": "2026-11-25T16:35:56.870Z",
-    "lastAttemptAt": "2026-11-25T16:35:56.870Z",
+    "lastSuccessAt": "2026-11-26T01:24:39.819Z",
+    "lastAttemptAt": "2026-11-26T01:24:39.819Z",
     "lastAttemptFailed": false,
     "dataDate": "20261125",
     "source": "full"
   },
   "eb05_lw_p": {
-    "lastSuccessAt": "2026-11-25T16:35:57.190Z",
-    "lastAttemptAt": "2026-11-25T16:35:57.190Z",
+    "lastSuccessAt": "2026-11-26T01:24:39.881Z",
+    "lastAttemptAt": "2026-11-26T01:24:39.881Z",
     "lastAttemptFailed": false,
     "dataDate": "20261118",
     "source": "full"
   },
   "eb05_lw": {
-    "lastSuccessAt": "2026-11-25T16:35:57.463Z",
-    "lastAttemptAt": "2026-11-25T16:35:57.463Z",
+    "lastSuccessAt": "2026-11-26T01:24:39.962Z",
+    "lastAttemptAt": "2026-11-26T01:24:39.962Z",
     "lastAttemptFailed": false,
     "dataDate": "20261118",
     "source": "full"
   },
   "eb05_p": {
-    "lastSuccessAt": "2026-11-25T16:35:57.811Z",
-    "lastAttemptAt": "2026-11-25T16:35:57.811Z",
+    "lastSuccessAt": "2026-11-26T01:24:40.015Z",
+    "lastAttemptAt": "2026-11-26T01:24:40.015Z",
     "lastAttemptFailed": false,
     "dataDate": "20261118",
     "source": "full"
   },
   "eb05": {
-    "lastSuccessAt": "2026-11-25T16:35:58.033Z",
-    "lastAttemptAt": "2026-11-25T16:35:58.033Z",
+    "lastSuccessAt": "2026-11-26T01:24:40.122Z",
+    "lastAttemptAt": "2026-11-26T01:24:40.122Z",
     "lastAttemptFailed": false,
     "dataDate": "20261118",
     "source": "full"
   },
   "op17_p": {
     "lastSuccessAt": null,
-    "lastAttemptAt": "2026-11-25T16:36:02.292Z",
+    "lastAttemptAt": "2026-11-26T01:24:43.218Z",
     "lastAttemptFailed": true
   },
   "op17": {
     "lastSuccessAt": null,
-    "lastAttemptAt": "2026-11-25T16:36:06.527Z",
+    "lastAttemptAt": "2026-11-26T01:24:46.220Z",
     "lastAttemptFailed": true
   },
   "op18_lw_p": {
-    "lastSuccessAt": "2026-11-25T16:36:06.762Z",
-    "lastAttemptAt": "2026-11-25T16:36:06.762Z",
+    "lastSuccessAt": "2026-11-26T01:24:46.319Z",
+    "lastAttemptAt": "2026-11-26T01:24:46.319Z",
     "lastAttemptFailed": false,
     "dataDate": "20261124",
     "source": "full"
