@@ -1,12 +1,16 @@
 {
-  "at": "2026-11-28T00:55:44.964Z",
+  "at": "2026-11-28T14:51:18.078Z",
   "pageResponses": [
+    {
+      "url": "ranking_op18_lw_p_20261128T001505.json?v=20261128",
+      "status": 200
+    },
     {
       "url": "ranking_op18_lw_p_20261127T001510.json?v=20261127",
       "status": 200
     },
     {
-      "url": "ranking_op18_lw_p_20261126T001505.json?v=20261126",
+      "url": "ranking_op18_lw_20261128T001505.json?v=20261128",
       "status": 200
     },
     {
@@ -14,15 +18,11 @@
       "status": 200
     },
     {
-      "url": "ranking_op18_lw_20261126T001505.json?v=20261126",
+      "url": "ranking_egb_lw_20261128T001505.json?v=20261128",
       "status": 200
     },
     {
       "url": "ranking_egb_lw_20261127T001510.json?v=20261127",
-      "status": 200
-    },
-    {
-      "url": "ranking_egb_lw_20261126T001505.json?v=20261126",
       "status": 200
     },
     {
@@ -68,49 +68,49 @@
   ],
   "replayHeaderNames": [],
   "initialRequests": [
-    "https://cdn.cardkaizoku.com/stats/ranking_op18_lw_p_20261127T001510.json?v=20261127",
-    "https://cdn.cardkaizoku.com/stats/ranking_op18_lw_p_20261126T001505.json?v=20261126"
+    "https://cdn.cardkaizoku.com/stats/ranking_op18_lw_p_20261128T001505.json?v=20261128",
+    "https://cdn.cardkaizoku.com/stats/ranking_op18_lw_p_20261127T001510.json?v=20261127"
   ],
   "pageRequests": [
     "fetch https://auth.cardkaizoku.com/verify",
-    "fetch https://cdn.cardkaizoku.com/image_manifest.json?t=1795827345916",
+    "fetch https://cdn.cardkaizoku.com/image_manifest.json?t=1795877478721",
     "xhr https://www.cardkaizoku.com/cdn-cgi/rum?",
-    "xhr https://www.cardkaizoku.com/cdn-cgi/challenge-platform/h/g/jsd/oneshot/b9d4778be3d9/0.7298749121389357:1795825521:3smxwuQtA3iv0U-EIjpdpEm6zA_v-wg4Qk3j42CP0iA/a61568ad1a625b23",
+    "xhr https://www.cardkaizoku.com/cdn-cgi/challenge-platform/h/g/jsd/oneshot/b9d4778be3d9/0.14118996821703866:1795872634:KR81Ljyc4hg12AhQrVa8QVIC2uVt37EX_AK_Np8aJvE/a61a309ebe9b4973",
     "fetch https://cdn.cardkaizoku.com/latest_video.txt",
     "fetch https://cdn.cardkaizoku.com/navbar/navmerch.json",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827346145",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827346146",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877478937",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877478939",
+    "fetch https://cdn.cardkaizoku.com/stats/ranking_op18_lw_p_20261128T001505.json?v=20261128",
+    "fetch https://cdn.cardkaizoku.com/card_data_v20261128T061527.json",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877479113",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_op18_lw_p_20261127T001510.json?v=20261127",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827346317",
-    "fetch https://cdn.cardkaizoku.com/card_data_v20261127T161549.json",
-    "fetch https://cdn.cardkaizoku.com/stats/ranking_op18_lw_p_20261126T001505.json?v=20261126",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827353087",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877485971",
+    "fetch https://cdn.cardkaizoku.com/stats/ranking_op18_lw_20261128T001505.json?v=20261128",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877486103",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_op18_lw_20261127T001510.json?v=20261127",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827353292",
-    "fetch https://cdn.cardkaizoku.com/stats/ranking_op18_lw_20261126T001505.json?v=20261126",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827356306",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877489191",
+    "fetch https://cdn.cardkaizoku.com/stats/ranking_egb_lw_20261128T001505.json?v=20261128",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877489346",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_egb_lw_20261127T001510.json?v=20261127",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827356488",
-    "fetch https://cdn.cardkaizoku.com/stats/ranking_egb_lw_20261126T001505.json?v=20261126",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827359527",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877492410",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_eb05_lw_p_20261118.json?v=20261118",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827359757",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877492576",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_eb05_lw_p_20261117.json?v=20261117",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827362746",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877495628",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_eb05_lw_20261118.json?v=20261118",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827362879",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877495785",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_eb05_lw_20261117.json?v=20261117",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827365967",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877498848",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_eb05_p_20261118.json?v=20261118",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827366212",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877499574",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_eb05_p_20261117.json?v=20261117",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827369185",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877502065",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_eb05_20261118.json?v=20261118",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827369356",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877502307",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_eb05_20261117.json?v=20261117",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827372402",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877505281",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_op17_p_20261106.json?v=20261106",
-    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795827375614",
+    "fetch https://cdn.cardkaizoku.com/manifest.json?t=1795877508493",
     "fetch https://cdn.cardkaizoku.com/stats/ranking_op17_20261106.json?v=20261106"
   ],
   "labels": [
@@ -136,20 +136,20 @@
     {
       "label": "OP18 · Last Week · All Lobbies",
       "requests": [
-        "https://cdn.cardkaizoku.com/stats/ranking_op18_lw_20261127T001510.json?v=20261127",
-        "https://cdn.cardkaizoku.com/stats/ranking_op18_lw_20261126T001505.json?v=20261126"
+        "https://cdn.cardkaizoku.com/stats/ranking_op18_lw_20261128T001505.json?v=20261128",
+        "https://cdn.cardkaizoku.com/stats/ranking_op18_lw_20261127T001510.json?v=20261127"
       ],
       "how": "select",
-      "result": "slug=op18_lw newest=20261127T001510"
+      "result": "slug=op18_lw newest=20261128T001505"
     },
     {
       "label": "EGB · Last Week · All Lobbies",
       "requests": [
-        "https://cdn.cardkaizoku.com/stats/ranking_egb_lw_20261127T001510.json?v=20261127",
-        "https://cdn.cardkaizoku.com/stats/ranking_egb_lw_20261126T001505.json?v=20261126"
+        "https://cdn.cardkaizoku.com/stats/ranking_egb_lw_20261128T001505.json?v=20261128",
+        "https://cdn.cardkaizoku.com/stats/ranking_egb_lw_20261127T001510.json?v=20261127"
       ],
       "how": "select",
-      "result": "slug=egb_lw newest=20261127T001510"
+      "result": "slug=egb_lw newest=20261128T001505"
     },
     {
       "label": "[Snapshot] EB05 · Last Week · Private Lobbies",
@@ -208,7 +208,6 @@
     "label": "OP18 · Last Week · Private",
     "slug": "op18_lw_p"
   },
-  "sitePageError": "page.goto: Timeout 30000ms exceeded.",
   "manifestIds": [
     "op18_lw",
     "egb_lw",
@@ -222,11 +221,11 @@
   ],
   "fetchSample": [
     {
-      "url": "https://cdn.cardkaizoku.com/stats/stats_op18_lw_20261127T001510.json?v=20261127",
+      "url": "https://cdn.cardkaizoku.com/stats/stats_op18_lw_20261128T001505.json?v=20261128",
       "status": "200 (in-page)"
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/stats_egb_lw_20261127T001510.json?v=20261127",
+      "url": "https://cdn.cardkaizoku.com/stats/stats_egb_lw_20261128T001505.json?v=20261128",
       "status": "200 (in-page)"
     },
     {
@@ -254,6 +253,14 @@
       "status": 403
     },
     {
+      "url": "https://cdn.cardkaizoku.com/stats/stats_op17_p_20261128.json?v=20261128",
+      "status": "404 (in-page)"
+    },
+    {
+      "url": "https://cdn.cardkaizoku.com/stats/stats_op17_p_20261128.json?v=20261128",
+      "status": 403
+    },
+    {
       "url": "https://cdn.cardkaizoku.com/stats/stats_op17_p_20261127.json?v=20261127",
       "status": "404 (in-page)"
     },
@@ -270,19 +277,19 @@
       "status": 403
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/stats_op17_p_20261125.json?v=20261125",
+      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_p_20261106.json?v=20261106",
       "status": "404 (in-page)"
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/stats_op17_p_20261125.json?v=20261125",
+      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_p_20261106.json?v=20261106",
       "status": 403
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_p_20261106.json?v=20261106",
+      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_p_20261128.json?v=20261128",
       "status": "404 (in-page)"
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_p_20261106.json?v=20261106",
+      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_p_20261128.json?v=20261128",
       "status": 403
     },
     {
@@ -302,19 +309,19 @@
       "status": 403
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_p_20261125.json?v=20261125",
+      "url": "https://cdn.cardkaizoku.com/stats/stats_op17_20261106.json?v=20261106",
       "status": "404 (in-page)"
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_p_20261125.json?v=20261125",
+      "url": "https://cdn.cardkaizoku.com/stats/stats_op17_20261106.json?v=20261106",
       "status": 403
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/stats_op17_20261106.json?v=20261106",
+      "url": "https://cdn.cardkaizoku.com/stats/stats_op17_20261128.json?v=20261128",
       "status": "404 (in-page)"
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/stats_op17_20261106.json?v=20261106",
+      "url": "https://cdn.cardkaizoku.com/stats/stats_op17_20261128.json?v=20261128",
       "status": 403
     },
     {
@@ -334,19 +341,19 @@
       "status": 403
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/stats_op17_20261125.json?v=20261125",
+      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_20261106.json?v=20261106",
       "status": "404 (in-page)"
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/stats_op17_20261125.json?v=20261125",
+      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_20261106.json?v=20261106",
       "status": 403
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_20261106.json?v=20261106",
+      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_20261128.json?v=20261128",
       "status": "404 (in-page)"
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_20261106.json?v=20261106",
+      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_20261128.json?v=20261128",
       "status": 403
     },
     {
@@ -366,15 +373,7 @@
       "status": 403
     },
     {
-      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_20261125.json?v=20261125",
-      "status": "404 (in-page)"
-    },
-    {
-      "url": "https://cdn.cardkaizoku.com/stats/ranking_op17_20261125.json?v=20261125",
-      "status": 403
-    },
-    {
-      "url": "https://cdn.cardkaizoku.com/stats/stats_op18_lw_p_20261126T001505.json?v=20261126",
+      "url": "https://cdn.cardkaizoku.com/stats/stats_op18_lw_p_20261127T001510.json?v=20261127",
       "status": "200 (in-page)"
     }
   ],
